@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "provider": "openrouter",
+  "protocol": { "id": "integer-v1", "language": "en", "targetSamples": 64, "temperature": null },
+  "trainingRuns": 3,
+  "validationRuns": 2,
+  "maxRequests": 10,
+  "models": [
+    { "id": "synthetic-a", "family": "a", "model": "openai/synthetic-a" },
+    { "id": "synthetic-b", "family": "b", "model": "openai/synthetic-b" }
+  ]
+}

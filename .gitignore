@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.bank-checkpoint/
+coverage/
+*.tgz
+.env
+.env.*
+!.env.example
+*.local.json
+.DS_Store
+src/data/default_bank.json.lock
+src/data/default_bank.json.*.tmp
+*.checkpoint.json
+*.checkpoint.json.*.tmp
+*.corpus-*.json

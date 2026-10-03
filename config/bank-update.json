@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "provider": "openrouter",
+  "protocol": {
+    "id": "integer-v1",
+    "language": "en",
+    "targetSamples": 512,
+    "temperature": null
+  },
+  "checkpoints": [ 64, 128, 256, 512 ],
+  "trainingRuns": 10,
+  "validationRuns": 5,
+  "timeoutMs": 120000,
+  "requestDelayMs": 1000,
+  "maxRequests": 300,
+  "maxProbeRetries": 5,
+  "models": [
+    {
+      "id": "gpt-6.1-sol",
+      "family": "gpt",
+      "model": "openai/gpt-6.1-sol",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-6-sol",
+      "family": "gpt",
+      "model": "openai/gpt-6-sol",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-6-luna",
+      "family": "gpt",
+      "model": "openai/gpt-6-luna",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-6-astra",
+      "family": "gpt",
+      "model": "openai/gpt-6-astra",
+      "tokenLimitField": "max_completion_tokens",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "family": "gpt",
+      "model": "openai/gpt-5.6-luna",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "family": "gpt",
+      "model": "openai/gpt-5.6-terra",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "family": "gpt",
+      "model": "openai/gpt-5.6-sol",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "claude-sonnet-5.5",
+      "family": "claude",
+      "model": "anthropic/claude-sonnet-5.5",
+      "apiFormat": "messages",
+      "maxTokens": 8192
+    },
+    {
+      "id": "claude-opus-5.5",
+      "family": "claude",
+      "model": "anthropic/claude-opus-5.5",
+      "apiFormat": "messages",
+      "maxTokens": 8192
+    },
+    {
+      "id": "claude-fable-5.1",
+      "family": "claude",
+      "model": "anthropic/claude-fable-5.1",
+      "apiFormat": "messages",
+      "maxTokens": 8192
+    },
+    {
+      "id": "claude-opus-5",
+      "family": "claude",
+      "model": "anthropic/claude-opus-5",
+      "apiFormat": "messages",
+      "maxTokens": 8192
+    },
+    {
+      "id": "claude-sonnet-5",
+      "family": "claude",
+      "model": "anthropic/claude-sonnet-5",
+      "apiFormat": "messages",
+      "maxTokens": 8192
+    },
+    {
+      "id": "claude-fable-5",
+      "family": "claude",
+      "model": "anthropic/claude-fable-5",
+      "apiFormat": "messages",
+      "maxTokens": 8192
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "name": "logitping",
+  "version": "0.1.0",
+  "description": "Streaming behavioral fingerprint probes for LLM endpoints and local developer CLIs",
+  "homepage": "https://github.com/logitping/logitping#readme",
+  "bugs": {
+    "url": "https://github.com/logitping/logitping/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/logitping/logitping.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "logitping": "./dist/bin/logitping.js",
+    "lping": "./dist/bin/logitping.js"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md",
+    "docs",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "overrides": {
+    "esbuild": "^0.28.1",
+    "rollup": "$rollup",
+    "vite": "$vite"
+  },
+  "scripts": {
+    "build": "node scripts/clean-build.mjs && tsup && node scripts/build-types.mjs && node scripts/third-party-notices.mjs && node scripts/finalize-build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:package": "node scripts/package-smoke.mjs",
+    "bank:update": "npm run build && node scripts/update-bank.mjs",
+    "bank:check": "npm run build && node scripts/update-bank.mjs --dry-run",
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepare": "npm run build",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "llm",
+    "fingerprinting",
+    "provenance",
+    "cli",
+    "security"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@clack/prompts": "^0.10.1",
+    "@types/node": "^20.19.0",
+    "commander": "^12.1.0",
+    "eventsource-parser": "^3.0.6",
+    "execa": "^8.0.1",
+    "ora": "^8.2.0",
+    "picocolors": "^1.1.1",
+    "rollup": "npm:@rollup/wasm-node@^4.63.4",
+    "rollup-plugin-dts": "^6.5.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.4.3",
+    "vitest": "^4.1.11"
+  }
+}

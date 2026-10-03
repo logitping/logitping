@@ -1,0 +1,17 @@
+export { fingerprint } from './core/engine.js';
+export { HttpClient, completionURL, type ApiFormat, type HttpClientOptions, type TokenLimitField } from './core/client.js';
+export { LogitpingError, type LogitpingErrorCode, type LogitpingErrorOptions } from './core/errors.js';
+export type * from './core/types.js';
+export { CliDriver, type DriverOptions, type EventDecoder, type LaunchContext } from './drivers/base.js';
+export { ClaudeDriver } from './drivers/claude_driver.js';
+export { CodexDriver } from './drivers/codex_driver.js';
+export { defaultBank, loadBank, validateBank } from './data/bank_loader.js';
+export { createFingerprintBank, type EnrollmentInput } from './data/enrollment.js';
+export { hellinger, smoothCounts, assertDistribution } from './math/hellinger.js';
+export { FEATURE_DIMENSION, FEATURE_VERSION, INTEGER_MAX, INTEGER_MIN, orderedBlockFeatures, type OrderedBlockFeatures } from './math/ordered_block.js';
+export { createNuisanceProjector, projectNuisance, type Projector } from './math/nuisance.js';
+export { MIN_SEQUENTIAL_SAMPLES, SequentialTest, type Hypothesis, type SequentialDecision } from './math/sprt.js';
+export { assessOOD, diagonalMahalanobis, type DistanceProfile } from './math/ood.js';
+export { IntegerStreamParser, IntegerOutputError } from './probes/integer_stream.js';
+export { integerPrompt, PROTOCOL_ID } from './probes/templates.js';
+export { tokenizerPrompt, BOUNDARY_CASES } from './probes/tokenizer.js';
