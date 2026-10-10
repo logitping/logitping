@@ -12,6 +12,8 @@ CI includes type checking, tests, builds, and package installation checks.
 
 `logitping` (`lping`) is a Node.js CLI and TypeScript library for collecting LLM behavior samples and comparing them with measured reference fingerprints. Use it to investigate endpoint behavior, compare candidate models, and build your own reference bank.
 
+The project website is live at [logitping.com](https://logitping.com), with an interactive output inspector, a methodology overview, and reference-bank details. Paste an existing model response into the browser playground to explore the protocol and results.
+
 **Experimental 0.1.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
 The bundled bank contains **13 models collected through OpenRouter on 2026-10-03**, with 10 training and 5 threshold-calibration runs per model. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
@@ -146,6 +148,7 @@ node dist/bin/logitping.js --help
 
 ## Documentation and contributing
 
+- [Project website and browser playground](https://logitping.com)
 - [Current bank and evaluation status](docs/bank.md)
 - [CLI reference](docs/cli.md) and [library reference](docs/library.md)
 - [Methodology and statistical assumptions](docs/methodology.md)

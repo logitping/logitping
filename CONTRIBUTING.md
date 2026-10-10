@@ -2,6 +2,8 @@
 
 logitping is an experimental behavioral fingerprinting tool. Contributions should make its measurements reproducible, its transports reliable, and its claims easy to evaluate. A successful synthetic test or a high likelihood weight does not establish real-model identity accuracy.
 
+Visit the [project website](https://logitping.com) for the browser playground and project overview, and the [README](README.md) for installation and usage documentation.
+
 ## Development setup
 
 Use Node.js 22 or 24 and npm; [CI](.github/workflows/ci.yml) checks both versions on Linux. Its Node.js 24 job also builds and dry-runs the updater under Node.js permission restrictions, using synthetic credentials without provider requests; see [bank-maintenance CI notes](docs/bank-maintenance.md#github-actions). Source and CI links in this guide refer to a repository checkout; those files are not shipped in npm tarballs. From a local checkout:

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Documentation
+
+- Announced the published project website at [logitping.com](https://logitping.com), including its browser playground, methodology overview, and reference-bank details, in the README and contributor guide.
+- Updated the npm package homepage to point to the project website.
+
 ## 0.1.0 — 2026-10-08
 
 Initial experimental release on [npm](https://www.npmjs.com/package/logitping/v/0.1.0). Install the CLI with `npm install -g logitping`, or add the library with `npm install logitping`. See the [README](README.md) for the Quickstart.

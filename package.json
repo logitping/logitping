@@ -2,7 +2,7 @@
   "name": "logitping",
   "version": "0.1.0",
   "description": "Streaming behavioral fingerprint probes for LLM endpoints and local developer CLIs",
-  "homepage": "https://github.com/logitping/logitping#readme",
+  "homepage": "https://logitping.com",
   "bugs": {
     "url": "https://github.com/logitping/logitping/issues"
   },
