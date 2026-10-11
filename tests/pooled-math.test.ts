@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { countEvents, FAMILY_SIZES, familyLogLikelihoods, logLikelihoods, smoothFamilies, sumFamilies, type EventCounts } from '../src/math/pooled_features.js';
+import { aggregateScores, cutoffIndex, fitPairStatistic, mulberry32, pairScore } from '../src/math/pooled_sets.js';
 
 const entries = (group: EventCounts) => [...group.counts].sort(([a], [b]) => a - b);
 
@@ -56,5 +57,41 @@ describe('pooled feature groups', () => {
     const run = countEvents([7, 7, 12, 300]);
     const fromProbabilities = familyLogLikelihoods(run, smoothFamilies(totals).map((family) => family.map(Math.log)));
     logLikelihoods(run, totals).forEach((value, group) => expect(fromProbabilities[group]).toBeCloseTo(value, 9));
+  });
+});
+
+describe('pooled prediction-set statistics', () => {
+  it('fits clipped diagonal-LDA weights and standardizes the combined score', () => {
+    const statistic = fitPairStatistic([[2, 0], [4, 0]], [[0, 1], [0, 3]]);
+    expect(statistic).toEqual({ weights: [3, 0], center: 4.5, scale: 3 });
+    expect(pairScore(statistic, [4, 0])).toBe(2.5);
+  });
+
+  it('falls back to equal weights and a minimum scale', () => {
+    expect(fitPairStatistic([[0], [1]], [[2], [3]]).weights).toEqual([1]);
+    expect(fitPairStatistic([[1], [1]], [[1], [1]])).toEqual({ weights: [1], center: 1, scale: 1e-6 });
+  });
+
+  it('sums fits and divides the worst competitor margin by sqrt(k)', () => {
+    expect(aggregateScores([1, 2, 3, 4], [[1, 5], [1, 5], [1, 5], [1, 5]])).toEqual({ fit: 10, margin: 2 });
+  });
+
+  it.each([[2000, 199], [99, 9], [199, 19]])('keeps score >= cutoff exactly when the conformal p-value exceeds alpha/2 (draws=%i)', (draws, index) => {
+    expect(cutoffIndex(0.2, draws)).toBe(index);
+    const random = mulberry32(draws);
+    // Integer nulls and half-step scores exercise ties.
+    const nulls = Array.from({ length: draws }, () => Math.round(random() * 50));
+    const sorted = [...nulls].sort((a, b) => a - b);
+    for (let score = -1; score <= 51; score += 0.5) {
+      const p = (1 + nulls.filter((value) => value <= score).length) / (draws + 1);
+      expect(score >= sorted[index]!).toBe(p > 0.1);
+    }
+  });
+
+  it('generates the prototype bootstrap sequence', () => {
+    const random = mulberry32(20261011);
+    expect([random(), random()]).toEqual([0.34649015543982387, 0.8141545492690057]);
+    const values = Array.from({ length: 1000 }, mulberry32(7));
+    expect(values.every((value) => value >= 0 && value < 1)).toBe(true);
   });
 });
