@@ -1,5 +1,6 @@
 import type { FingerprintBank, ProbeRequest, ProbeTransport, StreamGranularity } from '../src/core/types.js';
 import { createFingerprintBank } from '../src/data/enrollment.js';
+import { FAMILY_SIZES } from '../src/math/pooled_features.js';
 
 export function uncalibratedBank(): FingerprintBank {
   return {
@@ -45,4 +46,19 @@ export class MemoryTransport implements ProbeTransport {
       this.aborted = request.signal?.aborted ?? false;
     }
   }
+}
+
+/** A schema-v2 bank with a uniform pooled section, for validation tests that need no real calibration. */
+export function uniformPooledBank(requestsPerProbe = 4): FingerprintBank {
+  const bank = syntheticBank();
+  bank.schemaVersion = 2;
+  bank.protocol.requestsPerProbe = requestsPerProbe;
+  bank.protocol.scoring = 'pooled-sets-v1';
+  bank.pooled = {
+    alpha: 0.2, bootstrap: { draws: 2000, seed: 1 },
+    models: bank.models.map(() => ({ families: FAMILY_SIZES.map((size) => Array<number>(size).fill(1 / size)), cutoffs: { fit: 0, margin: 0 } })),
+    pairs: bank.models.flatMap((model) => bank.models.filter((other) => other !== model)
+      .map((other) => ({ model: model.id, competitor: other.id, weights: Array<number>(FAMILY_SIZES.length).fill(1), center: 0, scale: 1 }))),
+  };
+  return bank;
 }

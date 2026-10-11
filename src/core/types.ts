@@ -1,5 +1,7 @@
 import type { DistanceProfile } from '../math/ood.js';
 import type { FEATURE_VERSION } from '../math/ordered_block.js';
+import type { POOLED_SCORING } from '../math/pooled_features.js';
+import type { PairStatistic } from '../math/pooled_sets.js';
 
 export type Provider = 'openai' | 'anthropic';
 export type Language = 'en' | 'zh';
@@ -32,8 +34,17 @@ export interface ModelFingerprint {
   provenance: string;
 }
 
+/** Prediction-set calibration of a pooled bank (schema version 2); see docs/methodology.md. */
+export interface PooledScoring {
+  alpha: number;
+  bootstrap: { draws: number; seed: number };
+  /** In the order of `FingerprintBank.models`. */
+  models: { families: number[][]; cutoffs: { fit: number; margin: number } }[];
+  pairs: ({ model: string; competitor: string } & PairStatistic)[];
+}
+
 export interface FingerprintBank {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   featureVersion: typeof FEATURE_VERSION;
   protocol: {
     id: 'integer-v1';
@@ -45,6 +56,9 @@ export interface FingerprintBank {
      * collected through mixed HTTP API formats; it calibrates both HTTP providers.
      */
     transport: 'api' | 'openai' | 'anthropic' | 'claude' | 'codex';
+    /** Pooled banks (schema version 2): requests per probe, each of `targetSamples` integers. */
+    requestsPerProbe?: number;
+    scoring?: typeof POOLED_SCORING;
   };
   alpha: 0.5;
   nuisanceDirections: number[][];
@@ -55,6 +69,8 @@ export interface FingerprintBank {
     /** Enables nominal IID-based early stopping, only after external sequential validation. */
     sequentialValidated: boolean;
   } | null;
+  /** Present exactly when `schemaVersion` is 2. */
+  pooled?: PooledScoring;
 }
 
 export interface ModelScore {
@@ -64,6 +80,11 @@ export interface ModelScore {
   accepted: boolean;
   /** Relative likelihood among enrolled models; absent when the OOD gate fails. */
   weight: number | null;
+  /** Pooled banks only: summed fit and worst head-to-head margin over all responses, with this model's cutoffs. */
+  fit?: number;
+  margin?: number;
+  fitCutoff?: number;
+  marginCutoff?: number;
 }
 
 export interface ProbeResult {
@@ -85,6 +106,10 @@ export interface ProbeResult {
   warnings: string[];
   /** Present for opt-in reference comparisons whose transport calibration does not transfer. */
   crossTransport?: { probeTransport: string; bankTransport: FingerprintBank['protocol']['transport'] };
+  /** Pooled banks only, once every request completed: the prediction set, in bank order. */
+  candidates?: string[];
+  /** Pooled banks only: requests sent for this probe. */
+  requests?: number;
 }
 
 export interface EngineOptions {
