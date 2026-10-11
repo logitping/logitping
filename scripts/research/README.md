@@ -21,3 +21,15 @@ The corpora are git-ignored and stay at the repository root:
 Both were collected through OpenRouter on 2026-10-11.
 
 Example: `KS=4,8 node scripts/research/gate-test.mjs research-64.local.json.corpus-4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf.json`
+
+## Implementation check
+
+`check-pooled.mjs` compares the production `createPooledBank` and engine with the prototype on `research-64.local.json.corpus-4d34afe7….json`:
+
+- **Arithmetic:** largest relative difference 0, against a limit of 1e-9.
+- **Leave-group-out at 8 requests**, gate test C4 gated in parentheses:
+  - correct single model 45/65 (45/65);
+  - wrong single model 1/65 (1/65);
+  - unenrolled model named 9/65 (9/65).
+
+Exact equality is not guaranteed, because the bootstrap draws in a different order; on this corpus the results coincide. The check runs in about 15 s.
