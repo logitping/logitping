@@ -482,6 +482,31 @@ describe('CLI bank selection', () => {
     expect(fetch).toHaveBeenCalledTimes(4);
     expect(stdout).toContain('Heuristic match: synthetic-1-120');
   });
+
+  it('keeps --pooled in interactive mode without asking for a bank', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(openEnvelopes(syntheticPooledBank()));
+    const fetch = lowRangeEndpoint();
+    prompts.answers.push('api', 'openai', 'https://proxy.example/v1', 'claimed', 'unread');
+    const restore = stubTerminal();
+    try { await main(['node', 'lping', '--pooled']); } finally { restore(); }
+    expect(prompts.answers).toEqual(['unread']);
+    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(stdout).toContain('Heuristic match: synthetic-1-120');
+  });
+
+  it('keeps a --bank path in interactive mode without asking for another', async () => {
+    const bank = syntheticBank();
+    bank.protocol.transport = 'codex';
+    const path = join(directory, 'codex-bank.json');
+    await writeFile(path, JSON.stringify(bank));
+    prompts.answers.push('codex', 'unread');
+    const restore = stubTerminal();
+    try { await main(['node', 'lping', '--bank', path]); } finally { restore(); }
+    expect(prompts.answers).toEqual(['unread']);
+    expect(stdout).toContain('synthetic-17');
+    expect(process.exitCode).toBe(0);
+  });
 });
 
 describe('API key scoping', () => {

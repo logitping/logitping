@@ -76,6 +76,8 @@ async function interactive(options: Options): Promise<void> {
     options.model = answer(await prompts.text({ message: 'Claimed model identifier', validate: (value) => !value.trim() ? 'Enter a model identifier' : undefined }));
     if (!options.keyFile && !resolveApiKey(options)) options.key = answer(await prompts.password({ message: 'API key (leave blank for an unauthenticated local endpoint)' }));
   }
+  // A bank chosen on the command line is not asked for again.
+  if (options.bank || options.pooled) return;
   // A blank answer resolves as undefined, despite the declared string type.
   const bank = answer(await prompts.text({ message: options.allowTransportMismatch
     ? 'Reference bank path (blank uses the bundled bank for experimental comparison)'
