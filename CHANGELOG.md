@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- Interactive mode no longer fails with `Cannot read properties of undefined (reading 'trim')` when the bank path is left blank; it uses the bundled bank, as the prompt describes.
+- `--json` output writes C1 control and bidirectional formatting characters in model text, such as a tokenizer response, as `\uXXXX` escapes, so an endpoint cannot control or reorder the terminal display. Parsing the JSON restores the original text.
+- The third-party notice generator now recognizes bundled packages in Windows paths, and the build fails instead of publishing an empty notice list when it recognizes none.
+
 ### Documentation
 
 - Announced the published project website at [logitping.com](https://logitping.com), including its browser playground, methodology overview, and reference-bank details, in the README and contributor guide.

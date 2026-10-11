@@ -30,6 +30,26 @@ vi.mock('../src/drivers/codex_driver.js', () => ({
   },
 }));
 
+const prompts = vi.hoisted(() => ({ answers: [] as unknown[] }));
+vi.mock('@clack/prompts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@clack/prompts')>();
+  const next = async () => prompts.answers.shift();
+  return { ...actual, intro: () => {}, select: next, text: next, password: next };
+});
+
+/** Report stdin and stdout as a terminal, as an interactive session does; returns the undo. */
+function stubTerminal(): () => void {
+  const undo = [process.stdin, process.stdout].map((stream) => {
+    const descriptor = Object.getOwnPropertyDescriptor(stream, 'isTTY');
+    Object.defineProperty(stream, 'isTTY', { value: true, configurable: true });
+    return () => {
+      if (descriptor) Object.defineProperty(stream, 'isTTY', descriptor);
+      else delete (stream as { isTTY?: boolean }).isTTY;
+    };
+  });
+  return () => { for (const restore of undo) restore(); };
+}
+
 /** Deliver a signal as EventEmitter#emit would, but only to the listeners added since `before`. */
 function deliver(signal: NodeJS.Signals, before: readonly Function[]): void {
   for (const listener of process.rawListeners(signal).filter((added) => !before.includes(added))) listener.call(process, signal);
@@ -46,6 +66,7 @@ describe('CLI bank selection', () => {
     process.exitCode = undefined;
     fake.requests.length = 0;
     fake.onStart = undefined;
+    prompts.answers.length = 0;
     stdout = '';
     stderr = '';
     vi.spyOn(process.stdout, 'write').mockImplementation((text) => { stdout += String(text); return true; });
@@ -329,6 +350,44 @@ describe('CLI bank selection', () => {
     await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--stream', '--json']);
     expect(stderr).toContain('1771 ');
     expect(stderr).not.toContain('\u202e');
+  });
+
+  it('escapes terminal controls and bidirectional overrides in JSON output without losing them', async () => {
+    const response = 'a‮b⁦c\u009b31md\u007fe';
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      const content = String(init?.body).includes('tokenizer') ? response : '17 '.repeat(128);
+      return new Response(
+        `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content } }] })}\n\ndata: [DONE]\n\n`,
+        { headers: { 'content-type': 'text/event-stream' } },
+      );
+    });
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--tokenizer', '--json']);
+    expect(stdout).not.toMatch(/[\u007f\u009b‮⁦]/);
+    expect(JSON.parse(stdout).tokenizer.response).toBe(response);
+  });
+
+  it('uses the bundled bank when the interactive bank path is left blank', async () => {
+    // Like @clack/prompts, the mock resolves an empty text answer as undefined.
+    prompts.answers.push('codex', undefined);
+    const restore = stubTerminal();
+    try { await main(['node', 'lping']); } finally { restore(); }
+    expect(stderr).not.toContain('Error:');
+    expect(fake.requests).toHaveLength(1);
+    expect(stdout).toContain('UNCALIBRATED');
+    expect(process.exitCode).toBe(2);
+  });
+
+  it('loads a bank path typed at the interactive prompt, ignoring surrounding spaces', async () => {
+    const bank = syntheticBank();
+    bank.protocol.transport = 'codex';
+    const path = join(directory, 'codex-bank.json');
+    await writeFile(path, JSON.stringify(bank));
+    prompts.answers.push('codex', `  ${path}  `);
+    const restore = stubTerminal();
+    try { await main(['node', 'lping']); } finally { restore(); }
+    expect(stdout).toContain('synthetic-17');
+    expect(process.exitCode).toBe(0);
   });
 
   it('reports invalid enrollment JSON without echoing its content', async () => {

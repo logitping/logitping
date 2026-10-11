@@ -1,5 +1,5 @@
 import { access, readdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // The published bundles inline their runtime dependencies, so their license notices must ship too.
@@ -19,7 +19,8 @@ const notices = new Map();
 for (const map of maps) {
   for (const source of JSON.parse(await readFile(map, 'utf8')).sources) {
     // Greedy: the last node_modules segment is the package that owns a nested dependency's file.
-    const directory = resolve(dirname(map), source).match(/^(.*node_modules\/((?:@[^/]+\/)?[^/]+))\//);
+    // Match with forward slashes: Windows separators would otherwise skip every package.
+    const directory = resolve(dirname(map), source).split(sep).join('/').match(/^(.*node_modules\/((?:@[^/]+\/)?[^/]+))\//);
     if (!directory) continue;
     const [, path, packageName] = directory;
     if (await exists(join(path, 'package.json'))) {
@@ -41,6 +42,9 @@ for (const map of maps) {
     notices.set(id, { license: 'embedded in a dependency\'s build', text: await readFile(vendored, 'utf8') });
   }
 }
+
+// The bundles always inline dependencies; finding none means the source paths went unrecognized.
+if (!notices.size) throw new Error('No bundled packages found in source maps; refusing to write empty third-party notices');
 
 let output = '# Third-party notices\n\nThe files in this package bundle the following software.\n';
 for (const [id, { license, text }] of [...notices].sort(([a], [b]) => a.localeCompare(b))) {

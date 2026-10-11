@@ -45,7 +45,7 @@ Run the complete checks above before submitting code or packaging changes. For d
 | `tests/` | Synthetic unit and integration tests and fixtures |
 | `scripts/` | Build, package checks, license notices, and updater entry point |
 
-`dist/` and `build/` are generated. The maintainer bundle in `build/maintainer.js` is separate from the published library and CLI. The public bundles include their dependencies, so the package has no runtime dependencies. The build generates `dist/THIRD_PARTY_NOTICES.md` from source maps, which are not published. License texts for packages embedded inside dependencies live in `scripts/embedded-licenses`; the build fails when a bundled package's notice is missing. Retain these checks when changing packaging or dependencies.
+`dist/` and `build/` are generated. The maintainer bundle in `build/maintainer.js` is separate from the published library and CLI. The public bundles include their dependencies, so the package has no runtime dependencies. The build generates `dist/THIRD_PARTY_NOTICES.md` from source maps, which are not published. License texts for packages embedded inside dependencies live in `scripts/embedded-licenses`; the build fails when a bundled package's notice is missing, or when the source maps name no bundled package at all. Retain these checks when changing packaging or dependencies.
 
 ## Issues and pull requests
 

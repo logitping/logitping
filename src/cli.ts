@@ -73,9 +73,10 @@ async function interactive(options: Options): Promise<void> {
     options.model = answer(await prompts.text({ message: 'Claimed model identifier', validate: (value) => !value.trim() ? 'Enter a model identifier' : undefined }));
     if (!options.keyFile && !resolveApiKey(options)) options.key = answer(await prompts.password({ message: 'API key (leave blank for an unauthenticated local endpoint)' }));
   }
+  // A blank answer resolves as undefined, despite the declared string type.
   const bank = answer(await prompts.text({ message: options.allowTransportMismatch
     ? 'Reference bank path (blank uses the bundled bank for experimental comparison)'
-    : 'Fingerprint bank path (blank uses the bundled bank when its transport matches; otherwise collects without identification)' }));
+    : 'Fingerprint bank path (blank uses the bundled bank when its transport matches; otherwise collects without identification)' })) ?? '';
   if (bank.trim()) options.bank = bank.trim();
 }
 
@@ -132,9 +133,17 @@ function withheldKeyNote(options: Options): string | undefined {
   return `${vendor.variable} is only sent to https://${vendor.host}; set LOGITPING_API_KEY or --key to authenticate to this endpoint.`;
 }
 
+/** C1 controls and bidirectional formatting: terminals may act on them or reorder the text around them. */
+const C1_AND_BIDI = /[\x7f-\x9f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+
 /** Never pass terminal escape sequences or bidirectional overrides from endpoint output to the terminal. */
 function safeText(text: string): string {
-  return stripVTControlCharacters(text).replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '');
+  return stripVTControlCharacters(text).replace(/[\x00-\x08\x0b-\x1f]/g, '').replace(C1_AND_BIDI, '');
+}
+
+/** JSON.stringify escapes C0 controls only; escape what safeText strips too, so parsing restores the text. */
+function safeJson(value: unknown): string {
+  return JSON.stringify(value, null, 2).replace(C1_AND_BIDI, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }
 
 function display(result: ProbeResult): void {
@@ -265,7 +274,7 @@ export async function main(argv = process.argv): Promise<void> {
       });
       spinner.stop();
       if (options.stream) process.stderr.write('\n');
-      if (options.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      if (options.json) process.stdout.write(`${safeJson(result)}\n`);
       else display(result);
       process.exitCode = result.status === 'IDENTIFIED' ? 0 : 2;
     } finally {

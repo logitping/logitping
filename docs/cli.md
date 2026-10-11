@@ -66,4 +66,6 @@ An interrupted probe stops its CLI or request, removes its temporary directory, 
 
 With `--json`, every failure, including an invalid command-line argument, prints `{"status": "ERROR", "error": "…"}` on stdout. When available, it also carries `code`, the `LogitpingError` code (see [Library](library.md)) or `TIMEOUT` when the probe deadline passed, and `httpStatus` for `HTTP_STATUS` failures. Argument and configuration errors have no `code`, except that an unusable `--bank` file reports `INVALID_BANK`.
 
+Model text never reaches the terminal with control or bidirectional formatting characters intact. `--stream` removes them. JSON output keeps the text, such as a tokenizer response, but writes C1 control and bidirectional formatting characters as `\uXXXX` escapes; parsing the JSON restores them.
+
 `UNKNOWN_MODEL` means the observation falls outside all enrolled distance envelopes. It does not name an unseen model, and could also indicate parameter or environment drift. `INCONCLUSIVE` means the available evidence cannot support identification. An uncalibrated bank returns `UNCALIBRATED`, with no confidence or candidate ranking.
