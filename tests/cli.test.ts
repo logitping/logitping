@@ -1,12 +1,12 @@
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main, resolveApiKey } from '../src/cli.js';
 import type { ProbeRequest } from '../src/core/types.js';
 import * as bankLoader from '../src/data/bank_loader.js';
-import { syntheticBank } from './fixtures.js';
+import { forceCutoffs, openEnvelopes, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
 
 const fake = vi.hoisted(() => ({
   requests: [] as ProbeRequest[],
@@ -48,6 +48,14 @@ function stubTerminal(): () => void {
     };
   });
   return () => { for (const restore of undo) restore(); };
+}
+
+/** A chat-completions stream carrying one reply. */
+const sse = (text: string) => new Response(`data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: text } }] })}\n\ndata: [DONE]\n\n`, { headers: { 'content-type': 'text/event-stream' } });
+/** Answer successive requests with the low-range synthetic model's training runs. */
+function lowRangeEndpoint() {
+  let call = 0;
+  return vi.spyOn(globalThis, 'fetch').mockImplementation(async () => sse(`${syntheticRun(1, 120, call++).join(' ')} `));
 }
 
 /** Deliver a signal as EventEmitter#emit would, but only to the listeners added since `before`. */
@@ -404,6 +412,75 @@ describe('CLI bank selection', () => {
     expect(JSON.parse(stdout)).toMatchObject({ status: 'ERROR', error: expect.stringContaining('samples=64 (bank: 128)') });
     expect(fake.requests).toHaveLength(0);
     expect(process.exitCode).toBe(1);
+  });
+
+  it('selects the bundled pooled bank with --pooled', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(openEnvelopes(syntheticPooledBank()));
+    const fetch = lowRangeEndpoint();
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--pooled', '--json']);
+    expect(JSON.parse(stdout)).toMatchObject({ status: 'HEURISTIC_MATCH', model: 'synthetic-1-120', candidates: ['synthetic-1-120'], requests: 4 });
+    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(process.exitCode).toBe(2);
+  });
+
+  it('prints the candidates and request count of a pooled result', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(forceCutoffs(openEnvelopes(syntheticPooledBank()), [true, true, false]));
+    lowRangeEndpoint();
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--pooled']);
+    expect(stdout).toContain('Inconclusive, consistent with: synthetic-1-120, synthetic-118-237');
+    expect(stdout).toContain('256/256 integers in 4 requests');
+    expect(stdout).toContain('fit pass · margin pass');
+    expect(process.exitCode).toBe(2);
+  });
+
+  it('rejects --pooled together with --bank before any request', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--pooled', '--bank', join(directory, 'bank.json'), '--json']);
+    expect(JSON.parse(stdout)).toMatchObject({ status: 'ERROR', error: 'Choose either --pooled or --bank' });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
+
+  it.each([
+    [['--driver', 'codex'], 'transport=codex (bank: openai)'],
+    [['--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--samples', '512'], 'samples=512 (bank: 64)'],
+  ])('checks the pooled bank protocol before any request (%#)', async (args, message) => {
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(syntheticPooledBank());
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await main(['node', 'lping', ...args, '--pooled', '--no-tokenizer', '--json']);
+    expect(JSON.parse(stdout)).toMatchObject({ status: 'ERROR', code: 'PROTOCOL_MISMATCH', error: expect.stringContaining(message) });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(fake.requests).toHaveLength(0);
+  });
+
+  it('creates a pooled bank when the enrollment input sets pooled scoring', async () => {
+    const input = join(directory, 'enrollment.json');
+    const output = join(directory, 'pooled-bank.json');
+    await writeFile(input, JSON.stringify({ ...syntheticEnrollment(), scoring: 'pooled-sets-v1', requestsPerProbe: 4 }));
+    await main(['node', 'lping', 'bank-create', '--input', input, '--output', output]);
+    expect(process.exitCode).toBeUndefined();
+    expect(JSON.parse(await readFile(output, 'utf8'))).toMatchObject({ schemaVersion: 2, protocol: { requestsPerProbe: 4, scoring: 'pooled-sets-v1' } });
+  });
+
+  it('refuses requestsPerProbe without pooled scoring in enrollment input', async () => {
+    const input = join(directory, 'enrollment.json');
+    await writeFile(input, JSON.stringify({ ...syntheticEnrollment(), requestsPerProbe: 4 }));
+    await main(['node', 'lping', 'bank-create', '--input', input, '--output', join(directory, 'bank.json')]);
+    expect(stderr).toContain('Set scoring and requestsPerProbe together');
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('offers the experimental pooled bank when the interactive bank path is blank', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(openEnvelopes(syntheticPooledBank()));
+    const fetch = lowRangeEndpoint();
+    prompts.answers.push('api', 'openai', 'https://proxy.example/v1', 'claimed', undefined, true);
+    const restore = stubTerminal();
+    try { await main(['node', 'lping']); } finally { restore(); }
+    expect(fetch).toHaveBeenCalledTimes(4);
+    expect(stdout).toContain('Heuristic match: synthetic-1-120');
   });
 });
 

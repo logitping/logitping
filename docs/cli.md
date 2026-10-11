@@ -51,6 +51,14 @@ Other options: `--language en|zh`, `--samples 4..16384`, `--temperature 0..2` (A
 
 `--max-tokens <n>` sets the output-token budget of the integer request (API only). The default, samples × 5 + 64, is 2,624 tokens for 512 integers. Reasoning models spend part of the budget before answering, so a reply can stop short of the requested integers; the result is then `INCONCLUSIVE`, and its reason names the limit. Each bundled reference records its collection budget in provenance; the current bank used 8,192 output tokens per request. Match that budget when reproducing the current reference setup. Only complete replies were accepted, so changing the budget can change which replies satisfy the protocol. `--api-format responses` selects the OpenAI Responses API instead of Chat Completions. `--token-limit-field` overrides the budget field: `max_tokens` (default) or `max_completion_tokens` for Chat Completions; Responses uses `max_output_tokens`.
 
+`--pooled` selects the bundled **experimental pooled bank**: each probe sends 8 requests of 64 integers through the same connection and scores them together as a prediction set ([methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1)). It costs about 0.72× a 512-integer probe but takes 8 round trips. The bank was collected with 4,096 output tokens per request; pass `--max-tokens 4096` for reasoning models.
+
+- A single-model set prints `Heuristic match: <model>` and exits with 2. An unenrolled model from the same vendor as an enrolled one can produce it.
+- A larger set prints `Inconclusive, consistent with: <models>`.
+- An empty set is `UNKNOWN_MODEL`.
+
+JSON adds `candidates` and `requests`. A reply shorter than 64 integers ends the probe as `INCONCLUSIVE` and names the request. `--pooled` cannot be combined with `--bank`; a custom pooled bank is recognized from its protocol. Like any explicit API bank, it refuses `--driver claude|codex` unless `--allow-transport-mismatch` is given. In interactive mode, an API connection with a blank bank path offers the choice.
+
 HTTPS is required except for localhost. Use `--allow-insecure-http` to explicitly enable a remote HTTP endpoint. Redirects are rejected so authentication headers cannot move to another endpoint. Probes are not retried automatically: retries could duplicate cost and bias observations.
 
 Exit codes:

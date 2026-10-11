@@ -157,3 +157,5 @@ A pooled bank backs `--pooled`. Each probe sends `requestsPerProbe` requests of 
     npm run bank:update -- --config config/pooled-bank-update.json --output src/data/pooled_bank.json
 
 Collection, checkpoints, retries, the loop check and provenance work as for the default bank. The scoring fields are not part of the checkpoint, so the same runs can be enrolled either way. Pooled cutoffs depend on every model's runs, which a bank does not store, so `--incremental` is refused for a pooled configuration or an existing pooled bank; run a full update. To add pooled scoring to a bank this updater already collected, without new requests, see `npm run bank:pooled`.
+
+`lping bank-create` builds a pooled bank from independently collected runs when its input adds `"scoring": "pooled-sets-v1"` and `"requestsPerProbe"` to the usual enrollment fields. A pooled bank needs at least two models, each with at least three training and two held-out runs.

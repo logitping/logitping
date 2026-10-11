@@ -9,12 +9,14 @@ import { HttpClient, type ApiFormat, type TokenLimitField } from './core/client.
 import { fingerprint } from './core/engine.js';
 import { LogitpingError } from './core/errors.js';
 import type { Language, ProbeResult, ProbeTransport, Provider } from './core/types.js';
-import { loadBank } from './data/bank_loader.js';
+import { loadBank, pooledBank } from './data/bank_loader.js';
 import { createFingerprintBank, type EnrollmentInput } from './data/enrollment.js';
+import { createPooledBank, type PooledEnrollmentInput } from './data/pooled_enrollment.js';
 import { ClaudeDriver } from './drivers/claude_driver.js';
 import { CodexDriver } from './drivers/codex_driver.js';
 import { readBoundedText } from './util/fs.js';
-import { MAX_PAYLOAD_BYTES, MAX_SAMPLES, MIN_SAMPLES } from './util/validate.js';
+import { POOLED_SCORING } from './math/pooled_features.js';
+import { isRecord, MAX_PAYLOAD_BYTES, MAX_SAMPLES, MIN_SAMPLES } from './util/validate.js';
 import pkg from '../package.json';
 
 interface Options {
@@ -25,6 +27,7 @@ interface Options {
   keyFile?: string;
   model?: string;
   bank?: string;
+  pooled?: boolean;
   samples?: number;
   temperature?: number;
   language?: string;
@@ -78,6 +81,12 @@ async function interactive(options: Options): Promise<void> {
     ? 'Reference bank path (blank uses the bundled bank for experimental comparison)'
     : 'Fingerprint bank path (blank uses the bundled bank when its transport matches; otherwise collects without identification)' })) ?? '';
   if (bank.trim()) options.bank = bank.trim();
+  else if (mode === 'api' && !options.allowTransportMismatch) {
+    options.pooled = answer(await prompts.select({ message: 'Bundled bank', options: [
+      { value: false, label: 'Standard', hint: '1 request of 512 integers' },
+      { value: true, label: 'Experimental pooled', hint: '8 requests of 64 integers; heuristic matches only' },
+    ] }));
+  }
 }
 
 const VENDOR_KEYS = {
@@ -147,13 +156,17 @@ function safeJson(value: unknown): string {
 }
 
 function display(result: ProbeResult): void {
-  const label = result.status === 'HEURISTIC_MATCH' ? `Heuristic match: ${result.model}` : result.model ?? result.status;
+  const label = result.status === 'HEURISTIC_MATCH' ? `Heuristic match: ${result.model}`
+    : result.candidates && result.candidates.length > 1 ? `Inconclusive, consistent with: ${result.candidates.join(', ')}`
+      : result.model ?? result.status;
   process.stdout.write(`\n${pc.bold(label)}\n${result.reason}\n`);
   if (result.confidence !== null) process.stdout.write(`Nominal model-relative confidence: ${(result.confidence * 100).toFixed(2)}%\n`);
   for (const score of [...result.scores].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))) {
-    process.stdout.write(`  ${score.id}: ${score.weight === null ? 'unranked' : `${(score.weight * 100).toFixed(2)}%`} · H=${score.hellinger.toFixed(4)} · M=${score.mahalanobis.toFixed(2)} · OOD ${score.accepted ? 'pass' : 'reject'}\n`);
+    const sets = score.fit === undefined ? ''
+      : ` · fit ${score.fit >= score.fitCutoff! ? 'pass' : 'fail'} · margin ${score.margin! >= score.marginCutoff! ? 'pass' : 'fail'}`;
+    process.stdout.write(`  ${score.id}: ${score.weight === null ? 'unranked' : `${(score.weight * 100).toFixed(2)}%`} · H=${score.hellinger.toFixed(4)} · M=${score.mahalanobis.toFixed(2)} · OOD ${score.accepted ? 'pass' : 'reject'}${sets}\n`);
   }
-  process.stdout.write(`${result.samples.length}/${result.requestedSamples} integers · ${result.elapsedMs} ms\n`);
+  process.stdout.write(`${result.samples.length}/${result.requestedSamples} integers${result.requests ? ` in ${result.requests} requests` : ''} · ${result.elapsedMs} ms\n`);
   process.stdout.write(result.earlyStopped
     ? `Stopped early: ${(result.sampleBudgetSaved * 100).toFixed(1)}% of the requested integer budget skipped (not measured token or latency savings).\n`
     : 'Early stop: no\n');
@@ -181,6 +194,7 @@ export async function main(argv = process.argv): Promise<void> {
     .option('--token-limit-field <name>', 'API budget field: max_tokens, max_completion_tokens, or max_output_tokens (default depends on the API format)')
     .option('--max-tokens <count>', 'output token budget for the integer request (default: samples × 5 + 64); reasoning models need more', positiveInteger)
     .option('--bank <path>', 'measured bank matching this transport (default: compatible bundled bank, otherwise collection only)')
+    .option('--pooled', 'use the bundled experimental pooled bank: 8 requests of 64 integers; heuristic matches only')
     .option('--allow-transport-mismatch', 'experimentally compare against another transport\'s bank; no validated identity or early stopping', false)
     .option('--samples <count>', `integer sample budget (${MIN_SAMPLES}–${MAX_SAMPLES})`, positiveInteger)
     .option('--language <code>', 'probe language: en or zh (defaults to bank)')
@@ -203,7 +217,10 @@ export async function main(argv = process.argv): Promise<void> {
       let input: unknown;
       // JSON.parse messages quote the input; report the failure without echoing file content.
       try { input = JSON.parse(data); } catch { throw new Error('Enrollment input is not valid JSON'); }
-      const bank = createFingerprintBank(input as EnrollmentInput);
+      const fields = isRecord(input) ? input : {};
+      if (fields.scoring !== undefined && fields.scoring !== POOLED_SCORING) throw new Error(`Enrollment scoring must be ${POOLED_SCORING}`);
+      if ((fields.scoring === undefined) !== (fields.requestsPerProbe === undefined)) throw new Error('Set scoring and requestsPerProbe together');
+      const bank = fields.scoring === undefined ? createFingerprintBank(input as EnrollmentInput) : createPooledBank(input as PooledEnrollmentInput);
       await writeFile(options.output, `${JSON.stringify(bank, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
       process.stdout.write('Fingerprint bank created. Early stopping remains disabled pending independent sequential validation.\n');
     });
@@ -216,6 +233,7 @@ export async function main(argv = process.argv): Promise<void> {
       }
       await interactive(options);
     }
+    if (options.pooled && options.bank) throw new Error('Choose either --pooled or --bank');
     if (options.driver && options.endpoint) throw new Error('Choose either --driver or --endpoint');
     if (options.driver && !['claude', 'codex'].includes(options.driver)) throw new Error('Driver must be claude or codex');
     if (!['openai', 'anthropic'].includes(options.provider)) throw new Error('Provider must be openai or anthropic');
@@ -246,7 +264,7 @@ export async function main(argv = process.argv): Promise<void> {
         allowInsecureHttp: options.allowInsecureHttp, ...(key ? { apiKey: key } : {}),
       });
     }
-    const bank = options.bank ? await loadBank(options.bank) : undefined;
+    const bank = options.pooled ? await pooledBank() : options.bank ? await loadBank(options.bank) : undefined;
     const controller = new AbortController();
     // Persistent listeners, not once(): signal-exit, which execa's subprocess cleanup and ora load,
     // re-raises a signal when no other listener remains, ending the process before the probe
