@@ -149,3 +149,11 @@ Provenance includes the provider, collection time, requested catalog model, API 
 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs type checks, tests, builds, and package checks on Node.js 22 and 24 for pushes and pull requests. On Node.js 24, it also builds and runs `bank:check` under Node.js permission restrictions using a synthetic OpenRouter fixture. The `OPENROUTER_API_KEY` value in that step is a placeholder required by configuration validation; the dry run sends no provider requests and needs no repository secrets.
 
 Fingerprint bank updates are run manually with `npm run bank:update`; no GitHub Actions workflow collects probes or opens bank-update pull requests.
+
+## Pooled banks (experimental)
+
+A pooled bank backs `--pooled`. Each probe sends `requestsPerProbe` requests of `targetSamples` integers, and the bank adds prediction-set calibration to the usual envelopes; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1). [`config/pooled-bank-update.json`](../config/pooled-bank-update.json) sets `"scoring": "pooled-sets-v1"` and `"requestsPerProbe": 8`, with 64 integers, 25 training runs, 15 held-out runs and 4,096 output tokens per request:
+
+    npm run bank:update -- --config config/pooled-bank-update.json --output src/data/pooled_bank.json
+
+Collection, checkpoints, retries, the loop check and provenance work as for the default bank. The scoring fields are not part of the checkpoint, so the same runs can be enrolled either way. Pooled cutoffs depend on every model's runs, which a bank does not store, so `--incremental` is refused for a pooled configuration or an existing pooled bank; run a full update. To add pooled scoring to a bank this updater already collected, without new requests, see `npm run bank:pooled`.

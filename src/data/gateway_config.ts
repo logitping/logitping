@@ -1,4 +1,5 @@
 import type { FingerprintBank } from '../core/types.js';
+import { POOLED_SCORING } from '../math/pooled_features.js';
 import { readBoundedText } from '../util/fs.js';
 import { isIntegerInRange, isRecord, MAX_SAMPLES, MODEL_ID_PATTERN } from '../util/validate.js';
 
@@ -36,6 +37,9 @@ export interface GatewayBankConfig {
   requestDelayMs: number;
   maxRequests: number;
   maxProbeRetries: number;
+  /** Fit pooled prediction-set scoring after collection; not part of the collection checkpoint. */
+  scoring?: typeof POOLED_SCORING;
+  requestsPerProbe?: number;
   models: GatewayTarget[];
 }
 
@@ -100,7 +104,7 @@ function route(provider: GatewayProvider, model: unknown): string {
 /** Environment overrides file credentials. Returned config contains a secret; never log it. */
 export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = process.env): GatewayBankConfig {
   const root = object(input, 'root');
-  keys(root, ['schemaVersion', 'provider', 'gateway', 'openrouter', 'protocol', 'checkpoints', 'trainingRuns', 'validationRuns', 'timeoutMs', 'requestDelayMs', 'maxRequests', 'maxProbeRetries', 'maxShortResponseRetries', 'models'], 'root');
+  keys(root, ['schemaVersion', 'provider', 'gateway', 'openrouter', 'protocol', 'checkpoints', 'trainingRuns', 'validationRuns', 'timeoutMs', 'requestDelayMs', 'maxRequests', 'maxProbeRetries', 'maxShortResponseRetries', 'scoring', 'requestsPerProbe', 'models'], 'root');
   check(root.schemaVersion === 1, 'schemaVersion must be 1');
   const defaultProvider = root.provider ?? 'cloudflare';
   check(isProvider(defaultProvider), 'provider must be cloudflare or openrouter');
@@ -127,6 +131,9 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
     : integer(root.maxShortResponseRetries, 0, 5, 'maxShortResponseRetries');
   const maxProbeRetries = integer(root.maxProbeRetries ?? legacyRetries ?? 0, 0, 5, 'maxProbeRetries');
   check(legacyRetries === undefined || legacyRetries === maxProbeRetries, 'maxProbeRetries and its legacy alias maxShortResponseRetries must agree');
+  check(root.scoring === undefined || root.scoring === POOLED_SCORING, `scoring must be ${POOLED_SCORING}`);
+  check((root.scoring === undefined) === (root.requestsPerProbe === undefined), 'scoring and requestsPerProbe must be set together');
+  const requestsPerProbe = root.scoring === undefined ? undefined : integer(root.requestsPerProbe, 2, 64, 'requestsPerProbe');
   const checkpoints = root.checkpoints ?? [targetSamples];
   check(Array.isArray(checkpoints) && checkpoints.length > 0 && checkpoints.length <= 32, 'provide 1–32 checkpoints');
   const counts = checkpoints.map((value) => integer(value, 64, targetSamples, 'checkpoint'));
@@ -181,7 +188,9 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
     ...(apiKey ? { openrouter: { apiKey } } : {}),
     // Models may use different wire formats; the bank calibrates any HTTP API probe.
     protocol: { id: 'integer-v1', language, targetSamples, temperature, transport: 'api' },
-    checkpoints: counts, trainingRuns, validationRuns, timeoutMs, requestDelayMs, maxRequests, maxProbeRetries, models,
+    checkpoints: counts, trainingRuns, validationRuns, timeoutMs, requestDelayMs, maxRequests, maxProbeRetries,
+    ...(requestsPerProbe === undefined ? {} : { scoring: POOLED_SCORING, requestsPerProbe }),
+    models,
   };
 }
 

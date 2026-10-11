@@ -13,6 +13,7 @@ import { createFingerprintBank, VARIANCE_METHOD } from './enrollment.js';
 import { completedRuns, newGatewayCheckpoint, readGatewayCheckpoint, saveGatewayCheckpoint, type GatewayCheckpoint } from './gateway_checkpoint.js';
 import { parseGatewayBankConfig, type GatewayBankConfig, type GatewayTarget } from './gateway_config.js';
 import { collectionSettings, enrolledProvider, parseIncrementalBase, planGatewayBankUpdate, PROVIDER_LABELS, providerLabel, type BankUpdatePlan } from './gateway_plan.js';
+import { attachPooledScoring } from './pooled_enrollment.js';
 import { findRepeatingCycle } from './repetition.js';
 
 export interface BankUpdateProgress {
@@ -297,7 +298,7 @@ function enroll(config: GatewayBankConfig, state: GatewayCheckpoint, nuisanceDir
     const invalid = invalidResponses[index]!;
     model.provenance = `${PROVIDER_LABELS[target.provider]}; ${details}${collectionSettings(target)} cache=bypassed; variance=${VARIANCE_METHOD}; retries=${rejected.training + rejected.validation + invalid.training + invalid.validation}; short-training-responses=${rejected.training}; short-validation-responses=${rejected.validation}; invalid-training-responses=${invalid.training}; invalid-validation-responses=${invalid.validation}; maxProbeRetries=${config.maxProbeRetries}`;
   }
-  return bank;
+  return config.requestsPerProbe === undefined ? bank : attachPooledScoring(bank, models, { requestsPerProbe: config.requestsPerProbe });
 }
 
 /** Keep retained models verbatim, add newly collected ones, and follow configuration order. */
@@ -320,6 +321,9 @@ function merge(config: GatewayBankConfig, plan: BankUpdatePlan, base: Fingerprin
 export async function updateGatewayBank(input: GatewayBankConfig, options: BankUpdateOptions): Promise<BankUpdateResult> {
   // Revalidate callers from JavaScript as well as JSON; do not reread environment secrets.
   const config = parseGatewayBankConfig(input, {});
+  // Pooled cutoffs depend on every model's runs, which a bank does not store.
+  const pooledIncremental = 'Incremental updates are not supported for pooled banks; run a full update';
+  if (options.incremental && config.requestsPerProbe !== undefined) throw new Error(pooledIncremental);
   const outputPath = resolve(options.outputPath);
   const lockPath = `${outputPath}.lock`;
   const checkpointPath = `${outputPath}.checkpoint.json`;
@@ -336,6 +340,7 @@ export async function updateGatewayBank(input: GatewayBankConfig, options: BankU
     await lock.writeFile(`${process.pid}\n`);
     const before = await readExisting(outputPath);
     const base = options.incremental ? parseIncrementalBase(before) : undefined;
+    if (base?.schemaVersion === 2) throw new Error(pooledIncremental);
     const plan = planGatewayBankUpdate(config, base);
     options.onPlan?.(plan);
     // Saved progress, if any, belongs to another collection; leave it for that one.

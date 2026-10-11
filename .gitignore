@@ -11,6 +11,8 @@ coverage/
 .DS_Store
 src/data/default_bank.json.lock
 src/data/default_bank.json.*.tmp
+src/data/pooled_bank.json.lock
+src/data/pooled_bank.json.*.tmp
 *.checkpoint.json
 *.checkpoint.json.*.tmp
 *.corpus-*.json

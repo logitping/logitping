@@ -258,6 +258,15 @@ describe('Gateway bank configuration', () => {
     expect(attempt).toThrow(`Invalid bank-update config: ${message}`);
     expect(attempt).not.toThrow(/secret/);
   });
+
+  it('parses pooled scoring and requires both of its fields', () => {
+    expect(parseGatewayBankConfig({ ...input(), scoring: 'pooled-sets-v1', requestsPerProbe: 8 }, credentials))
+      .toMatchObject({ scoring: 'pooled-sets-v1', requestsPerProbe: 8 });
+    expect(parseGatewayBankConfig(input(), credentials)).not.toHaveProperty('scoring');
+    for (const extra of [{ scoring: 'pooled-sets-v1' }, { requestsPerProbe: 8 }, { scoring: 'other', requestsPerProbe: 8 }, { scoring: 'pooled-sets-v1', requestsPerProbe: 1 }, { scoring: 'pooled-sets-v1', requestsPerProbe: 65 }]) {
+      expect(() => parseGatewayBankConfig({ ...input(), ...extra }, credentials)).toThrow('Invalid bank-update config');
+    }
+  });
 });
 
 describe('Gateway collection and atomic bank updates', () => {
@@ -902,6 +911,24 @@ describe('Gateway collection and atomic bank updates', () => {
     expect(fetch).toHaveBeenCalledTimes(10);
     expect(onResume).not.toHaveBeenCalled();
     expect(await entries(directory)).toEqual(['default_bank.json']);
+  });
+
+  it('writes a pooled bank when the configuration sets pooled scoring', async () => {
+    const pooled = parseGatewayBankConfig({ ...input(), scoring: 'pooled-sets-v1', requestsPerProbe: 2 }, credentials);
+    const result = await updateGatewayBank(pooled, { outputPath, fetch: gateway(), now });
+    expect(result.bank).toMatchObject({ schemaVersion: 2, protocol: { requestsPerProbe: 2, scoring: 'pooled-sets-v1' } });
+    expect(result.bank.pooled!.pairs).toHaveLength(2);
+    expect(result.bank.models[0]!.provenance).toContain('corpus sha256:');
+    expect((await loadBank(outputPath)).schemaVersion).toBe(2);
+  });
+
+  it('refuses incremental updates of pooled banks before any request', async () => {
+    const pooled = parseGatewayBankConfig({ ...input(), scoring: 'pooled-sets-v1', requestsPerProbe: 2 }, credentials);
+    const fetch = gateway();
+    await expect(updateGatewayBank(pooled, { outputPath, fetch, now, incremental: true })).rejects.toThrow('Incremental updates are not supported for pooled banks');
+    await updateGatewayBank(pooled, { outputPath, fetch: gateway(), now });
+    await expect(updateGatewayBank(config(), { outputPath, fetch, now, incremental: true })).rejects.toThrow('Incremental updates are not supported for pooled banks');
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 
