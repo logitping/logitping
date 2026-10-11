@@ -14,7 +14,7 @@ CI includes type checking, tests, builds, and package installation checks.
 
 The project website is live at [logitping.com](https://logitping.com), with an interactive output inspector, a methodology overview, and reference-bank details. Paste an existing model response into the browser playground to explore the protocol and results.
 
-**Experimental 0.1.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
+**Experimental 0.2.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
 The bundled bank contains **13 models collected through OpenRouter on 2026-10-03**, with 10 training and 5 threshold-calibration runs per model. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
@@ -150,7 +150,7 @@ npm ci
 node dist/bin/logitping.js --help
 ```
 
-`npm ci` builds through `prepare`. When following CLI examples from a source checkout, replace `lping` with `node dist/bin/logitping.js`. To install your local build instead of the registry version, run `npm pack` and `npm install -g ./logitping-0.1.0.tgz`.
+`npm ci` builds through `prepare`. When following CLI examples from a source checkout, replace `lping` with `node dist/bin/logitping.js`. To install your local build instead of the registry version, run `npm pack` and `npm install -g ./logitping-0.2.0.tgz`.
 
 ## Documentation and contributing
 

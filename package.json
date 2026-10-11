@@ -1,6 +1,6 @@
 {
   "name": "logitping",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Streaming behavioral fingerprint probes for LLM endpoints and local developer CLIs",
   "homepage": "https://logitping.com",
   "bugs": {
