@@ -58,6 +58,7 @@
     "test:package": "node scripts/package-smoke.mjs",
     "bank:update": "npm run build && node scripts/update-bank.mjs",
     "bank:check": "npm run build && node scripts/update-bank.mjs --dry-run",
+    "bank:pooled": "npm run build && node scripts/build-pooled-bank.mjs",
     "check": "npm run typecheck && npm test && npm run build",
     "prepare": "npm run build",
     "prepack": "npm run build"

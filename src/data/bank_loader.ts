@@ -130,6 +130,12 @@ export function validateBank(input: unknown): FingerprintBank {
 
 export function defaultBank(): FingerprintBank { return validateBank(defaults); }
 
+/** The bundled experimental pooled bank (schema version 2), loaded on first use. */
+export async function pooledBank(): Promise<FingerprintBank> {
+  const { default: bank } = await import('./pooled_bank.json');
+  return validateBank(bank);
+}
+
 export async function loadBank(path?: string): Promise<FingerprintBank> {
   if (!path) return defaultBank();
   const content = await readBoundedText(path, MAX_PAYLOAD_BYTES, () => invalidBank('Bank must be a JSON file no larger than 16 MiB'));

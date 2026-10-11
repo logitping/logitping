@@ -5,7 +5,7 @@ export type * from './core/types.js';
 export { CliDriver, type DriverOptions, type EventDecoder, type LaunchContext } from './drivers/base.js';
 export { ClaudeDriver } from './drivers/claude_driver.js';
 export { CodexDriver } from './drivers/codex_driver.js';
-export { defaultBank, loadBank, validateBank } from './data/bank_loader.js';
+export { defaultBank, loadBank, pooledBank, validateBank } from './data/bank_loader.js';
 export { createFingerprintBank, type EnrollmentInput } from './data/enrollment.js';
 export { createPooledBank, type PooledEnrollmentInput } from './data/pooled_enrollment.js';
 export { hellinger, smoothCounts, assertDistribution } from './math/hellinger.js';

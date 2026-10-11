@@ -18,8 +18,10 @@ try {
   const packedFiles = packed.files.map((file) => file.path);
   // Maps reference unpublished sources; the bundled dependencies' notices must ship.
   assert.deepEqual(packedFiles.filter((path) => path.endsWith('.map')), []);
-  // The ESM library and CLI share exactly one chunk; another is left over from an earlier build.
-  assert.equal(packedFiles.filter((path) => /^dist\/chunk-[^/]+\.js$/.test(path)).length, 1, 'stale build chunks would be published');
+  // The ESM library and CLI share one code chunk, and esbuild's runtime helpers sit in a second chunk
+  // shared with the lazily loaded pooled bank; any other chunk is left over from an earlier build.
+  assert.equal(packedFiles.filter((path) => /^dist\/chunk-[^/]+\.js$/.test(path)).length, 2, 'stale build chunks would be published');
+  assert.equal(packedFiles.filter((path) => /^dist\/pooled_bank-[^/]+\.js$/.test(path)).length, 1, 'the pooled bank ships as one lazily loaded ESM chunk');
   assert.ok(packedFiles.includes('dist/THIRD_PARTY_NOTICES.md'));
   execFileSync('npm', ['install', '--global', '--prefix', directory, '--offline', '--ignore-scripts', '--cache', process.env.npm_config_cache ?? join(homedir(), '.npm'), join(directory, packed.filename)], { stdio: 'pipe' });
   for (const command of ['logitping', 'lping']) {
@@ -38,6 +40,7 @@ try {
   const consumerRequire = createRequire(join(directory, 'lib', 'consumer.cjs'));
   assert.equal(consumerRequire('logitping/package.json').name, 'logitping');
   assert.deepEqual(esm.validateBank(esm.defaultBank()), esm.defaultBank());
+  for (const library of [esm, cjs]) assert.equal((await library.pooledBank()).protocol.requestsPerProbe, 8);
   const fixture = esm.defaultBank();
   fixture.calibration = null;
   for (const model of fixture.models) { model.status = 'uncalibrated'; model.profiles = []; }

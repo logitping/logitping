@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FingerprintBank } from '../src/core/types.js';
-import { validateBank } from '../src/data/bank_loader.js';
+import { pooledBank, validateBank } from '../src/data/bank_loader.js';
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import { createPooledBank, prepareCalibration, type PooledEnrollmentInput } from '../src/data/pooled_enrollment.js';
 import { countEvents, FAMILY_SIZES, logLikelihoods } from '../src/math/pooled_features.js';
@@ -87,5 +87,25 @@ describe('pooled enrollment', () => {
     const input: PooledEnrollmentInput = { ...syntheticEnrollment(), requestsPerProbe: 4 };
     mutate(input);
     expect(() => createPooledBank(input)).toThrow(message);
+  });
+});
+
+describe('bundled pooled bank', () => {
+  it('loads a validated 13-model bank of 8 requests × 64 integers', async () => {
+    const bank = await pooledBank();
+    expect(bank).toMatchObject({
+      schemaVersion: 2,
+      protocol: { id: 'integer-v1', language: 'en', targetSamples: 64, temperature: null, transport: 'api', requestsPerProbe: 8, scoring: 'pooled-sets-v1' },
+      pooled: { alpha: 0.2, bootstrap: { draws: 2000, seed: 20261011 } },
+    });
+    expect(bank.models).toHaveLength(13);
+    expect(bank.pooled!.pairs).toHaveLength(156);
+    for (const model of bank.models) expect(model.provenance).toContain('corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf;');
+  });
+
+  it('returns an independent copy', async () => {
+    const bank = await pooledBank();
+    bank.pooled!.models[0]!.cutoffs.fit = 0;
+    expect((await pooledBank()).pooled!.models[0]!.cutoffs.fit).not.toBe(0);
   });
 });
