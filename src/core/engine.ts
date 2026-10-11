@@ -222,6 +222,8 @@ interface PooledCollection {
   responses: number[][];
   /** Integers of the first reply that ended early; no request follows it. */
   short?: number[];
+  /** A complete reply identical to an earlier one (`of` is that request's number); no request follows it. */
+  repeated?: { samples: number[]; of: number };
 }
 
 /** Send a pooled bank's requests one after another under the probe's overall deadline. */
@@ -243,6 +245,9 @@ async function collectPooled(
         { ...options, onProgress: (count) => options.onProgress?.(offset + count) });
       scope.signal.throwIfAborted();
       if (samples.length < plan.count) return { responses, short: samples };
+      // Independent replies practically never coincide; a repeat means caching, replay, or deterministic sampling.
+      const earlier = responses.findIndex((response) => response.every((value, position) => value === samples[position]));
+      if (earlier >= 0) return { responses, repeated: { samples, of: earlier + 1 } };
       responses.push(samples);
     } finally { child.dispose(); }
   }
@@ -300,19 +305,22 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       warnings.push('Tokenizer segmentation is model-reported diagnostic text, not a verified observation of BPE internals.');
     }
     if (plan.requests > 1) {
-      const { responses, short } = await collectPooled(transport, bank, plan, scope, request, options);
+      const { responses, short, repeated } = await collectPooled(transport, bank, plan, scope, request, options);
       options.signal?.throwIfAborted();
-      const sent = responses.length + (short ? 1 : 0);
-      const pooled = short ? undefined : classifyPooledProbe(responses, bank, plan);
+      const stopped = short ?? repeated?.samples;
+      const sent = responses.length + (stopped ? 1 : 0);
+      const pooled = stopped ? undefined : classifyPooledProbe(responses, bank, plan);
       if (short) warnings.push(`Request ${sent} ended after ${short.length} of ${plan.count} requested integers (output limit: ${plan.maxTokens} tokens); no further requests were sent.`);
       const classification: Classification = pooled?.classification ?? {
         status: 'INCONCLUSIVE', model: null, confidence: null, scores: [], evaluatedSamples: 0,
-        reason: `Request ${sent} of ${plan.requests} ended after ${short!.length} of ${plan.count} integers; a pooled probe needs every request complete. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.`,
+        reason: short
+          ? `Request ${sent} of ${plan.requests} ended after ${short.length} of ${plan.count} integers; a pooled probe needs every request complete. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.`
+          : `Request ${sent} repeated request ${repeated!.of} exactly; the endpoint may be caching or replaying replies, or sampling deterministically. A pooled probe needs independent responses.`,
       };
       return {
         ...relabel(classification, plan, transport, bank),
         confidenceMeaning: 'nominal closed-set IID likelihood; not calibrated identity probability',
-        samples: [...responses.flat(), ...(short ?? [])], requestedSamples: plan.count * plan.requests,
+        samples: [...responses.flat(), ...(stopped ?? [])], requestedSamples: plan.count * plan.requests,
         earlyStopped: false, sampleBudgetSaved: 0,
         elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
         tokenizer, warnings, requests: sent,

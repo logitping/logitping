@@ -267,6 +267,11 @@ describe('Gateway bank configuration', () => {
       expect(() => parseGatewayBankConfig({ ...input(), ...extra }, credentials)).toThrow('Invalid bank-update config');
     }
   });
+
+  it('rejects a pooled configuration whose probe would exceed the sample limit before collecting', () => {
+    const large = { ...input(), protocol: { ...input().protocol, targetSamples: 4096 }, checkpoints: [4096], scoring: 'pooled-sets-v1', requestsPerProbe: 8 };
+    expect(() => parseGatewayBankConfig(large, credentials)).toThrow('targetSamples × requestsPerProbe must be at most 16384');
+  });
 });
 
 describe('Gateway collection and atomic bank updates', () => {

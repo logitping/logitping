@@ -58,6 +58,18 @@ describe('pooled probes', () => {
     expect(transport.requests).toHaveLength(3);
   });
 
+  it('stops when a reply repeats an earlier one, since replayed replies are not independent', async () => {
+    const replies = lowReplies();
+    replies[2] = replies[0]!;
+    const transport = new SequenceTransport(replies);
+    const result = await fingerprint(transport, { bank: openEnvelopes(syntheticPooledBank()) });
+    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, requests: 3, evaluatedSamples: 0, scores: [] });
+    expect(result.candidates).toBeUndefined();
+    expect(result.reason).toContain('Request 3 repeated request 1 exactly');
+    expect(result.samples).toHaveLength(192);
+    expect(transport.requests).toHaveLength(3);
+  });
+
   it('stops each request at 64 integers without cancelling the next one', async () => {
     const transport = new SequenceTransport(lowReplies().map(([text]) => [text!, '17 18 19 20 ']));
     const result = await fingerprint(transport, { bank: openEnvelopes(syntheticPooledBank()) });

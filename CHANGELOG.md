@@ -7,6 +7,7 @@
 - Experimental pooled probe (`--pooled`; library: `pooledBank()`):
   - Each probe sends 8 requests of 64 integers and scores them together as a calibrated prediction set over seven feature groups, with each model's distance envelope applied to every reply.
   - A single-model set returns `HEURISTIC_MATCH`, several return `INCONCLUSIVE` with `candidates`, and none returns `UNKNOWN_MODEL`.
+  - A short reply, or one identical to an earlier reply, ends the probe as `INCONCLUSIVE`.
   - The bundled pooled bank covers the 13 reference models, collected on 2026-10-11 (25 training and 15 held-out runs each).
   - See the README for its measured rates and limits.
 - Pooled banks use bank schema version 2, which logitping 0.1.0 rejects:

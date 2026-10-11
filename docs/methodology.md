@@ -51,7 +51,7 @@ A model stays in the set when three things hold:
 
 - both scores reach that model's cutoffs;
 - its 64-integer distance envelope accepts every reply;
-- every request returned 64 integers. If any request is short, the probe is `INCONCLUSIVE` before scoring.
+- every request returned 64 integers, and no reply repeated an earlier one. A short or repeated reply ends the probe as `INCONCLUSIVE` before scoring, because a caching or replaying endpoint, or deterministic sampling, does not give independent evidence.
 
 **Calibration.** Cutoffs are per model, with conformal miscoverage α = 0.2 split between the two tests.
 

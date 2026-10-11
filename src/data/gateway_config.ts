@@ -134,6 +134,8 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
   check(root.scoring === undefined || root.scoring === POOLED_SCORING, `scoring must be ${POOLED_SCORING}`);
   check((root.scoring === undefined) === (root.requestsPerProbe === undefined), 'scoring and requestsPerProbe must be set together');
   const requestsPerProbe = root.scoring === undefined ? undefined : integer(root.requestsPerProbe, 2, 64, 'requestsPerProbe');
+  // The same limit the bank enforces, checked before any paid collection.
+  check(requestsPerProbe === undefined || targetSamples * requestsPerProbe <= MAX_SAMPLES, `targetSamples × requestsPerProbe must be at most ${MAX_SAMPLES}`);
   const checkpoints = root.checkpoints ?? [targetSamples];
   check(Array.isArray(checkpoints) && checkpoints.length > 0 && checkpoints.length <= 32, 'provide 1–32 checkpoints');
   const counts = checkpoints.map((value) => integer(value, 64, targetSamples, 'checkpoint'));

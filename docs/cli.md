@@ -57,7 +57,7 @@ Other options: `--language en|zh`, `--samples 4..16384`, `--temperature 0..2` (A
 - A larger set prints `Inconclusive, consistent with: <models>`.
 - An empty set is `UNKNOWN_MODEL`.
 
-JSON adds `candidates` and `requests`. A reply shorter than 64 integers ends the probe as `INCONCLUSIVE` and names the request. `--pooled` cannot be combined with `--bank`; a custom pooled bank is recognized from its protocol. Like any explicit API bank, it refuses `--driver claude|codex` unless `--allow-transport-mismatch` is given. In interactive mode, an API connection with a blank bank path offers the choice.
+JSON adds `candidates` and `requests`. A reply shorter than 64 integers ends the probe as `INCONCLUSIVE` and names the request. So does a reply identical to an earlier one: a caching or replaying endpoint, or deterministic sampling, does not give independent evidence. `--pooled` cannot be combined with `--bank`; a custom pooled bank is recognized from its protocol. Like any explicit API bank, it refuses `--driver claude|codex` unless `--allow-transport-mismatch` is given. In interactive mode, an API connection with a blank bank path offers the choice.
 
 HTTPS is required except for localhost. Use `--allow-insecure-http` to explicitly enable a remote HTTP endpoint. Redirects are rejected so authentication headers cannot move to another endpoint. Probes are not retried automatically: retries could duplicate cost and bias observations.
 
