@@ -194,7 +194,7 @@ export async function main(argv = process.argv): Promise<void> {
     .option('--model <id>', 'claimed API model or optional CLI model override')
     .option('--api-format <format>', 'OpenAI wire format: chat-completions (default) or responses')
     .option('--token-limit-field <name>', 'API budget field: max_tokens, max_completion_tokens, or max_output_tokens (default depends on the API format)')
-    .option('--max-tokens <count>', 'output token budget for the integer request (default: samples × 5 + 64); reasoning models need more', positiveInteger)
+    .option('--max-tokens <count>', 'output token budget per integer request (default: samples × 5 + 64); reasoning models need more', positiveInteger)
     .option('--bank <path>', 'measured bank matching this transport (default: compatible bundled bank, otherwise collection only)')
     .option('--pooled', 'use the bundled experimental pooled bank: 8 requests of 64 integers; heuristic matches only')
     .option('--allow-transport-mismatch', 'experimentally compare against another transport\'s bank; no validated identity or early stopping', false)

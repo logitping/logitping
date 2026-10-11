@@ -23,13 +23,13 @@ const result = await fingerprint(transport, {
 console.log(result.status, result.model, result.confidence);
 ```
 
-Pass `maxTokens` to `fingerprint()` to raise the integer request's output budget; see [`--max-tokens`](cli.md).
+Pass `maxTokens` to `fingerprint()` to raise each integer request's output budget; see [`--max-tokens`](cli.md).
 
 Errors that callers may want to handle are `LogitpingError` instances with a stable `code`: `HTTP_STATUS` (with the response `status`), `NETWORK` (a DNS, connection, or TLS failure, or a refused redirect; the underlying error is its `cause`), `PROTOCOL_MISMATCH`, `INVALID_BANK` (a malformed bank or bank file, from `validateBank()`, `loadBank()`, or `fingerprint()`), `MALFORMED_OUTPUT` (an `IntegerOutputError` with the invalid `position`), `PROVIDER_RESPONSE`, `TRUNCATED`, `CLI_NOT_FOUND`, and `CLI_FAILED`. A deadline rejects with a `DOMException` named `TimeoutError`, as `AbortSignal.timeout()` does; cancellation rejects with the signal's reason. Invalid arguments throw `TypeError` or `RangeError`, and file-system errors keep Node's `code`, such as `ENOENT`. Messages are diagnostic text and may change between versions.
 
 ## Experimental pooled probe
 
-`pooledBank()` resolves to the bundled pooled bank: 8 requests of 64 integers, scored as a prediction set (see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1)). Pass it as `bank`: `fingerprint(transport, { bank: await pooledBank(), maxTokens: 4096 })`. A single-model set returns `HEURISTIC_MATCH`, with the candidate in `model` and `confidence: null`. Two or more return `INCONCLUSIVE`, and none returns `UNKNOWN_MODEL`. `candidates` lists the set and `requests` the requests sent; `onText` receives the request number, from 1, as its third argument. An unenrolled model from the same vendor as an enrolled one can produce a single-model set. `createPooledBank(input)` builds a pooled bank from the same enrollment input as `createFingerprintBank`, plus `requestsPerProbe`.
+`pooledBank()` resolves to the bundled pooled bank: 8 requests of 64 integers, scored as a prediction set (see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1)). Pass it as `bank`: `fingerprint(transport, { bank: await pooledBank(), maxTokens: 4096 })`. A single-model set returns `HEURISTIC_MATCH`, with the candidate in `model` and `confidence: null`. Two or more return `INCONCLUSIVE`, and none returns `UNKNOWN_MODEL`. `candidates` lists the set and `requests` the requests sent; `onText` receives the request number, from 1, as its third argument. An unenrolled model from the same vendor as an enrolled one can produce a single-model set. One deadline, `timeoutMs` (120,000 ms by default) or `signal`, covers all requests together. `createPooledBank(input)` builds a pooled bank from the same enrollment input as `createFingerprintBank`, plus `requestsPerProbe` and an optional bootstrap `seed`, an unsigned 32-bit integer (20261011 by default). The bank records the seed, so the same runs and seed give the same cutoffs.
 
 ## Custom transports
 
