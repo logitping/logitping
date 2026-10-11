@@ -89,9 +89,9 @@ export function planProbe(
   // The driver aborts on the first tool item, but some Codex tools cannot be switched off and race that abort.
   if (transport.name === 'codex') warnings.push('Codex can start a tool before the probe stops it; probe Codex only through backends you would trust with read access to this machine.');
   if (requests > 1 && calibrated.length) {
-    warnings.push(`Experimental pooled probe: ${requests} requests of ${count} integers each. A single-model result is a heuristic match: an unenrolled model from the same vendor as an enrolled one can produce it.`);
+    warnings.push(`Experimental pooled probe: up to ${requests} requests of ${count} integers each; a short or repeated reply ends it sooner. A single-model result is a heuristic match: an unenrolled model from the same vendor as an enrolled one can produce it.`);
   }
-  if (!calibrated.length || !bank.calibration?.sequentialValidated) warnings.push('Early stopping is disabled until sequential behavior has been validated for this bank.');
+  if (requests === 1 && (!calibrated.length || !bank.calibration?.sequentialValidated)) warnings.push('Early stopping is disabled until sequential behavior has been validated for this bank.');
   return {
     calibrated, crossTransport, incompatibleDefault, count, requests, maxTokens, language, prompt, temperature, warnings,
     canStop: requests === 1 && !crossTransport && calibrated.length >= 2 && options.earlyStopping !== false &&

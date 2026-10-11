@@ -24,7 +24,9 @@ describe('pooled probes', () => {
     const low = result.scores.find((score) => score.id === LOW)!;
     expect(low.fit).toBeGreaterThanOrEqual(low.fitCutoff!);
     expect(low.margin).toBeGreaterThanOrEqual(low.marginCutoff!);
-    expect(result.warnings.join(' ')).toContain('4 requests of 64 integers');
+    expect(result.warnings.join(' ')).toContain('up to 4 requests of 64 integers each; a short or repeated reply ends it sooner');
+    // Pooled probes never stop early, so the sequential-validation note does not apply.
+    expect(result.warnings.join(' ')).not.toContain('Early stopping');
   });
 
   it.each([
