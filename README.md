@@ -69,13 +69,19 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 }
 ```
 
+### Experimental: pooled short requests
+
+`--pooled` sends 8 requests of 64 integers instead of one of 512. It costs about 0.72× as much, and it separates closely related models better: on the 2026-10-11 collection, it named `gpt-6.1-sol` or its teacher `gpt-6-astra` correctly in 6 of 10 probes, where the default probe was inconclusive in every run. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
+
+    lping --endpoint https://openrouter.ai/api/v1 --model openai/gpt-6.1-sol --api-format responses --max-tokens 4096 --pooled --json
+
 ## Understand the result
 
 | Status | Meaning | Exit code |
 | --- | --- | --- |
 | `IDENTIFIED` | One reference passed the nominal likelihood and distance checks; this is not identity attestation | `0` |
-| `HEURISTIC_MATCH` | An explicitly enabled comparison across transports found a reference candidate; `confidence` is `null` | `2` |
-| `INCONCLUSIVE` | Insufficient separation, disagreeing checks, or an incomplete response | `2` |
+| `HEURISTIC_MATCH` | An explicitly enabled exploratory comparison found a reference candidate: across transports, or with the experimental `--pooled` bank; `confidence` is `null` | `2` |
+| `INCONCLUSIVE` | Insufficient separation, disagreeing checks, or an incomplete response; with `--pooled`, `candidates` lists the models still consistent | `2` |
 | `UNKNOWN_MODEL` | All enrolled distance regions rejected the observation; drift can also cause this | `2` |
 | `UNCALIBRATED` | Samples were collected without a usable calibrated bank for this transport | `2` |
 | `ERROR` | Invalid configuration, transport failure, or malformed output | `1` |

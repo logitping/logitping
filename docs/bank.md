@@ -111,3 +111,23 @@ for (const model of corpus.models) {
 console.log(JSON.stringify(totals, null, 2));
 NODE
 ```
+
+## Experimental pooled bank
+
+`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers the same 13 models, collected through OpenRouter on 2026-10-11 without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Its provenance records the corpus SHA-256, `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf`. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
+
+Exploratory leave-group-out results on that collection. "Unenrolled" means the model was removed from the bank and its runs probed against the rest.
+
+| Probe | Enrolled model named wrongly | Unenrolled model named | `gpt-6.1-sol` / `gpt-6-astra` named correctly |
+| --- | --- | --- | --- |
+| 1 × 512 integers, default engine (fresh 512-integer collection) | 0/519 | 51/519 (10%) | 0/80 |
+| 8 × 64 integers, pooled bank | 1/65 | 9/65 (14%) | 6/10 |
+
+Treat these as exploratory:
+
+- The pooled test was designed after the collection results were seen.
+- The 8-request samples are small: 9/65 has a 95% interval of about 7–24%.
+- The pooled mode did not meet the predeclared target of naming unenrolled models at most 10% of the time.
+- Unenrolled models were named as close relatives from the same vendor. In the pooled test, none was named as a model from another vendor.
+
+The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.
