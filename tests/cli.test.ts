@@ -442,6 +442,15 @@ describe('CLI bank selection', () => {
     expect(process.exitCode).toBe(2);
   });
 
+  it('exits with code 2 when no enrolled model fits a pooled probe', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(forceCutoffs(openEnvelopes(syntheticPooledBank()), [false, false, false]));
+    lowRangeEndpoint();
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--pooled', '--json']);
+    expect(JSON.parse(stdout)).toMatchObject({ status: 'UNKNOWN_MODEL', model: null, candidates: [], requests: 4 });
+    expect(process.exitCode).toBe(2);
+  });
+
   it('streams each pooled reply on its own line', async () => {
     vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
     vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(openEnvelopes(syntheticPooledBank()));
