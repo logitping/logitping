@@ -6,8 +6,9 @@ import { SequentialTest } from '../math/sprt.js';
 import { IntegerStreamParser } from '../probes/integer_stream.js';
 import { integerPrompt } from '../probes/templates.js';
 import { tokenizerPrompt } from '../probes/tokenizer.js';
-import { abortScope, DEFAULT_TIMEOUT_MS } from './abort.js';
+import { abortScope, childScope, DEFAULT_TIMEOUT_MS } from './abort.js';
 import { LogitpingError } from './errors.js';
+import { classifyPooled } from './pooled.js';
 import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport } from './types.js';
 
 type Classification = Pick<ProbeResult, 'status' | 'model' | 'confidence' | 'reason' | 'scores' | 'evaluatedSamples'>;
@@ -25,6 +26,8 @@ export interface ProbePlan {
   /** An implicit default bank that cannot calibrate this transport. */
   incompatibleDefault: boolean;
   count: number;
+  /** Requests per probe: 1, or a pooled bank's requestsPerProbe. */
+  requests: number;
   /** Output-token budget for the integer request. */
   maxTokens: number;
   language: Language;
@@ -51,6 +54,7 @@ export function planProbe(
   const incompatibleDefault = !explicitBank && enrolled.length > 0 && transportMismatch && !crossTransport;
   const calibrated = incompatibleDefault ? [] : enrolled;
   const count = options.samples ?? bank.protocol.targetSamples;
+  const requests = bank.protocol.requestsPerProbe ?? 1;
   const maxTokens = options.maxTokens ?? count * 5 + 64;
   const language = options.language ?? bank.protocol.language;
   const temperature = options.temperature ?? (incompatibleDefault ? undefined : bank.protocol.temperature ?? undefined);
@@ -84,10 +88,13 @@ export function planProbe(
   if (transport.granularity === 'message') warnings.push('This driver delivers completed messages; within-message token or latency savings cannot be inferred.');
   // The driver aborts on the first tool item, but some Codex tools cannot be switched off and race that abort.
   if (transport.name === 'codex') warnings.push('Codex can start a tool before the probe stops it; probe Codex only through backends you would trust with read access to this machine.');
+  if (requests > 1 && calibrated.length) {
+    warnings.push(`Experimental pooled probe: ${requests} requests of ${count} integers each. A single-model result is a heuristic match: an unenrolled model from the same vendor as an enrolled one can produce it.`);
+  }
   if (!calibrated.length || !bank.calibration?.sequentialValidated) warnings.push('Early stopping is disabled until sequential behavior has been validated for this bank.');
   return {
-    calibrated, crossTransport, incompatibleDefault, count, maxTokens, language, prompt, temperature, warnings,
-    canStop: !crossTransport && calibrated.length >= 2 && options.earlyStopping !== false &&
+    calibrated, crossTransport, incompatibleDefault, count, requests, maxTokens, language, prompt, temperature, warnings,
+    canStop: requests === 1 && !crossTransport && calibrated.length >= 2 && options.earlyStopping !== false &&
       bank.calibration?.sequentialValidated === true && transport.granularity === 'token',
     checkpoints: new Set(calibrated[0]?.profiles.map((profile) => profile.sampleCount) ?? []),
   };
@@ -210,6 +217,54 @@ async function collectIntegers(
   return collection;
 }
 
+interface PooledCollection {
+  /** Complete responses, each its fixed prefix of the requested count. */
+  responses: number[][];
+  /** Integers of the first reply that ended early; no request follows it. */
+  short?: number[];
+}
+
+/** Send a pooled bank's requests one after another under the probe's overall deadline. */
+async function collectPooled(
+  transport: ProbeTransport,
+  bank: FingerprintBank,
+  plan: ProbePlan,
+  scope: ReturnType<typeof abortScope>,
+  request: RequestOptions,
+  options: EngineOptions,
+): Promise<PooledCollection> {
+  const responses: number[][] = [];
+  for (let index = 0; index < plan.requests; index++) {
+    // Reaching the count aborts only this request's scope; the overall deadline still ends every request.
+    const child = childScope(scope.signal);
+    try {
+      const offset = index * plan.count;
+      const { samples } = await collectIntegers(transport, bank, plan, child, { ...request, signal: child.signal },
+        { ...options, onProgress: (count) => options.onProgress?.(offset + count) });
+      scope.signal.throwIfAborted();
+      if (samples.length < plan.count) return { responses, short: samples };
+      responses.push(samples);
+    } finally { child.dispose(); }
+  }
+  return { responses };
+}
+
+/** One candidate is a heuristic match, more are inconclusive, none is an unknown model. */
+function classifyPooledProbe(responses: number[][], bank: FingerprintBank, plan: ProbePlan): { classification: Classification; candidates: string[] } {
+  const { candidates, scores } = classifyPooled(responses, bank, createNuisanceProjector(bank.nuisanceDirections));
+  const shared = { confidence: null, scores, evaluatedSamples: responses.length * plan.count };
+  const every = `all ${plan.requests} responses`;
+  if (candidates.length === 1) {
+    return { candidates, classification: { ...shared, status: 'HEURISTIC_MATCH', model: candidates[0]!,
+      reason: `Only ${candidates[0]} fits ${every} among enrolled models; an unenrolled model from the same vendor can produce the same result.` } };
+  }
+  if (candidates.length > 1) {
+    return { candidates, classification: { ...shared, status: 'INCONCLUSIVE', model: null,
+      reason: `Consistent with ${candidates.slice(0, -1).join(', ')} or ${candidates.at(-1)}; the responses do not separate them.` } };
+  }
+  return { candidates, classification: { ...shared, status: 'UNKNOWN_MODEL', model: null, reason: `No enrolled model fits ${every}.` } };
+}
+
 /** Relabel a classification for opt-in cross-transport comparisons and collection-only runs. */
 function relabel(result: Classification, plan: ProbePlan, transport: ProbeTransport, bank: FingerprintBank): Classification {
   if (plan.crossTransport) {
@@ -243,6 +298,27 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
     if (options.tokenizerProbe === true) {
       tokenizer = { response: await runTokenizerProbe(transport, plan, request, options), diagnosticOnly: true };
       warnings.push('Tokenizer segmentation is model-reported diagnostic text, not a verified observation of BPE internals.');
+    }
+    if (plan.requests > 1) {
+      const { responses, short } = await collectPooled(transport, bank, plan, scope, request, options);
+      options.signal?.throwIfAborted();
+      const sent = responses.length + (short ? 1 : 0);
+      const pooled = short ? undefined : classifyPooledProbe(responses, bank, plan);
+      if (short) warnings.push(`Request ${sent} ended after ${short.length} of ${plan.count} requested integers (output limit: ${plan.maxTokens} tokens); no further requests were sent.`);
+      const classification: Classification = pooled?.classification ?? {
+        status: 'INCONCLUSIVE', model: null, confidence: null, scores: [], evaluatedSamples: 0,
+        reason: `Request ${sent} of ${plan.requests} ended after ${short!.length} of ${plan.count} integers; a pooled probe needs every request complete. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.`,
+      };
+      return {
+        ...relabel(classification, plan, transport, bank),
+        confidenceMeaning: 'nominal closed-set IID likelihood; not calibrated identity probability',
+        samples: [...responses.flat(), ...(short ?? [])], requestedSamples: plan.count * plan.requests,
+        earlyStopped: false, sampleBudgetSaved: 0,
+        elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
+        tokenizer, warnings, requests: sent,
+        ...(pooled ? { candidates: pooled.candidates } : {}),
+        ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
+      };
     }
     const { samples, early, test, project } = await collectIntegers(transport, bank, plan, scope, request, options);
     options.signal?.throwIfAborted();

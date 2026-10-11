@@ -88,3 +88,42 @@ export function syntheticEnrollment(): EnrollmentInput {
 export function syntheticPooledBank(requestsPerProbe = 4): FingerprintBank {
   return createPooledBank({ ...syntheticEnrollment(), requestsPerProbe });
 }
+
+/** Answers request i with replies[i]; 'stall' waits until the request is aborted. */
+export class SequenceTransport implements ProbeTransport {
+  requests: ProbeRequest[] = [];
+  abortedAtStart: boolean[] = [];
+  onRequest?: (index: number) => void;
+  constructor(private readonly replies: (string[] | 'stall')[], readonly granularity: StreamGranularity = 'token', readonly name: string = 'openai') {}
+
+  async *stream(request: ProbeRequest): AsyncGenerator<string> {
+    const index = this.requests.push(request) - 1;
+    this.abortedAtStart.push(request.signal?.aborted ?? false);
+    this.onRequest?.(index);
+    const reply = this.replies[index] ?? [];
+    if (reply === 'stall') {
+      request.signal?.throwIfAborted();
+      await new Promise<never>((_, reject) => request.signal?.addEventListener('abort', () => reject(request.signal!.reason), { once: true }));
+      return;
+    }
+    for (const chunk of reply) {
+      request.signal?.throwIfAborted();
+      yield chunk;
+    }
+  }
+}
+
+/** Accept every response in every envelope, so a test isolates the fit and margin tests. */
+export function openEnvelopes(bank: FingerprintBank): FingerprintBank {
+  for (const model of bank.models) for (const profile of model.profiles) { profile.maxHellinger = 1; profile.maxMahalanobis = Number.MAX_VALUE; }
+  return bank;
+}
+
+/** Force each model into (`true`) or out of the prediction set through its cutoffs. */
+export function forceCutoffs(bank: FingerprintBank, pass: readonly boolean[]): FingerprintBank {
+  bank.pooled!.models.forEach((model, index) => {
+    const value = pass[index] ? -1e12 : 1e12;
+    model.cutoffs = { fit: value, margin: value };
+  });
+  return bank;
+}

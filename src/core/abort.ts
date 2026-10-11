@@ -20,3 +20,12 @@ export function abortScope(parent?: AbortSignal, timeoutMs = DEFAULT_TIMEOUT_MS)
     },
   };
 }
+
+/** A scope that aborts with `parent` and can also be aborted on its own, e.g. to end one request of several. */
+export function childScope(parent: AbortSignal) {
+  const controller = new AbortController();
+  const abort = () => controller.abort(parent.reason);
+  if (parent.aborted) abort();
+  else parent.addEventListener('abort', abort, { once: true });
+  return { controller, signal: controller.signal, dispose: () => parent.removeEventListener('abort', abort) };
+}
