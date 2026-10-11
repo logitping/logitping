@@ -13,6 +13,7 @@ import { createFingerprintBank, VARIANCE_METHOD } from './enrollment.js';
 import { completedRuns, newGatewayCheckpoint, readGatewayCheckpoint, saveGatewayCheckpoint, type GatewayCheckpoint } from './gateway_checkpoint.js';
 import { parseGatewayBankConfig, type GatewayBankConfig, type GatewayTarget } from './gateway_config.js';
 import { collectionSettings, enrolledProvider, parseIncrementalBase, planGatewayBankUpdate, PROVIDER_LABELS, providerLabel, type BankUpdatePlan } from './gateway_plan.js';
+import { findRepeatingCycle } from './repetition.js';
 
 export interface BankUpdateProgress {
   modelId: string;
@@ -30,10 +31,11 @@ export interface BankUpdateRetry {
   run: number;
   attempt: number;
   maxAttempts: number;
-  reason: 'short' | 'invalid';
+  reason: 'short' | 'invalid' | 'loop';
   message: string;
   receivedSamples?: number;
   invalidPosition?: number;
+  loopPeriod?: number;
   expectedSamples: number;
   requestsSent: number;
 }
@@ -83,7 +85,7 @@ function safeError(error: unknown, config: GatewayBankConfig): string {
   if (!(error instanceof Error)) return 'Unexpected bank update failure';
   let message = error.message;
   // Probe errors contain only counts and positions; never mangle them or wrapped context.
-  if (!(error instanceof RedactedError || error instanceof ShortProbeError || error instanceof IntegerOutputError)) {
+  if (!(error instanceof RedactedError || error instanceof ShortProbeError || error instanceof IntegerOutputError || error instanceof LoopingProbeError)) {
     for (const secret of [config.gateway?.apiToken, config.gateway?.accountId, config.openrouter?.apiKey]) {
       if (secret) message = message.replaceAll(secret, '[redacted]');
     }
@@ -104,6 +106,12 @@ async function readExisting(path: string): Promise<string | undefined> {
 class ShortProbeError extends Error {
   constructor(readonly received: number, expected: number) {
     super(`Incomplete probe: received ${received} of ${expected} integers`);
+  }
+}
+
+class LoopingProbeError extends Error {
+  constructor(readonly period: number, share: number) {
+    super(`Looping probe: ${Math.floor(share * 100)}% of integers repeat at period ${period}`);
   }
 }
 
@@ -183,6 +191,8 @@ async function collectRun(config: GatewayBankConfig, target: GatewayTarget, opti
   for (const sample of parser.push(text)) accept(sample);
   for (const sample of parser.finish()) accept(sample);
   if (samples.length !== target.sampleCount) throw new ShortProbeError(samples.length, target.sampleCount);
+  const cycle = findRepeatingCycle(samples);
+  if (cycle) throw new LoopingProbeError(cycle.period, cycle.share);
   return samples;
 }
 
@@ -233,8 +243,9 @@ async function collectProbes(config: GatewayBankConfig, checkpointPath: string, 
               await saveGatewayCheckpoint(checkpointPath, state);
               break;
             } catch (error) {
-              if (!(error instanceof ShortProbeError) && !(error instanceof IntegerOutputError)) throw error;
+              if (!(error instanceof ShortProbeError) && !(error instanceof IntegerOutputError) && !(error instanceof LoopingProbeError)) throw error;
               const short = error instanceof ShortProbeError;
+              const looping = error instanceof LoopingProbeError;
               (short ? shortResponses : invalidResponses)[index]![phase]++;
               await saveGatewayCheckpoint(checkpointPath, state);
               if (attempt >= config.maxProbeRetries) {
@@ -248,9 +259,9 @@ async function collectProbes(config: GatewayBankConfig, checkpointPath: string, 
               options.signal?.throwIfAborted();
               options.onRetry?.({
                 modelId: target.id, phase, run: round + 1, attempt: attempt + 2,
-                maxAttempts: config.maxProbeRetries + 1, reason: short ? 'short' : 'invalid',
+                maxAttempts: config.maxProbeRetries + 1, reason: short ? 'short' : looping ? 'loop' : 'invalid',
                 message: safeError(error, config),
-                ...(short ? { receivedSamples: error.received } : { invalidPosition: error.position }),
+                ...(short ? { receivedSamples: error.received } : looping ? { loopPeriod: error.period } : { invalidPosition: error.position }),
                 expectedSamples: target.sampleCount, requestsSent: state.requestsSent,
               });
             }

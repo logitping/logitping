@@ -9,6 +9,7 @@ import { createFingerprintBank } from '../src/data/enrollment.js';
 import { loadGatewayBankConfig, parseGatewayBankConfig, type GatewayTarget } from '../src/data/gateway_config.js';
 import { planGatewayBankUpdate, readIncrementalBase } from '../src/data/gateway_plan.js';
 import { updateGatewayBank } from '../src/data/gateway_update.js';
+import { findRepeatingCycle } from '../src/data/repetition.js';
 import { FEATURE_DIMENSION } from '../src/math/ordered_block.js';
 import { integerPrompt } from '../src/probes/templates.js';
 
@@ -21,6 +22,8 @@ const openrouterCredentials = { OPENROUTER_API_KEY: 'sk-or-v1-test-openrouter-cr
 const allCredentials = { ...credentials, ...openrouterCredentials };
 const now = () => new Date('2026-09-23T00:00:00.000Z');
 const CORPUS = /\.corpus-([0-9a-f]{64})\.json$/;
+/** A deterministic run starting at `first`; steps of 7 visit all 355 values, so it never loops. */
+const steppedRun = (first: number, length = 64) => Array.from({ length }, (_, index) => (first - 1 + index * 7) % 355 + 1);
 
 /** Directory entries other than the corpus files that successful collections keep. */
 async function entries(directory: string): Promise<string[]> {
@@ -96,7 +99,7 @@ function gateway() {
     const run = (runs.get(body.model) ?? 0) + 1;
     runs.set(body.model, run);
     const value = (body.model.startsWith('openai/') ? 10 : 200) + run;
-    return response(Array<number>(64).fill(value).join(' '));
+    return response(steppedRun(value).join(' '));
   });
 }
 
@@ -293,8 +296,8 @@ describe('Gateway collection and atomic bank updates', () => {
       source: 'Expected fixture', protocol: config().protocol, checkpoints: [64],
       models: input().models.map((model, index) => ({
         id: model.id, family: model.family,
-        training: [1, 2, 3].map((n) => Array<number>(64).fill((index ? 200 : 10) + n)),
-        validation: [4, 5].map((n) => Array<number>(64).fill((index ? 200 : 10) + n)),
+        training: [1, 2, 3].map((n) => steppedRun((index ? 200 : 10) + n)),
+        validation: [4, 5].map((n) => steppedRun((index ? 200 : 10) + n)),
       })),
     });
     const saved = await loadBank(outputPath);
@@ -312,7 +315,7 @@ describe('Gateway collection and atomic bank updates', () => {
     const corpus = JSON.parse(await readFile(join(directory, corpusName!), 'utf8'));
     const { protocol, checkpoints, models } = corpus;
     expect(createHash('sha256').update(JSON.stringify({ protocol, checkpoints, models })).digest('hex')).toBe(digest);
-    expect(models[0].training).toEqual([1, 2, 3].map((n) => Array<number>(64).fill(10 + n)));
+    expect(models[0].training).toEqual([1, 2, 3].map((n) => steppedRun(10 + n)));
     for (const model of saved.models) expect(model.provenance).toContain(`corpus sha256:${digest};`);
     for (const credential of Object.values(credentials)) expect(JSON.stringify(corpus)).not.toContain(credential);
   });
@@ -344,9 +347,9 @@ describe('Gateway collection and atomic bank updates', () => {
     custom.models[1]!.maxTokens = 8192;
     const chat = gateway();
     const fetch = vi.fn<typeof globalThis.fetch>(async (url, init) => {
-      if (String(url).endsWith('/messages')) return formattedResponse('messages', '200 '.repeat(64));
+      if (String(url).endsWith('/messages')) return formattedResponse('messages', steppedRun(200).join(' '));
       if (!String(url).endsWith('/responses')) return chat(url, init);
-      return formattedResponse('responses', '17 '.repeat(64));
+      return formattedResponse('responses', steppedRun(17).join(' '));
     });
     const { bank } = await updateGatewayBank(custom, { outputPath, fetch, now });
     expect(bank.models[0]!.provenance).toContain('api=responses');
@@ -441,7 +444,7 @@ describe('Gateway collection and atomic bank updates', () => {
         return formattedResponse('responses', rejectedText);
       }
       runs.set(model, run);
-      return formattedResponse('responses', Array(512).fill((model === custom.models[0]!.model ? 10 : 200) + run).join(' '));
+      return formattedResponse('responses', steppedRun((model === custom.models[0]!.model ? 10 : 200) + run, 512).join(' '));
     });
     const onRetry = vi.fn();
     const onProgress = vi.fn();
@@ -465,8 +468,8 @@ describe('Gateway collection and atomic bank updates', () => {
       source: 'Fresh complete runs', protocol: custom.protocol, checkpoints: custom.checkpoints,
       models: custom.models.map((model, index) => ({
         id: model.id, family: model.family,
-        training: [1, 2, 3].map((run) => Array<number>(512).fill((index ? 200 : 10) + run)),
-        validation: [4, 5].map((run) => Array<number>(512).fill((index ? 200 : 10) + run)),
+        training: [1, 2, 3].map((run) => steppedRun((index ? 200 : 10) + run, 512)),
+        validation: [4, 5].map((run) => steppedRun((index ? 200 : 10) + run, 512)),
       })),
     });
     const saved = await loadBank(outputPath);
@@ -494,6 +497,24 @@ describe('Gateway collection and atomic bank updates', () => {
     expect(onRetry).toHaveBeenCalledOnce();
     expect(onRetry.mock.calls[0]![0]).toMatchObject({ reason: 'invalid', attempt: 2, maxAttempts: 3 });
     expect(onRetry.mock.calls[0]![0].message).not.toContain('private-model-prose');
+    expect(result.bank.models[0]!.provenance).toContain('invalid-training-responses=1');
+    expect(result.bank.models[0]!.provenance).toContain('retries=1;');
+  });
+
+  it.each([
+    ['a constant run', Array<number>(64).fill(17), 1],
+    ['a 16-value cycle', Array.from({ length: 64 }, (_, index) => index % 16 + 40), 16],
+  ] as const)('retries %s as a looping response', async (_name, samples, period) => {
+    const custom = { ...config(), maxRequests: 12, maxProbeRetries: 2 };
+    const fetch = gateway().mockImplementationOnce(async () => response(samples.join(' ')));
+    const onRetry = vi.fn();
+    const result = await updateGatewayBank(custom, { outputPath, fetch, now, onRetry });
+    expect(result.requests).toBe(11);
+    expect(onRetry).toHaveBeenCalledExactlyOnceWith({
+      modelId: 'reference-a', phase: 'training', run: 1, attempt: 2, maxAttempts: 3,
+      reason: 'loop', loopPeriod: period, expectedSamples: 64, requestsSent: 1,
+      message: `Looping probe: 100% of integers repeat at period ${period}`,
+    });
     expect(result.bank.models[0]!.provenance).toContain('invalid-training-responses=1');
     expect(result.bank.models[0]!.provenance).toContain('retries=1;');
   });
@@ -583,7 +604,7 @@ describe('Gateway collection and atomic bank updates', () => {
     ['HTTP failure', () => new Response(credentials.CLOUDFLARE_API_TOKEN, { status: 429 })],
   ] as const)('preserves the previous bank after a %s without retrying', async (_name, makeResponse) => {
     const custom = _name === 'short response' ? config() : { ...config(), maxRequests: 12, maxProbeRetries: 2 };
-    const fetch = gateway().mockImplementationOnce(async () => response('17 '.repeat(64)))
+    const fetch = gateway().mockImplementationOnce(async () => response(steppedRun(17).join(' ')))
       .mockImplementationOnce(async () => makeResponse());
     await expect(updateGatewayBank(custom, { outputPath, fetch, now })).rejects.toThrow();
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -658,7 +679,7 @@ describe('Gateway collection and atomic bank updates', () => {
     const fetch = gateway();
     fetch.mockImplementationOnce(async () => {
       await writeFile(outputPath, 'concurrent edit');
-      return response('17 '.repeat(64));
+      return response(steppedRun(17).join(' '));
     });
     await expect(updateGatewayBank(config(), { outputPath, fetch, now })).rejects.toThrow('Bank changed during collection');
     expect(await readFile(outputPath, 'utf8')).toBe('concurrent edit');
@@ -693,7 +714,7 @@ describe('Gateway collection and atomic bank updates', () => {
       expect(body.stream).toBe(false);
       const run = (runs.get(body.model) ?? 0) + 1;
       runs.set(body.model, run);
-      return formattedResponse(apiFormat, Array(64).fill((body.model.startsWith('openai/') ? 10 : 200) + run).join(' '));
+      return formattedResponse(apiFormat, steppedRun((body.model.startsWith('openai/') ? 10 : 200) + run).join(' '));
     });
     await expect(updateGatewayBank(custom, { outputPath, fetch, now })).rejects.toThrow('HTTP 503');
     const checkpoint = `${outputPath}.checkpoint.json`;
@@ -725,8 +746,8 @@ describe('Gateway collection and atomic bank updates', () => {
       source: 'Expected uninterrupted corpus', protocol: custom.protocol, checkpoints: custom.checkpoints,
       models: custom.models.map((model, index) => ({
         id: model.id, family: model.family,
-        training: [1, 2, 3].map((n) => Array<number>(64).fill((index ? 200 : 10) + n)),
-        validation: [4, 5].map((n) => Array<number>(64).fill((index ? 200 : 10) + n)),
+        training: [1, 2, 3].map((n) => steppedRun((index ? 200 : 10) + n)),
+        validation: [4, 5].map((n) => steppedRun((index ? 200 : 10) + n)),
       })),
     });
     expect(result.bank.models.map((model) => model.profiles)).toEqual(expected.models.map((model) => model.profiles));
@@ -904,7 +925,7 @@ describe('OpenRouter collection', () => {
       const run = (runs.get(model) ?? 0) + 1;
       runs.set(model, run);
       const apiFormat = (Object.keys(paths) as (keyof typeof paths)[]).find((format) => String(url).endsWith(paths[format]))!;
-      return formattedResponse(apiFormat, Array<number>(64).fill((model.startsWith('openai/') ? 10 : 200) + run).join(' '));
+      return formattedResponse(apiFormat, steppedRun((model.startsWith('openai/') ? 10 : 200) + run).join(' '));
     });
   }
 
@@ -912,8 +933,8 @@ describe('OpenRouter collection', () => {
     source: 'Expected fixture', protocol: config().protocol, checkpoints: [64],
     models: models.map((model, index) => ({
       id: model.id, family: model.family,
-      training: [1, 2, 3].map((n) => Array<number>(64).fill((index ? 200 : 10) + n)),
-      validation: [4, 5].map((n) => Array<number>(64).fill((index ? 200 : 10) + n)),
+      training: [1, 2, 3].map((n) => steppedRun((index ? 200 : 10) + n)),
+      validation: [4, 5].map((n) => steppedRun((index ? 200 : 10) + n)),
     })),
   }).models.map((model) => model.profiles);
 
@@ -1024,7 +1045,7 @@ function routes(samples = 64) {
     const { model } = JSON.parse(String(init?.body)) as { model: string };
     const run = (runs.get(model) ?? 0) + 1;
     runs.set(model, run);
-    return response(Array<number>(samples).fill(offsets[model]! + run).join(' '));
+    return response(steppedRun(offsets[model]! + run, samples).join(' '));
   });
 }
 
@@ -1034,8 +1055,8 @@ function expectedModel(id: string, family: string, offset: number, nuisanceDirec
     source: 'Expected fixture', protocol: config().protocol, checkpoints: [64], nuisanceDirections,
     models: [{
       id, family,
-      training: [1, 2, 3].map((n) => Array<number>(64).fill(offset + n)),
-      validation: [4, 5].map((n) => Array<number>(64).fill(offset + n)),
+      training: [1, 2, 3].map((n) => steppedRun(offset + n)),
+      validation: [4, 5].map((n) => steppedRun(offset + n)),
     }],
   }).models[0]!;
 }
@@ -1285,7 +1306,7 @@ describe('Incremental bank updates', () => {
     const fetch = routes();
     fetch.mockImplementationOnce(async () => {
       await writeFile(outputPath, 'concurrent edit');
-      return response('101 '.repeat(64));
+      return response(steppedRun(101).join(' '));
     });
     await expect(updateGatewayBank(withModels([referenceA, referenceB, referenceC]), { outputPath, fetch, now, incremental: true }))
       .rejects.toThrow('Bank changed during collection');
@@ -1305,5 +1326,27 @@ describe('Incremental bank updates', () => {
       .rejects.toThrow(message);
     expect(fetch).not.toHaveBeenCalled();
     expect(await entries(directory)).toEqual(files);
+  });
+});
+
+describe('findRepeatingCycle', () => {
+  it.each([
+    ['a constant run', Array<number>(512).fill(17), { period: 1, share: 1 }],
+    ['a 16-value cycle over 512 integers', Array.from({ length: 512 }, (_, index) => index % 16 + 40), { period: 16, share: 1 }],
+    ['a 128-value cycle over 512 integers', Array.from({ length: 512 }, (_, index) => index % 128 + 1), { period: 128, share: 1 }],
+    ['a cycle with 4% of values changed', Array.from({ length: 512 }, (_, index) => index % 25 === 0 ? 300 + index % 50 : index % 16 + 40), { period: 16, share: 456 / 496 }],
+  ])('finds %s', (_name, samples, expected) => {
+    expect(findRepeatingCycle(samples)).toEqual(expected);
+  });
+
+  it.each([
+    ['a near-permutation of 512 integers', steppedRun(1, 512)],
+    ['64 distinct integers whose first and last values match', [...steppedRun(1, 63), 1]],
+    ['a 64-integer run that repeats only twice (period 32 exceeds n/4)', [...steppedRun(1, 32), ...steppedRun(1, 32)]],
+    ['a cycle with 15% of values changed', Array.from({ length: 512 }, (_, index) => index % 7 === 0 ? 300 + index % 50 : index % 16 + 40)],
+    ['a 129-value cycle', Array.from({ length: 512 }, (_, index) => index % 129 + 1)],
+    ['three integers', [5, 5, 5]],
+  ])('accepts %s', (_name, samples) => {
+    expect(findRepeatingCycle(samples)).toBeUndefined();
   });
 });
