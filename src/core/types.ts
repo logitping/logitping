@@ -38,8 +38,8 @@ export interface ModelFingerprint {
 export interface PooledScoring {
   alpha: number;
   bootstrap: { draws: number; seed: number };
-  /** In the order of `FingerprintBank.models`. */
-  models: { families: number[][]; cutoffs: { fit: number; margin: number } }[];
+  /** In the order of `FingerprintBank.models`, which `id` repeats. */
+  models: { id: string; families: number[][]; cutoffs: { fit: number; margin: number } }[];
   pairs: ({ model: string; competitor: string } & PairStatistic)[];
 }
 

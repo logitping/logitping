@@ -39,9 +39,11 @@ function validatePooled(bank: Record<string, unknown>, protocol: Record<string, 
   check(typeof pooled.alpha === 'number' && pooled.alpha > 0 && pooled.alpha < 1, 'pooled alpha');
   const bootstrap = object(pooled.bootstrap, 'pooled.bootstrap');
   check(integer(bootstrap.draws, 100, 100_000) && integer(bootstrap.seed, 0, 0xffffffff), 'pooled bootstrap');
+  const ids = models.map((model) => String(model.id));
   check(Array.isArray(pooled.models) && pooled.models.length === models.length, 'pooled.models must match models');
-  for (const value of pooled.models) {
+  for (const [index, value] of pooled.models.entries()) {
     const entry = object(value, 'pooled model');
+    check(entry.id === ids[index], 'pooled.models must list the bank models in bank order');
     check(Array.isArray(entry.families) && entry.families.length === FAMILY_SIZES.length, 'pooled feature groups');
     entry.families.forEach((family: unknown, group: number) => {
       vector(family, FAMILY_SIZES[group]!, 'pooled feature group dimensions');
@@ -51,7 +53,6 @@ function validatePooled(bank: Record<string, unknown>, protocol: Record<string, 
     const cutoffs = object(entry.cutoffs, 'pooled cutoffs');
     check(Number.isFinite(cutoffs.fit) && Number.isFinite(cutoffs.margin), 'pooled cutoffs must be finite');
   }
-  const ids = models.map((model) => String(model.id));
   check(Array.isArray(pooled.pairs) && pooled.pairs.length === ids.length * (ids.length - 1), 'pooled pairs must cover every ordered model pair');
   const seen = new Set<string>();
   for (const value of pooled.pairs) {

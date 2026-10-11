@@ -58,7 +58,7 @@ export function uniformPooledBank(requestsPerProbe = 4): FingerprintBank {
   bank.protocol.scoring = 'pooled-sets-v1';
   bank.pooled = {
     alpha: 0.2, bootstrap: { draws: 2000, seed: 1 },
-    models: bank.models.map(() => ({ families: FAMILY_SIZES.map((size) => Array<number>(size).fill(1 / size)), cutoffs: { fit: 0, margin: 0 } })),
+    models: bank.models.map((model) => ({ id: model.id, families: FAMILY_SIZES.map((size) => Array<number>(size).fill(1 / size)), cutoffs: { fit: 0, margin: 0 } })),
     pairs: bank.models.flatMap((model) => bank.models.filter((other) => other !== model)
       .map((other) => ({ model: model.id, competitor: other.id, weights: Array<number>(FAMILY_SIZES.length).fill(1), center: 0, scale: 1 }))),
   };

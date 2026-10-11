@@ -83,7 +83,7 @@ export function attachPooledScoring(bank: FingerprintBank, runs: EnrolledRuns, o
     }
     fits.sort((a, b) => a - b);
     margins.sort((a, b) => a - b);
-    return { families: smoothFamilies(calibration.totals[m]!), cutoffs: { fit: fits[index]!, margin: margins[index]! } };
+    return { id: runs[m]!.id, families: smoothFamilies(calibration.totals[m]!), cutoffs: { fit: fits[index]!, margin: margins[index]! } };
   });
   return validateBank({
     ...bank, schemaVersion: 2,

@@ -33,10 +33,13 @@ describe('pooled bank validation', () => {
     ['an unsmoothed probability', (bank) => { const family = bank.pooled!.models[0]!.families[0]!; family[1]! += family[0]!; family[0] = 0; }],
     ['a non-finite cutoff', (bank) => { bank.pooled!.models[0]!.cutoffs.fit = Infinity; }],
     ['a missing pooled model', (bank) => { bank.pooled!.models.pop(); }],
+    ['a pooled model without an id', (bank) => { delete (bank.pooled!.models[0] as { id?: string }).id; }],
+    ['pooled models out of bank order', (bank) => { bank.pooled!.models.reverse(); }],
     ['a missing pair', (bank) => { bank.pooled!.pairs.pop(); }],
     ['a duplicate pair', (bank) => { bank.pooled!.pairs[1] = structuredClone(bank.pooled!.pairs[0]!); }],
     ['a model paired with itself', (bank) => { bank.pooled!.pairs[0]!.competitor = bank.pooled!.pairs[0]!.model; }],
     ['a negative weight', (bank) => { bank.pooled!.pairs[0]!.weights[0] = -1; }],
+    ['a non-finite weight', (bank) => { bank.pooled!.pairs[0]!.weights[0] = Infinity; }],
     ['a zero scale', (bank) => { bank.pooled!.pairs[0]!.scale = 0; }],
   ])('rejects %s', (_name, mutate) => {
     const bank = uniformPooledBank();
@@ -55,6 +58,7 @@ describe('pooled enrollment', () => {
       pooled: { alpha: 0.2, bootstrap: { draws: 2000, seed: 20261011 } },
     });
     expect(bank.pooled!.pairs).toHaveLength(6);
+    expect(bank.pooled!.models.map((model) => model.id)).toEqual(bank.models.map((model) => model.id));
     expect(bank.pooled!.models.map((model) => model.families.map((family) => family.length))).toEqual(Array(3).fill([...FAMILY_SIZES]));
     const v1 = createFingerprintBank(syntheticEnrollment());
     expect(bank.models).toEqual(v1.models);
@@ -100,6 +104,7 @@ describe('bundled pooled bank', () => {
     });
     expect(bank.models).toHaveLength(13);
     expect(bank.pooled!.pairs).toHaveLength(156);
+    expect(bank.pooled!.models.map((model) => model.id)).toEqual(bank.models.map((model) => model.id));
     for (const model of bank.models) expect(model.provenance).toContain('corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf;');
   });
 
