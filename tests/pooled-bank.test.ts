@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { FingerprintBank } from '../src/core/types.js';
 import { validateBank } from '../src/data/bank_loader.js';
-import { uniformPooledBank } from './fixtures.js';
+import { createFingerprintBank } from '../src/data/enrollment.js';
+import { createPooledBank, prepareCalibration, type PooledEnrollmentInput } from '../src/data/pooled_enrollment.js';
+import { countEvents, FAMILY_SIZES, logLikelihoods } from '../src/math/pooled_features.js';
+import { syntheticEnrollment, syntheticPooledBank, uniformPooledBank } from './fixtures.js';
 
 function thrown(action: () => unknown): unknown {
   try { action(); } catch (error) { return error; }
@@ -39,5 +42,50 @@ describe('pooled bank validation', () => {
     const bank = uniformPooledBank();
     mutate(bank);
     expect(thrown(() => validateBank(bank))).toMatchObject({ code: 'INVALID_BANK' });
+  });
+});
+
+describe('pooled enrollment', () => {
+  it('extends the v1 bank of the same runs with a seeded, repeatable pooled section', () => {
+    const bank = syntheticPooledBank();
+    expect(JSON.stringify(syntheticPooledBank())).toBe(JSON.stringify(bank));
+    expect(bank).toMatchObject({
+      schemaVersion: 2,
+      protocol: { id: 'integer-v1', targetSamples: 64, requestsPerProbe: 4, scoring: 'pooled-sets-v1' },
+      pooled: { alpha: 0.2, bootstrap: { draws: 2000, seed: 20261011 } },
+    });
+    expect(bank.pooled!.pairs).toHaveLength(6);
+    expect(bank.pooled!.models.map((model) => model.families.map((family) => family.length))).toEqual(Array(3).fill([...FAMILY_SIZES]));
+    const v1 = createFingerprintBank(syntheticEnrollment());
+    expect(bank.models).toEqual(v1.models);
+    expect(bank.calibration).toEqual(v1.calibration);
+  });
+
+  it('records a custom seed, which changes only the cutoffs', () => {
+    const custom = createPooledBank({ ...syntheticEnrollment(), requestsPerProbe: 4, seed: 7 });
+    const standard = syntheticPooledBank();
+    expect(custom.pooled!.bootstrap.seed).toBe(7);
+    expect(custom.pooled!.models.map((model) => model.cutoffs)).not.toEqual(standard.pooled!.models.map((model) => model.cutoffs));
+    expect(custom.pooled!.pairs).toEqual(standard.pooled!.pairs);
+  });
+
+  it('scores each calibration run with statistics fitted without it', () => {
+    const events = syntheticEnrollment().models.map((model) => [...model.training, ...model.validation].map((run) => countEvents(run)));
+    const calibration = prepareCalibration(events);
+    const inSample = logLikelihoods(events[0]![0]!, calibration.totals[0]!).reduce((sum, value) => sum + value, 0);
+    const [first] = calibration.components(0);
+    expect(first!.fit).toBeLessThan(inSample);
+    expect(first!.margins).toHaveLength(2);
+  });
+
+  it.each<[string, (input: PooledEnrollmentInput) => void, string]>([
+    ['one model', (input) => { input.models.length = 1; }, 'at least two models'],
+    ['a run of the wrong length', (input) => { input.models[0]!.validation[0] = input.models[0]!.validation[0]!.slice(1); }, 'target sample budget'],
+    ['one request per probe', (input) => { input.requestsPerProbe = 1; }, 'requestsPerProbe'],
+    ['a negative seed', (input) => { input.seed = -1; }, 'seed'],
+  ])('rejects %s', (_name, mutate, message) => {
+    const input: PooledEnrollmentInput = { ...syntheticEnrollment(), requestsPerProbe: 4 };
+    mutate(input);
+    expect(() => createPooledBank(input)).toThrow(message);
   });
 });

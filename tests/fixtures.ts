@@ -1,6 +1,8 @@
 import type { FingerprintBank, ProbeRequest, ProbeTransport, StreamGranularity } from '../src/core/types.js';
-import { createFingerprintBank } from '../src/data/enrollment.js';
+import { createFingerprintBank, type EnrollmentInput } from '../src/data/enrollment.js';
+import { createPooledBank } from '../src/data/pooled_enrollment.js';
 import { FAMILY_SIZES } from '../src/math/pooled_features.js';
+import { mulberry32 } from '../src/math/pooled_sets.js';
 
 export function uncalibratedBank(): FingerprintBank {
   return {
@@ -61,4 +63,28 @@ export function uniformPooledBank(requestsPerProbe = 4): FingerprintBank {
       .map((other) => ({ model: model.id, competitor: other.id, weights: Array<number>(FAMILY_SIZES.length).fill(1), center: 0, scale: 1 }))),
   };
   return bank;
+}
+
+/** 64 integers drawn uniformly from [low, high] with a fixed seed. */
+export function syntheticRun(low: number, high: number, seed: number): number[] {
+  const random = mulberry32(seed);
+  return Array.from({ length: 64 }, () => low + Math.floor(random() * (high - low + 1)));
+}
+
+/** Deliberately artificial runs: three models drawing from mostly separate ranges. Never a real model bank. */
+export function syntheticEnrollment(): EnrollmentInput {
+  return {
+    source: 'SYNTHETIC POOLED TEST FIXTURE; no real model measurements',
+    protocol: { id: 'integer-v1', targetSamples: 64, language: 'en', temperature: null, transport: 'openai' },
+    checkpoints: [64],
+    models: ([[1, 120], [118, 237], [236, 355]] as const).map(([low, high], index) => ({
+      id: `synthetic-${low}-${high}`, family: 'synthetic',
+      training: Array.from({ length: 6 }, (_, run) => syntheticRun(low, high, index * 100 + run)),
+      validation: Array.from({ length: 4 }, (_, run) => syntheticRun(low, high, index * 100 + 50 + run)),
+    })),
+  };
+}
+
+export function syntheticPooledBank(requestsPerProbe = 4): FingerprintBank {
+  return createPooledBank({ ...syntheticEnrollment(), requestsPerProbe });
 }

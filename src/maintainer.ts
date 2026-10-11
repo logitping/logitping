@@ -5,3 +5,5 @@
 export { loadGatewayBankConfig, parseGatewayBankConfig, type GatewayBankConfig, type GatewayProvider, type GatewayTarget } from './data/gateway_config.js';
 export { planGatewayBankUpdate, providerLabel, readIncrementalBase, type BankUpdatePlan } from './data/gateway_plan.js';
 export { updateGatewayBank, type BankUpdateOptions, type BankUpdateProgress, type BankUpdateResult, type BankUpdateResume, type BankUpdateRetry } from './data/gateway_update.js';
+export { loadBank } from './data/bank_loader.js';
+export { attachPooledScoring } from './data/pooled_enrollment.js';
