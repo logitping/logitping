@@ -16,9 +16,11 @@
   - `npm run bank:pooled` adds pooled scoring to a collected bank from its archived corpus.
   - Incremental updates are refused for pooled banks.
 - `ProbeResult.candidates` and `ProbeResult.requests`, and the pooled `fit`, `margin` and cutoff fields in `scores`.
+- In a pooled probe, `onText` receives the request number, from 1, as a third argument.
 
 ### Changed
 
+- `--stream` starts a new line when the stage changes from the tokenizer reply to the integers, and at each request of a pooled probe.
 - The bank updater rejects and retries a reply whose integers loop: at least 90% of positions repeat the integer one period earlier, for a period of at most 128 integers and a quarter of the run. Such a reply counts as invalid in provenance and shares the `maxProbeRetries` allowance. A looping run in the bundled bank's corpus (`gpt-5.6-luna` training run 2) cycles through 32 values; it remains in the bundled bank until the next full update.
 
 ### Fixed

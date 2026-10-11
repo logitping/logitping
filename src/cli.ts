@@ -280,6 +280,8 @@ export async function main(argv = process.argv): Promise<void> {
     process.on('SIGTERM', abort);
     const spinner = ora({ text: 'Running fingerprint probes…', stream: process.stderr, isEnabled: !!process.stderr.isTTY && !options.json && !options.stream });
     spinner.start();
+    // Streamed text starts a new line at each stage and pooled request.
+    let streamed: string | undefined;
     try {
       const result = await fingerprint(transport, {
         ...(bank ? { bank } : {}), signal: controller.signal, timeoutMs: options.timeout,
@@ -289,7 +291,13 @@ export async function main(argv = process.argv): Promise<void> {
         ...(options.maxTokens !== undefined ? { maxTokens: options.maxTokens } : {}),
         ...(options.language ? { language: options.language as Language } : {}),
         ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-        onText: (text) => { if (options.stream) process.stderr.write(safeText(text)); },
+        onText: (text, stage, request) => {
+          if (!options.stream) return;
+          const part = `${stage} ${request ?? ''}`;
+          if (streamed !== undefined && part !== streamed) process.stderr.write('\n');
+          streamed = part;
+          process.stderr.write(safeText(text));
+        },
         onProgress: (samples) => { spinner.text = `Collected ${samples} integers…`; },
       });
       spinner.stop();

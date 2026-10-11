@@ -29,7 +29,7 @@ Errors that callers may want to handle are `LogitpingError` instances with a sta
 
 ## Experimental pooled probe
 
-`pooledBank()` resolves to the bundled pooled bank: 8 requests of 64 integers, scored as a prediction set (see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1)). Pass it as `bank`: `fingerprint(transport, { bank: await pooledBank(), maxTokens: 4096 })`. A single-model set returns `HEURISTIC_MATCH`, with the candidate in `model` and `confidence: null`. Two or more return `INCONCLUSIVE`, and none returns `UNKNOWN_MODEL`. `candidates` lists the set and `requests` the requests sent. An unenrolled model from the same vendor as an enrolled one can produce a single-model set. `createPooledBank(input)` builds a pooled bank from the same enrollment input as `createFingerprintBank`, plus `requestsPerProbe`.
+`pooledBank()` resolves to the bundled pooled bank: 8 requests of 64 integers, scored as a prediction set (see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1)). Pass it as `bank`: `fingerprint(transport, { bank: await pooledBank(), maxTokens: 4096 })`. A single-model set returns `HEURISTIC_MATCH`, with the candidate in `model` and `confidence: null`. Two or more return `INCONCLUSIVE`, and none returns `UNKNOWN_MODEL`. `candidates` lists the set and `requests` the requests sent; `onText` receives the request number, from 1, as its third argument. An unenrolled model from the same vendor as an enrolled one can produce a single-model set. `createPooledBank(input)` builds a pooled bank from the same enrollment input as `createFingerprintBank`, plus `requestsPerProbe`.
 
 ## Custom transports
 

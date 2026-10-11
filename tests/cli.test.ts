@@ -360,6 +360,13 @@ describe('CLI bank selection', () => {
     expect(stderr).not.toContain('\u202e');
   });
 
+  it('streams the tokenizer reply and the integers on separate lines', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => sse(String(init?.body).includes('tokenizer') ? 'segments' : '17 '.repeat(128)));
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--tokenizer', '--stream', '--json']);
+    expect(stderr).toContain(`segments\n${'17 '.repeat(128)}\n`);
+  });
+
   it('escapes terminal controls and bidirectional overrides in JSON output without losing them', async () => {
     const response = 'a‮b⁦c\u009b31md\u007fe';
     vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
@@ -433,6 +440,15 @@ describe('CLI bank selection', () => {
     expect(stdout).toContain('256/256 integers in 4 requests');
     expect(stdout).toContain('fit pass · margin pass');
     expect(process.exitCode).toBe(2);
+  });
+
+  it('streams each pooled reply on its own line', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(bankLoader, 'pooledBank').mockResolvedValue(openEnvelopes(syntheticPooledBank()));
+    lowRangeEndpoint();
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--pooled', '--stream', '--json']);
+    // ora prints its text once when the spinner is disabled.
+    expect(stderr).toBe(`- Running fingerprint probes…\n${Array.from({ length: 4 }, (_, run) => `${syntheticRun(1, 120, run).join(' ')} `).join('\n')}\n`);
   });
 
   it('rejects --pooled together with --bank before any request', async () => {

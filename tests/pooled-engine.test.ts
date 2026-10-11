@@ -37,6 +37,14 @@ describe('pooled probes', () => {
     expect(result.reason).toContain(reason);
   });
 
+  it('numbers the streamed text of each request', async () => {
+    const texts: [string, string, number | undefined][] = [];
+    await fingerprint(new SequenceTransport(lowReplies()), {
+      bank: openEnvelopes(syntheticPooledBank()), onText: (text, stage, request) => { texts.push([text, stage, request]); },
+    });
+    expect(texts).toEqual(lowReplies().map(([text], index) => [text, 'integers', index + 1]));
+  });
+
   it('drops a model whose envelope rejects any response', async () => {
     const bank = forceCutoffs(openEnvelopes(syntheticPooledBank()), [true, true, true]);
     bank.models[2]!.profiles[0]!.maxHellinger = 1e-9;

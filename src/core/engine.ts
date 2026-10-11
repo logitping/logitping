@@ -242,7 +242,7 @@ async function collectPooled(
     try {
       const offset = index * plan.count;
       const { samples } = await collectIntegers(transport, bank, plan, child, { ...request, signal: child.signal },
-        { ...options, onProgress: (count) => options.onProgress?.(offset + count) });
+        { ...options, onText: (text, stage) => options.onText?.(text, stage, index + 1), onProgress: (count) => options.onProgress?.(offset + count) });
       scope.signal.throwIfAborted();
       if (samples.length < plan.count) return { responses, short: samples };
       // Independent replies practically never coincide; a repeat means caching, replay, or deterministic sampling.

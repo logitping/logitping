@@ -33,7 +33,7 @@ lping --driver codex --allow-transport-mismatch
 # Collect data without early stopping; JSON includes the parsed samples
 lping --driver claude --no-early-stop --samples 512 --json > run.local.json
 
-# Stream incoming model text to stderr; JSON stays on stdout
+# Stream incoming model text to stderr, a new line for each stage and pooled request; JSON stays on stdout
 lping --driver claude --stream --json
 ```
 

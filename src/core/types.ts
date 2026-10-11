@@ -130,6 +130,7 @@ export interface EngineOptions {
   tokenizerProbe?: boolean;
   earlyStopping?: boolean;
   signal?: AbortSignal;
-  onText?: (text: string, stage: 'tokenizer' | 'integers') => void;
+  /** Model text as it arrives; `request` numbers the integer requests of a pooled probe from 1. */
+  onText?: (text: string, stage: 'tokenizer' | 'integers', request?: number) => void;
   onProgress?: (samples: number) => void;
 }
