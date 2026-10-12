@@ -2161,7 +2161,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 ```markdown
 ## Experimental pooled probe (`pooled-sets-v1`)
 
-Some models answer the 512-integer probe with near-permutations, which use almost every value once. Their value histograms then carry little information: `gpt-6.1-sol` and its teacher `gpt-6-astra` were `INCONCLUSIVE` on every evaluated run. A pooled bank instead asks for several short replies, 8 requests of 64 integers, and scores what is left free in short replies: which values come first, which follow which, and when values recur.
+Some models answer the 512-integer probe with near-permutations, which use almost every value once. Their value histograms then carry little information: `gpt-6.1-sol` and `gpt-6-astra` were `INCONCLUSIVE` on every evaluated run. A pooled bank instead asks for several short replies, 8 requests of 64 integers, and scores what is left free in short replies: which values come first, which follow which, and when values recur.
 
 **Features.** Each reply contributes events to seven groups:
 
@@ -2207,7 +2207,7 @@ A model stays in the set when three things hold:
 **Limits.**
 
 - The set is calibrated for enrolled models.
-- An unenrolled model is often named as its closest enrolled relative from the same vendor, sometimes from another generation. The envelope gate removes few of these.
+- An unenrolled model is often named as the most similar enrolled model from the same vendor, sometimes from another generation. The envelope gate removes few of these.
 - See [bank status](bank.md#experimental-pooled-bank) for the measured rates.
 - Early stopping is not available in pooled mode.
 ```
@@ -2231,7 +2231,7 @@ Treat these as exploratory:
 - The pooled test was designed after the collection results were seen.
 - The 8-request samples are small: 9/65 has a 95% interval of about 7–24%.
 - The pooled mode did not meet the predeclared target of naming unenrolled models at most 10% of the time.
-- Unenrolled models were named as close relatives from the same vendor. In the pooled test, none was named as a model from another vendor.
+- Unenrolled models were named as similar models from the same vendor. In the pooled test, none was named as a model from another vendor.
 
 The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.
 ```
@@ -2243,7 +2243,7 @@ Add a section after the Quickstart's JSON excerpt and its explanation, before th
 ```markdown
 ### Experimental: pooled short requests
 
-`--pooled` sends 8 requests of 64 integers instead of one of 512. It costs about 0.72× as much, and it separates closely related models better: on the 2026-10-11 collection, it named `gpt-6.1-sol` or its teacher `gpt-6-astra` correctly in 6 of 10 probes, where the default probe was inconclusive in every run. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
+`--pooled` sends 8 requests of 64 integers instead of one of 512. It costs about 0.72× as much, and it separates models with similar outputs better: on the 2026-10-11 collection, it named `gpt-6.1-sol` or `gpt-6-astra` correctly in 6 of 10 probes, where the default probe was inconclusive in every run. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
 
     lping --endpoint https://openrouter.ai/api/v1 --model openai/gpt-6.1-sol --api-format responses --max-tokens 4096 --pooled --json
 ```

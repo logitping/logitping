@@ -128,6 +128,6 @@ Treat these as exploratory:
 - The pooled test was designed after the collection results were seen.
 - The 8-request samples are small: 9/65 has a 95% interval of about 7–24%.
 - The pooled mode did not meet the predeclared target of naming unenrolled models at most 10% of the time.
-- Unenrolled models were named as close relatives from the same vendor. In the pooled test, none was named as a model from another vendor.
+- Unenrolled models were named as similar models from the same vendor. In the pooled test, none was named as a model from another vendor.
 
 The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.

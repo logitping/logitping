@@ -4,7 +4,7 @@ Status: approved in conversation on 2026-10-11, pending written-spec review.
 
 ## Context
 
-The bundled engine sends one 512-integer request. `openai/gpt-6.1-sol` and its teacher `gpt-6-astra` both answer with near-permutations: about 354 distinct values per 512 integers. Their value histograms are therefore almost flat. On fresh data (40 runs per model, collected 2026-10-11 through OpenRouter), the current engine returned `INCONCLUSIVE` for all 80 of their runs.
+The bundled engine sends one 512-integer request. `openai/gpt-6.1-sol` and `gpt-6-astra` both answer with near-permutations: about 354 distinct values per 512 integers. Their value histograms are therefore almost flat. On fresh data (40 runs per model, collected 2026-10-11 through OpenRouter), the current engine returned `INCONCLUSIVE` for all 80 of their runs.
 
 The offline evaluation compared several request formats and scoring methods. It used leave-group-out testing, and also the case where the model is unenrolled (left out of the bank):
 
@@ -14,7 +14,7 @@ The offline evaluation compared several request formats and scoring methods. It 
 | 8 × 64 | Current engine, pooled | 0/65 | 24/65 (37%) | 3/10 |
 | 8 × 64 | Prediction sets (C4) + per-response OOD gate | 1/65 | 9/65 (14%) | 6/10 |
 
-Pooled short requests with prediction sets separate the pair far better, at about 0.72× the cost of one 512-integer request. They did not meet the predeclared open-set target (at most 10% of unenrolled models named wrongly). An unenrolled model is named as its closest enrolled relative from the same vendor, often from another generation. The gate test was designed after the fresh-data results were seen, so it is exploratory. At 8 requests the samples are small: 9/65 has a 95% interval of roughly 7–24%.
+Pooled short requests with prediction sets separate the pair far better, at about 0.72× the cost of one 512-integer request. They did not meet the predeclared open-set target (at most 10% of unenrolled models named wrongly). An unenrolled model is named as the most similar enrolled model from the same vendor, often from another generation. The gate test was designed after the fresh-data results were seen, so it is exploratory. At 8 requests the samples are small: 9/65 has a 95% interval of roughly 7–24%.
 
 The method therefore ships as an **opt-in experimental mode**. The default probe and bundled bank are unchanged.
 
@@ -258,6 +258,6 @@ New fields:
 
 ## Risks
 
-- **Unenrolled relatives.** An unenrolled model from the same vendor is named 14–21% of the time in exploratory testing, and the samples are small. Mitigations: the `HEURISTIC_MATCH` status, exit code 2, warnings and documentation.
+- **Unenrolled models from the same vendor.** An unenrolled model from the same vendor is named 14–21% of the time in exploratory testing, and the samples are small. Mitigations: the `HEURISTIC_MATCH` status, exit code 2, warnings and documentation.
 - **Distribution shift.** The evidence comes from one collection day and one gateway, OpenRouter, without streaming. The CLI streams, and transfer between those modes has not been evaluated; this caveat is inherited from the current bank.
 - **Cost.** A pooled probe sends 8 requests. It costs about 0.72× a 512-integer probe, but takes 8 round trips (about 25–60 s measured).

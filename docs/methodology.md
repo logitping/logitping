@@ -24,7 +24,7 @@ With `K` fixed positive categorical hypotheses, the sequential threshold is `log
 
 ## Experimental pooled probe (`pooled-sets-v1`)
 
-Some models answer the 512-integer probe with near-permutations, which use almost every value once. Their value histograms then carry little information: `gpt-6.1-sol` and its teacher `gpt-6-astra` were `INCONCLUSIVE` on every evaluated run. A pooled bank instead asks for several short replies, 8 requests of 64 integers, and scores what is left free in short replies: which values come first, which follow which, and when values recur.
+Some models answer the 512-integer probe with near-permutations, which use almost every value once. Their value histograms then carry little information: `gpt-6.1-sol` and `gpt-6-astra` were `INCONCLUSIVE` on every evaluated run. A pooled bank instead asks for several short replies, 8 requests of 64 integers, and scores what is left free in short replies: which values come first, which follow which, and when values recur.
 
 **Features.** Each reply contributes events to seven groups:
 
@@ -70,6 +70,6 @@ A model stays in the set when three things hold:
 **Limits.**
 
 - The set is calibrated for enrolled models.
-- An unenrolled model is often named as its closest enrolled relative from the same vendor, sometimes from another generation. The envelope gate removes few of these.
+- An unenrolled model is often named as the most similar enrolled model from the same vendor, sometimes from another generation. The envelope gate removes few of these.
 - See [bank status](bank.md#experimental-pooled-bank) for the measured rates.
 - Early stopping is not available in pooled mode.

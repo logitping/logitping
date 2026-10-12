@@ -71,7 +71,7 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 
 ### Experimental: pooled short requests
 
-`--pooled` sends 8 requests of 64 integers instead of one of 512. It costs about 0.72× as much, and it separates closely related models better: on the 2026-10-11 collection, it named `gpt-6.1-sol` or its teacher `gpt-6-astra` correctly in 6 of 10 probes, where the default probe was inconclusive in every run. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
+`--pooled` sends 8 requests of 64 integers instead of one of 512. It costs about 0.72× as much, and it separates models with similar outputs better: on the 2026-10-11 collection, it named `gpt-6.1-sol` or `gpt-6-astra` correctly in 6 of 10 probes, where the default probe was inconclusive in every run. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
 
     lping --endpoint https://openrouter.ai/api/v1 --model openai/gpt-6.1-sol --api-format responses --max-tokens 4096 --pooled --json
 
