@@ -4,7 +4,7 @@
 
 ## Collection snapshot
 
-This describes the bank included in the experimental `0.2.0` npm release, unchanged since `0.1.0`. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
+This describes the bank included in the experimental `0.2.1` npm release, unchanged since `0.1.0`. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
 
 | Setting | Value |
 | --- | --- |

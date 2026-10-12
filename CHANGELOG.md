@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 — 2026-10-12
+
+Documentation-only release: no code, bank, or behavior changes from 0.2.0.
+
+### Documentation
+
+- The README and methodology no longer describe a lineage between `gpt-6.1-sol` and `gpt-6-astra`, which no evidence supports. Both models are now described only by their measured outputs.
+- The README, methodology, and bank notes say "similar models from the same vendor" where they said "close relatives", which is all the measurements show.
+
 ## 0.2.0 — 2026-10-12
 
 ### Added

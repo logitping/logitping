@@ -90,7 +90,7 @@ Do not commit credentials or private collection configuration. Keep checkpoints 
 
 ## Release review
 
-The current experimental release is `0.2.0`. Before each new release:
+The current experimental release is `0.2.1`. Before each new release:
 
 1. Run `npm ci`, `npm run check`, and `npm run test:package` on supported Node.js versions, and review `npm audit` results.
 2. Prepare the npm installation instructions, current bank description, limitations, version, release date, and [release notes](CHANGELOG.md) before the final pack. Check the private reporting channel described in [SECURITY.md](SECURITY.md), and keep its availability statement accurate.
