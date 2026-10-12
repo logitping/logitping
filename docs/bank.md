@@ -131,3 +131,17 @@ Treat these as exploratory:
 - Unenrolled models were named as similar models from the same vendor. In the pooled test, none was named as a model from another vendor.
 
 The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.
+
+Most pooled errors involve two pairs of models. To locate them, the pooled test was repeated with 10 different groupings of each model's 40 runs into 5 probes of 8, giving 50 probes per model. The first grouping is the one in the table above.
+
+| Tested model | Bank | Named instead | Probes |
+| --- | --- | --- | --- |
+| `gpt-6-astra` | Without `gpt-6-astra` | `gpt-6.1-sol` | 48/50 |
+| `gpt-6-luna` | Without `gpt-6-luna` | `gpt-6-sol` | 26/50 |
+| Each other model | Without the tested model | A same-vendor model | 12/550 (2.2%) |
+| `gpt-6-astra` | All 13 models | `gpt-6.1-sol` | 9/50 |
+| Each other model | All 13 models | Any other model | 0/600 |
+
+The confusion between `gpt-6-astra` and `gpt-6.1-sol` runs one way. With both models enrolled, `gpt-6-astra` was named as `gpt-6.1-sol` in 9 of 50 probes; `gpt-6.1-sol` was never named as `gpt-6-astra`. Removed from the bank, `gpt-6.1-sol` was named as `gpt-6-astra` in 2 of 50 probes. A `gpt-6.1-sol` result therefore does not rule out `gpt-6-astra`, while a `gpt-6-astra` result was not observed for `gpt-6.1-sol`.
+
+The groupings reuse the collection that the bank was built from, so these counts show where errors concentrate, not how often they occur on new data. Three offline changes to the pooled test were tried on the same groupings: a novelty test on the pooled score, a fit test for each feature group, and a minimum lead over the second-best model. Those that lowered the unenrolled rate below 10%, to 7.5–9.5%, also cut correct single-model results for enrolled models from 73% to 34–62%. None was adopted.
