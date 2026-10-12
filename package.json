@@ -31,8 +31,8 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "logitping": "./dist/bin/logitping.js",
-    "lping": "./dist/bin/logitping.js"
+    "logitping": "dist/bin/logitping.js",
+    "lping": "dist/bin/logitping.js"
   },
   "files": [
     "dist",
