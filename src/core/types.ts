@@ -55,7 +55,7 @@ export interface FingerprintBank {
      * Banks are specific to the transport and its environment. `api` marks references
      * collected through mixed HTTP API formats; it calibrates both HTTP providers.
      */
-    transport: 'api' | 'openai' | 'anthropic' | 'claude' | 'codex';
+    transport: 'api' | 'openai' | 'anthropic' | 'claude' | 'codex' | 'antigravity';
     /** Pooled banks (schema version 2): requests per probe, each of `targetSamples` integers. */
     requestsPerProbe?: number;
     scoring?: typeof POOLED_SCORING;

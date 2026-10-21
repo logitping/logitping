@@ -27,6 +27,7 @@ export interface BankUpdatePlan {
 export const PROVIDER_LABELS: Readonly<Record<GatewayProvider, string>> = {
   cloudflare: 'Cloudflare AI Gateway REST',
   openrouter: 'OpenRouter API',
+  google: 'Google AI Studio Gemini API',
 };
 
 const PROVIDERS = Object.keys(PROVIDER_LABELS) as GatewayProvider[];

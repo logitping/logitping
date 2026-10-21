@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Antigravity CLI driver (`--driver antigravity`; library: `AntigravityDriver`), which runs `agy` headless over stream-json with the prompt on stdin. `agy` cannot turn its tools off, so the driver refuses to sample unless `agy` starts in `request-review` permission mode, and it terminates `agy` at the first step that is not a response. Read-only tools can still start before that, so every Antigravity result carries the same tool warning as Codex. Banks accept `protocol.transport: "antigravity"`. See the [transport limitations](docs/transports.md).
+- The bank updater can request models directly from Google AI Studio (`"provider": "google"`, key in `GEMINI_API_KEY`) through Google's OpenAI-compatible Chat Completions endpoint, with no relay in between. Provenance records `cache=none` for these models, since there is no response cache to bypass.
+- `CliDriver` subclasses can override `executable()`, the default command and the name used in messages, and `stdin()`, the text written for a prompt.
+
+### Bundled reference bank
+
+- Enrolls `gemini-3.8-flash` (family `gemini`), collected directly from Google AI Studio on **2026-10-21**: 10 training and 5 threshold-calibration runs of 512 English integers, with an 8,192-token output budget. The 13 earlier references are unchanged, and replaying their stored runs gives the same results as before. The pooled bank does not include Gemini. See [bank documentation](docs/bank.md).
+
+### Documentation
+
+- The bank notes show where pooled-probe errors concentrate: with both enrolled, `gpt-6-astra` was sometimes named as `gpt-6.1-sol`, never the reverse.
+- The CLI reference shows how to probe Google's OpenAI-compatible Gemini API, which needs its full Chat Completions URL.
+
 ## 0.2.1 — 2026-10-12
 
 Documentation-only release: no code, bank, or behavior changes from 0.2.0.

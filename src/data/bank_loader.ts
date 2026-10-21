@@ -8,7 +8,7 @@ import { MIN_SEQUENTIAL_SAMPLES } from '../math/sprt.js';
 import { readBoundedText } from '../util/fs.js';
 import { isIntegerInRange as integer, isRecord, MAX_PAYLOAD_BYTES, MAX_SAMPLES, MIN_SAMPLES, MODEL_ID_PATTERN } from '../util/validate.js';
 
-export const BANK_TRANSPORTS: readonly FingerprintBank['protocol']['transport'][] = ['api', 'openai', 'anthropic', 'claude', 'codex'];
+export const BANK_TRANSPORTS: readonly FingerprintBank['protocol']['transport'][] = ['api', 'openai', 'anthropic', 'claude', 'codex', 'antigravity'];
 
 const invalidBank = (message: string) => new LogitpingError('INVALID_BANK', message);
 

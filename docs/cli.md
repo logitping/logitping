@@ -11,10 +11,14 @@ lping
 # Reuse an existing CLI login
 lping --driver claude
 lping --driver codex
+lping --driver antigravity --model gemini-3.8-flash-low   # runs agy; `agy models` lists the models
 
 # OpenAI-compatible API: root URL, /v1, or full /v1/chat/completions URL
 export LOGITPING_API_KEY='your-key'
 lping --endpoint https://api.example.com/v1 --model claimed-model
+
+# Google's OpenAI-compatible Gemini API has no /v1 path segment: pass its full URL
+lping --endpoint https://generativelanguage.googleapis.com/v1beta/openai/chat/completions --model gemini-3.8-flash --max-tokens 8192
 
 # Anthropic Messages API
 lping --provider anthropic --endpoint https://api.anthropic.com --model claimed-model
@@ -39,9 +43,9 @@ lping --driver claude --stream --json
 
 API keys are read in this order: `--key` or `--key-file`, `LOGITPING_API_KEY`, then `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`. The vendor variables are sent only to the vendor's own host (`api.openai.com` or `api.anthropic.com`) over HTTPS, even with `--allow-insecure-http`, and never to a third-party endpoint under test; use `LOGITPING_API_KEY`, `--key-file`, or `--key` for any other endpoint. Prefer `--key-file <path>` (a file or pipe holding only the key, at most 4 KiB, such as `--key-file <(pass show api-key)`; surrounding whitespace is trimmed) or environment variables over `--key`, which may appear in shell history and process listings. Credential options are not serialized into bank files or ordinary result fields. Review raw tokenizer responses, streamed text, and custom-transport output before sharing; arbitrary provider text is not guaranteed to be free of secrets. No key is required for an unauthenticated local endpoint.
 
-By default, without `--bank`, the bundled bank is used for identification only when its transport matches the selected connection. The bundled OpenRouter bank has transport `api`: it was collected through non-streaming Chat Completions, Responses, and Anthropic Messages. The engine permits comparisons with both `--provider openai` and `--provider anthropic`; transfer across providers, streaming modes, and API formats still needs independent evaluation. See the [current bank](bank.md). `lping --driver codex` and `lping --driver claude` collect samples and return `UNCALIBRATED` (exit code 2), with no model ranking or confidence. Their output explains the missing calibration; this is a completed collection, not a transport error. The same behavior applies to the library when `fingerprint()` is called without an explicit bank.
+By default, without `--bank`, the bundled bank is used for identification only when its transport matches the selected connection. The bundled bank has transport `api`: it was collected without streaming through Chat Completions, Responses, and Anthropic Messages, from OpenRouter and Google AI Studio. The engine permits comparisons with both `--provider openai` and `--provider anthropic`; transfer across providers, streaming modes, and API formats still needs independent evaluation. See the [current bank](bank.md). `lping --driver codex`, `lping --driver claude`, and `lping --driver antigravity` collect samples and return `UNCALIBRATED` (exit code 2), with no model ranking or confidence. Their output explains the missing calibration; this is a completed collection, not a transport error. The same behavior applies to the library when `fingerprint()` is called without an explicit bank.
 
-To identify models through Codex under a matching calibration, supply a bank enrolled from independent Codex driver runs with `protocol.transport: "codex"` and `temperature: null`; see [enrollment](bank-maintenance.md#create-a-measured-bank). Local CLI prompts and settings can change the output distribution, so API measurements do not establish calibration for those drivers. By default, an explicit `--bank` must match the transport, language, sample budget, and temperature. Mismatch errors report the differing values before starting a probe.
+To identify models through Codex under a matching calibration, supply a bank enrolled from independent Codex driver runs with `protocol.transport: "codex"` and `temperature: null` (`"antigravity"` for the Antigravity driver); see [enrollment](bank-maintenance.md#create-a-measured-bank). Local CLI prompts and settings can change the output distribution, so API measurements do not establish calibration for those drivers. By default, an explicit `--bank` must match the transport, language, sample budget, and temperature. Mismatch errors report the differing values before starting a probe.
 
 Use `--allow-transport-mismatch` to opt into comparing Codex output against API reference fingerprints. It works with the bundled bank or an explicit `--bank` and also supports other transport pairs. Only the transport restriction is relaxed: language, sample budget, and temperature must still match; CLI drivers require a bank with `temperature: null`. Collection requires the full requested sample count and disables early stopping, even if the reference bank was sequentially validated. The bank itself is unchanged.
 

@@ -12,6 +12,7 @@ import type { Language, ProbeResult, ProbeTransport, Provider } from './core/typ
 import { loadBank, pooledBank } from './data/bank_loader.js';
 import { createFingerprintBank, type EnrollmentInput } from './data/enrollment.js';
 import { createPooledBank, type PooledEnrollmentInput } from './data/pooled_enrollment.js';
+import { AntigravityDriver } from './drivers/antigravity_driver.js';
 import { ClaudeDriver } from './drivers/claude_driver.js';
 import { CodexDriver } from './drivers/codex_driver.js';
 import { readBoundedText } from './util/fs.js';
@@ -65,6 +66,7 @@ async function interactive(options: Options): Promise<void> {
   const mode = answer(await prompts.select({ message: 'Which connection should be tested?', options: [
     { value: 'claude', label: 'Claude Code', hint: 'uses your local login' },
     { value: 'codex', label: 'Codex', hint: 'uses your local login' },
+    { value: 'antigravity', label: 'Antigravity', hint: 'runs agy with your local login' },
     { value: 'api', label: 'API endpoint' },
   ] }));
   if (mode !== 'api') options.driver = mode;
@@ -90,6 +92,9 @@ async function interactive(options: Options): Promise<void> {
     ] }));
   }
 }
+
+/** Local CLI drivers by --driver name. */
+const DRIVERS = { claude: ClaudeDriver, codex: CodexDriver, antigravity: AntigravityDriver } as const;
 
 const VENDOR_KEYS = {
   openai: { variable: 'OPENAI_API_KEY', host: 'api.openai.com' },
@@ -180,13 +185,13 @@ export async function main(argv = process.argv): Promise<void> {
   const jsonRequested = argv.slice(2).includes('--json');
   const program = new Command()
     .name('logitping')
-    .description('Probe LLM behavior via API, Claude Code, or Codex. Alias: lping.')
+    .description('Probe LLM behavior via API, Claude Code, Codex, or Antigravity. Alias: lping.')
     .version(pkg.version)
     // Throw instead of calling process.exit(): --json failures stay JSON, and main() always returns.
     // Set before .command() so that subcommands inherit both settings.
     .exitOverride()
     .configureOutput({ outputError: (text, write) => { if (!jsonRequested) write(text); } })
-    .option('--driver <name>', 'local CLI driver: claude or codex')
+    .option('--driver <name>', 'local CLI driver: claude, codex, or antigravity (runs agy)')
     .option('--endpoint <url>', 'API base URL or complete completion endpoint')
     .option('--provider <name>', 'API format: openai or anthropic', 'openai')
     .option('--key <key>', 'API key; visible in process listings and shell history (prefer --key-file or LOGITPING_API_KEY)')
@@ -231,13 +236,13 @@ export async function main(argv = process.argv): Promise<void> {
     if (options.key !== undefined && options.keyFile !== undefined) throw new Error('Use either --key or --key-file');
     if (!options.driver && !options.endpoint) {
       if (!process.stdin.isTTY || !process.stdout.isTTY || !options.interactive || options.json) {
-        throw new Error('Choose --driver claude, --driver codex, or --endpoint <url> --model <id>');
+        throw new Error('Choose --driver claude, --driver codex, --driver antigravity, or --endpoint <url> --model <id>');
       }
       await interactive(options);
     }
     if (options.pooled && options.bank) throw new Error('Choose either --pooled or --bank');
     if (options.driver && options.endpoint) throw new Error('Choose either --driver or --endpoint');
-    if (options.driver && !['claude', 'codex'].includes(options.driver)) throw new Error('Driver must be claude or codex');
+    if (options.driver && !Object.hasOwn(DRIVERS, options.driver)) throw new Error('Driver must be claude, codex, or antigravity');
     if (!['openai', 'anthropic'].includes(options.provider)) throw new Error('Provider must be openai or anthropic');
     if (options.language && !['en', 'zh'].includes(options.language)) throw new Error('Language must be en or zh');
     if (options.apiFormat && !['chat-completions', 'responses'].includes(options.apiFormat)) throw new Error('API format must be chat-completions or responses');
@@ -251,7 +256,7 @@ export async function main(argv = process.argv): Promise<void> {
     let transport: ProbeTransport;
     if (options.driver) {
       const driverOptions = options.model ? { model: options.model } : {};
-      transport = options.driver === 'claude' ? new ClaudeDriver(driverOptions) : new CodexDriver(driverOptions);
+      transport = new DRIVERS[options.driver as keyof typeof DRIVERS](driverOptions);
     } else {
       if (!options.model) throw new Error('--model is required for API mode');
       // Stored as the --key value so error redaction covers it.

@@ -187,6 +187,13 @@ describe('classification pipeline', () => {
       .rejects.toThrow(`transport=${name} (bank: openai)`);
     expect(transport.requests).toHaveLength(0);
   });
+  it('identifies through Antigravity when an explicitly enrolled Antigravity bank matches', async () => {
+    const bank = syntheticBank();
+    bank.protocol.transport = 'antigravity';
+    const result = await fingerprint(new MemoryTransport(['17 '.repeat(128)], 'token', 'antigravity'), { bank, tokenizerProbe: false });
+    expect(result.status).toBe('IDENTIFIED');
+    expect(result.model).toBe('synthetic-17');
+  });
   it('identifies through Codex when an explicitly enrolled Codex bank matches', async () => {
     const bank = syntheticBank();
     bank.protocol.transport = 'codex';
@@ -397,5 +404,18 @@ describe('probe planning', () => {
     const warnings = (name: string) => planProbe({ name, granularity: 'message' }, uncalibratedBank(), true).warnings.join(' ');
     expect(warnings('codex')).toContain('Codex can start a tool before the probe stops it');
     expect(warnings('claude')).not.toContain('Codex can start a tool');
+  });
+  it('warns on every Antigravity probe that a tool can start before the probe stops it', () => {
+    // agy has no flag that turns its tools off, and runs read-only tools without a permission prompt.
+    const warnings = (name: string) => planProbe({ name, granularity: 'token' }, uncalibratedBank(), true).warnings.join(' ');
+    expect(warnings('antigravity')).toContain('Antigravity can start a tool before the probe stops it; probe Antigravity only through backends you would trust with read access to this machine.');
+    expect(warnings('antigravity')).not.toContain('Codex');
+    expect(warnings('claude')).not.toContain('can start a tool');
+  });
+  it('refuses a sampling temperature for Antigravity, which does not expose one', () => {
+    const bank = syntheticBank();
+    bank.protocol.transport = 'antigravity';
+    bank.protocol.temperature = 0.7;
+    expect(() => planProbe({ name: 'antigravity', granularity: 'token' }, bank, true)).toThrow('CLI drivers do not expose a sampling temperature');
   });
 });

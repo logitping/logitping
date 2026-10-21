@@ -105,6 +105,13 @@
       "model": "anthropic/claude-fable-5",
       "apiFormat": "messages",
       "maxTokens": 8192
+    },
+    {
+      "id": "gemini-3.8-flash",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-3.8-flash",
+      "maxTokens": 8192
     }
   ]
 }

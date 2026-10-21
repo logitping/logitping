@@ -1,11 +1,31 @@
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { AntigravityDriver, AntigravityEventDecoder } from '../src/drivers/antigravity_driver.js';
 import { CliDriver, type DriverOptions } from '../src/drivers/base.js';
 import { ClaudeDriver, ClaudeEventDecoder } from '../src/drivers/claude_driver.js';
 import { CodexDriver, CodexEventDecoder } from '../src/drivers/codex_driver.js';
+
+/** Events in the shape agy 1.4.2 emits with `--output-format stream-json`. */
+const conversation = '9d16bde6-7312-4229-b357-b6fbfd26bfa6';
+const agyInit = (fields: Record<string, unknown> = {}) => ({
+  event: 'init', conversation_id: conversation,
+  init: { model: 'gemini-3.8-flash-low', cwd: '/tmp/logitping-x', tools: ['run_command', 'view_file'], permission_mode: 'request-review', ...fields },
+});
+const agyStep = (fields: Record<string, unknown>) => ({
+  event: 'step_update', step_update: { conversation_id: conversation, step_index: 1, state: 'ACTIVE', step_type: 'agent_response', ...fields },
+});
+const agyResult = (fields: Record<string, unknown> = {}) => ({
+  event: 'result', result: { conversation_id: conversation, status: 'SUCCESS', response: '17 355 42\n', num_turns: 1, ...fields },
+});
+/** A decoder that has accepted the init event. */
+const startedAgy = () => {
+  const decoder = new AntigravityEventDecoder();
+  decoder.decode(agyInit());
+  return decoder;
+};
 
 describe('CLI event decoders', () => {
   it('takes Claude partial text exactly once and excludes metadata and nested agents', () => {
@@ -55,9 +75,60 @@ describe('CLI event decoders', () => {
       expect(() => new CodexEventDecoder().decode({ type: phase, item: { type, text: '42' } })).toThrow('Codex attempted a tool action during the probe');
     }
   });
+  it('takes Antigravity response deltas exactly once and excludes metadata', () => {
+    const decoder = new AntigravityEventDecoder();
+    expect(decoder.decode(agyInit())).toEqual([]);
+    expect(decoder.decode(agyStep({ step_index: 0, state: 'DONE', step_type: 'user_input' }))).toEqual([]);
+    expect(decoder.decode(agyStep({ text_delta: '17' }))).toEqual(['17']);
+    expect(decoder.decode(agyStep({ text_delta: ' 355 42' }))).toEqual([' 355 42']);
+    expect(decoder.decode(agyStep({ state: 'DONE', text_delta: '\n', usage: { output_tokens: 9, thinking_tokens: 0 } }))).toEqual(['\n']);
+    expect(decoder.decode(agyResult())).toEqual([]);
+    expect(() => decoder.finish()).not.toThrow();
+  });
+  it('falls back to the Antigravity result text and catches errors and truncation', () => {
+    const decoder = startedAgy();
+    // A response step that only reasoned streams no text.
+    expect(decoder.decode(agyStep({ state: 'DONE', usage: { output_tokens: 869, thinking_tokens: 750 } }))).toEqual([]);
+    expect(decoder.decode(agyResult({ response: '355' }))).toEqual(['355']);
+    expect(() => new AntigravityEventDecoder().finish()).toThrow('Antigravity output ended before its result event');
+    expect(() => startedAgy().decode(agyResult({ status: 'ERROR', response: '', error: 'quota' }))).toThrow('Antigravity reported an unsuccessful probe');
+    expect(() => startedAgy().decode(agyStep({ state: 'ERROR' }))).toThrow('Antigravity reported an unsuccessful probe');
+    // agy reports a rejected prompt in a result without an init event.
+    expect(() => new AntigravityEventDecoder().decode(agyResult({ status: 'ERROR', response: '' }))).toThrow('Antigravity reported an unsuccessful probe');
+  });
+  it('ignores Antigravity text from another conversation', () => {
+    const decoder = startedAgy();
+    const nested = agyStep({ text_delta: '42' });
+    nested.step_update.conversation_id = 'nested-conversation';
+    expect(decoder.decode(nested)).toEqual([]);
+    expect(decoder.decode(agyStep({ text_delta: '17' }))).toEqual(['17']);
+  });
+  it.each([
+    ['a command', { step_type: 'tool', tool_name: 'run_command', tool_info: { name: 'run_command', parameters: { CommandLine: 'ls -la' } } }],
+    ['a file read', { step_type: 'tool', tool_name: 'view_file', tool_info: { name: 'view_file', parameters: { AbsolutePath: '/tmp/note.txt' } } }],
+    ['an MCP call', { step_type: 'tool', tool_name: 'call_mcp_tool' }],
+    ['a step of an unknown type', { step_type: 'browser_action' }],
+    ['a step without a type', { step_type: undefined }],
+  ])('aborts as soon as Antigravity starts %s', (_label, fields) => {
+    // Tool steps report ACTIVE before they run; read-only tools then finish without a permission prompt.
+    expect(() => startedAgy().decode(agyStep({ step_index: 2, ...fields }))).toThrow(expect.objectContaining({
+      code: 'CLI_FAILED', message: 'Antigravity attempted a tool action during the probe; aborted',
+    }));
+  });
+  it('aborts when Antigravity reports a denied tool action', () => {
+    const denied = agyResult({ response: '', denied_actions: [{ action: 'command', display_name: 'RunCommand' }] });
+    expect(() => startedAgy().decode(denied)).toThrow('Antigravity attempted a tool action during the probe; aborted');
+  });
+  it.each(['bypass-permissions', 'auto', undefined])('refuses to sample Antigravity in permission mode %s', (mode) => {
+    // Only request-review denies tools that need a permission prompt in headless mode.
+    expect(() => new AntigravityEventDecoder().decode(agyInit({ permission_mode: mode }))).toThrow(expect.objectContaining({ code: 'CLI_FAILED', message: expect.stringContaining('request-review') }));
+  });
+  it('refuses Antigravity steps that arrive before its init event', () => {
+    expect(() => new AntigravityEventDecoder().decode(agyStep({ text_delta: '17' }))).toThrow('Antigravity output did not start with its init event');
+  });
   /** A caller mistake: a TypeError from the model check, before any process starts. */
   const rejectsModel = (model: string) => {
-    for (const Driver of [ClaudeDriver, CodexDriver]) {
+    for (const Driver of [ClaudeDriver, CodexDriver, AntigravityDriver]) {
       expect(() => new Driver({ model })).toThrow(TypeError);
       expect(() => new Driver({ model })).toThrow(/^CLI model must/);
     }
@@ -83,6 +154,17 @@ describe('CLI event decoders', () => {
     expect(new Claude().command()).toContain('--include-partial-messages');
     expect(new Codex().command()).toContain('read-only');
     expect(new Codex().granularity).toBe('message');
+  });
+  it('runs Antigravity headless over stream-json without auto-approving tools', () => {
+    class Agy extends AntigravityDriver { command() { return this.args(); } }
+    const args = new Agy({ model: 'gemini-3.8-flash-low' }).command();
+    for (const flag of ['--input-format', '--output-format']) expect(args[args.indexOf(flag) + 1]).toBe('stream-json');
+    expect(args).toEqual(expect.arrayContaining(['--sandbox', '--disable-slash-commands']));
+    // -p takes the prompt as an argument; the prompt goes to stdin instead.
+    for (const flag of ['-p', '--print', '--prompt', '--dangerously-skip-permissions', '--mode']) expect(args).not.toContain(flag);
+    expect(args.slice(-2)).toEqual(['--model', 'gemini-3.8-flash-low']);
+    expect(new Agy().command()).not.toContain('--model');
+    expect(new Agy().name).toBe('antigravity');
   });
   it('turns off Codex tool features with config overrides that unknown names cannot break', () => {
     class Codex extends CodexDriver { command() { return this.args(); } }
@@ -252,6 +334,55 @@ if (args[0] === 'mcp') {
     it('still reports a missing Codex executable as CLI_NOT_FOUND', async () => {
       await expect(new CodexDriver({ binary: join(directory, 'missing') }).stream({ prompt: 'test', maxTokens: 1 }).next())
         .rejects.toMatchObject({ code: 'CLI_NOT_FOUND' });
+    });
+  });
+
+  // Runs the real AntigravityDriver against an executable fake named agy: it replies with its
+  // argument list and standard input, or with FAKE_AGY=tool answers once and then starts a tool.
+  describe.skipIf(process.platform === 'win32')('Antigravity subprocess', () => {
+    let bin: string;
+    beforeAll(async () => {
+      bin = join(directory, 'agy-bin');
+      await mkdir(bin);
+      await writeFile(join(bin, 'agy'), `#!${process.execPath}
+const args = process.argv.slice(2);
+const send = event => process.stdout.write(JSON.stringify(event) + '\\n');
+const step = fields => send({ event: 'step_update', step_update: { conversation_id: 'c', step_index: 1, state: 'ACTIVE', step_type: 'agent_response', ...fields } });
+let input = '';
+process.stdin.on('data', chunk => { input += chunk; }).on('end', () => {
+  send({ event: 'init', conversation_id: 'c', init: { tools: ['view_file'], permission_mode: 'request-review' } });
+  if (process.env.FAKE_AGY === 'tool') {
+    step({ text_delta: String(process.pid) });
+    step({ step_index: 2, step_type: 'tool', tool_name: 'view_file', tool_info: { name: 'view_file', parameters: { AbsolutePath: '/etc/hosts' } } });
+    setInterval(() => {}, 100);
+    return;
+  }
+  step({ state: 'DONE', text_delta: JSON.stringify({ args, input }) });
+  send({ event: 'result', result: { conversation_id: 'c', status: 'SUCCESS', response: '' } });
+});
+`, { mode: 0o755 });
+    });
+    /** The default executable name, found on PATH like an installed agy. */
+    const agy = (mode = 'reply') => new AntigravityDriver({ env: { PATH: bin, FAKE_AGY: mode } });
+
+    it('starts agy from PATH and sends the prompt as one stream-json user message', async () => {
+      const prompt = 'Line one\n"quoted" \\ {"event":"user"}';
+      const texts: string[] = [];
+      for await (const text of agy().stream({ prompt, maxTokens: 10 })) texts.push(text);
+      const { args, input } = JSON.parse(texts.join('')) as { args: string[]; input: string };
+      expect(args[args.indexOf('--input-format') + 1]).toBe('stream-json');
+      expect(input.endsWith('\n')).toBe(true);
+      expect(input.trimEnd().split('\n').map((line) => JSON.parse(line))).toEqual([{ event: 'user', message: { content: prompt } }]);
+    });
+    it('kills agy when it starts a tool', async () => {
+      const stream = agy('tool').stream({ prompt: 'test', maxTokens: 10 });
+      const pid = Number((await stream.next()).value);
+      await expect(stream.next()).rejects.toMatchObject({ code: 'CLI_FAILED', message: expect.stringContaining('tool action') });
+      expect(() => process.kill(pid, 0)).toThrow();
+    });
+    it('names the agy executable when it is missing', async () => {
+      await expect(new AntigravityDriver({ env: { PATH: join(directory, 'empty') } }).stream({ prompt: 'test', maxTokens: 1 }).next())
+        .rejects.toMatchObject({ code: 'CLI_NOT_FOUND', message: expect.stringMatching(/^agy was not found on PATH/) });
     });
   });
 });

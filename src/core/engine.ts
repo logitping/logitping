@@ -14,6 +14,15 @@ import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelS
 type Classification = Pick<ProbeResult, 'status' | 'model' | 'confidence' | 'reason' | 'scores' | 'evaluatedSamples'>;
 type RequestOptions = Pick<ProbeRequest, 'timeoutMs' | 'temperature'> & { signal: AbortSignal };
 
+/** Local CLI drivers, which expose no sampling temperature. */
+const CLI_TRANSPORTS: ReadonlySet<string> = new Set(['claude', 'codex', 'antigravity']);
+
+/**
+ * CLI drivers whose tools cannot all be switched off: the driver aborts on the first tool
+ * event, but the tool can start before that abort.
+ */
+const RACING_TOOLS: ReadonlyMap<string, string> = new Map([['codex', 'Codex'], ['antigravity', 'Antigravity']]);
+
 /** Whether a probe transport may use a bank's calibration without an explicit opt-in. */
 export function transportCompatible(probe: string, bank: FingerprintBank['protocol']['transport']): boolean {
   return probe === bank || (bank === 'api' && (probe === 'openai' || probe === 'anthropic'));
@@ -74,7 +83,7 @@ export function planProbe(
   if (calibrated.length && mismatches.length) {
     throw new LogitpingError('PROTOCOL_MISMATCH', `Probe protocol differs from the calibrated bank: ${mismatches.join('; ')}. Use a bank collected through ${transport.name} with matching probe settings.`);
   }
-  if ((transport.name === 'claude' || transport.name === 'codex') && temperature !== undefined) {
+  if (CLI_TRANSPORTS.has(transport.name) && temperature !== undefined) {
     throw new LogitpingError('PROTOCOL_MISMATCH', 'CLI drivers do not expose a sampling temperature; use a bank with temperature: null');
   }
   const warnings = [
@@ -86,8 +95,8 @@ export function planProbe(
   else if (calibrated.length === 1) warnings.push('This bank enrolls one calibrated model: its OOD gate is reported in scores, but identification needs at least two references.');
   if (crossTransport) warnings.push(`Experimental comparison: ${transport.name} samples against ${bank.protocol.transport} references. Reference weights and distance envelopes have not been validated for this transport; early stopping is disabled.`);
   if (transport.granularity === 'message') warnings.push('This driver delivers completed messages; within-message token or latency savings cannot be inferred.');
-  // The driver aborts on the first tool item, but some Codex tools cannot be switched off and race that abort.
-  if (transport.name === 'codex') warnings.push('Codex can start a tool before the probe stops it; probe Codex only through backends you would trust with read access to this machine.');
+  const racing = RACING_TOOLS.get(transport.name);
+  if (racing) warnings.push(`${racing} can start a tool before the probe stops it; probe ${racing} only through backends you would trust with read access to this machine.`);
   if (requests > 1 && calibrated.length) {
     warnings.push(`Experimental pooled probe: up to ${requests} requests of ${count} integers each; a short or repeated reply ends it sooner. A single-model result is a heuristic match: an unenrolled model from the same vendor as an enrolled one can produce it.`);
   }
