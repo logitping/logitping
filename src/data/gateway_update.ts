@@ -9,6 +9,7 @@ import { integerPrompt } from '../probes/templates.js';
 import { errorCode, syncDirectory } from '../util/fs.js';
 import { MAX_PAYLOAD_BYTES } from '../util/validate.js';
 import { loadBank, validateBank } from './bank_loader.js';
+import { collectionFetch } from './collection_fetch.js';
 import { createFingerprintBank, VARIANCE_METHOD } from './enrollment.js';
 import { completedRuns, newGatewayCheckpoint, readGatewayCheckpoint, saveGatewayCheckpoint, type GatewayCheckpoint } from './gateway_checkpoint.js';
 import { parseGatewayBankConfig, type GatewayBankConfig, type GatewayTarget } from './gateway_config.js';
@@ -87,7 +88,7 @@ function safeError(error: unknown, config: GatewayBankConfig): string {
   let message = error.message;
   // Probe errors contain only counts and positions; never mangle them or wrapped context.
   if (!(error instanceof RedactedError || error instanceof ShortProbeError || error instanceof IntegerOutputError || error instanceof LoopingProbeError)) {
-    for (const secret of [config.gateway?.apiToken, config.gateway?.accountId, config.openrouter?.apiKey]) {
+    for (const secret of [config.gateway?.apiToken, config.gateway?.accountId, config.openrouter?.apiKey, config.google?.apiKey]) {
       if (secret) message = message.replaceAll(secret, '[redacted]');
     }
     if (config.gateway) {
@@ -120,12 +121,22 @@ interface Relay {
   name: string;
   baseURL: string;
   headers: Record<string, string>;
-  /** Response header reporting whether the relay answered from its cache. */
-  cacheStatus: string;
+  /** Response header reporting whether the relay answered from its cache; absent for a service without a response cache. */
+  cacheStatus?: string;
 }
 
-/** Endpoint, authentication, and cache bypass for the provider relaying `target`. */
+/** Endpoint, authentication, and cache bypass for the provider serving `target`. */
 function relay(config: GatewayBankConfig, target: GatewayTarget): Relay {
+  if (target.provider === 'google') {
+    // Requested from Google directly, not through a relay. The Gemini API keeps no response
+    // cache: context caching discounts repeated input tokens but never replays a response.
+    return {
+      name: 'Google AI Studio',
+      // The complete Chat Completions endpoint: from the /openai base, completionURL would insert /v1.
+      baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      headers: { 'Authorization': `Bearer ${config.google!.apiKey}` },
+    };
+  }
   if (target.provider === 'openrouter') {
     return {
       name: 'OpenRouter',
@@ -158,7 +169,7 @@ async function collectRun(config: GatewayBankConfig, target: GatewayTarget, opti
   const { name, baseURL, headers, cacheStatus } = relay(config, target);
   const fetch: typeof globalThis.fetch = async (url, init) => {
     const response = await (options.fetch ?? globalThis.fetch)(url, init);
-    const cache = response.headers.get(cacheStatus)?.trim().toUpperCase();
+    const cache = cacheStatus && response.headers.get(cacheStatus)?.trim().toUpperCase();
     if (cache === 'HIT' || cache === 'STALE') {
       await response.body?.cancel();
       throw new Error(`${name} served a cached response despite cache bypass; collection stopped`);
@@ -296,7 +307,7 @@ function enroll(config: GatewayBankConfig, state: GatewayCheckpoint, nuisanceDir
     const target = config.models[index]!;
     const rejected = shortResponses[index]!;
     const invalid = invalidResponses[index]!;
-    model.provenance = `${PROVIDER_LABELS[target.provider]}; ${details}${collectionSettings(target)} cache=bypassed; variance=${VARIANCE_METHOD}; retries=${rejected.training + rejected.validation + invalid.training + invalid.validation}; short-training-responses=${rejected.training}; short-validation-responses=${rejected.validation}; invalid-training-responses=${invalid.training}; invalid-validation-responses=${invalid.validation}; maxProbeRetries=${config.maxProbeRetries}`;
+    model.provenance = `${PROVIDER_LABELS[target.provider]}; ${details}${collectionSettings(target)} cache=${target.provider === 'google' ? 'none' : 'bypassed'}; variance=${VARIANCE_METHOD}; retries=${rejected.training + rejected.validation + invalid.training + invalid.validation}; short-training-responses=${rejected.training}; short-validation-responses=${rejected.validation}; invalid-training-responses=${invalid.training}; invalid-validation-responses=${invalid.validation}; maxProbeRetries=${config.maxProbeRetries}`;
   }
   return config.requestsPerProbe === undefined ? bank : attachPooledScoring(bank, models, { requestsPerProbe: config.requestsPerProbe });
 }
@@ -349,7 +360,12 @@ export async function updateGatewayBank(input: GatewayBankConfig, options: BankU
     }
     // The checkpoint covers only the models this update collects.
     const targets = { ...config, models: plan.collect };
-    const collection = plan.collect.length ? await collectProbes(targets, checkpointPath, options) : undefined;
+    let collection: Awaited<ReturnType<typeof collectProbes>> | undefined;
+    if (plan.collect.length) {
+      const transport = options.fetch ? undefined : collectionFetch(config.timeoutMs);
+      try { collection = await collectProbes(targets, checkpointPath, transport ? { ...options, fetch: transport.fetch } : options); }
+      finally { await transport?.close(); }
+    }
     options.signal?.throwIfAborted();
     const collected = collection && enroll(targets, collection.state, base?.nuisanceDirections);
     const bank = base ? merge(config, plan, base, collected) : collected!;

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FingerprintBank } from '../src/core/types.js';
 import { loadBank } from '../src/data/bank_loader.js';
+import { collectionFetch } from '../src/data/collection_fetch.js';
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import { loadGatewayBankConfig, parseGatewayBankConfig, type GatewayTarget } from '../src/data/gateway_config.js';
 import { planGatewayBankUpdate, readIncrementalBase } from '../src/data/gateway_plan.js';
@@ -13,6 +14,12 @@ import { findRepeatingCycle } from '../src/data/repetition.js';
 import { FEATURE_DIMENSION } from '../src/math/ordered_block.js';
 import { integerPrompt } from '../src/probes/templates.js';
 
+// Keep the real transport; tests that inject no fetch substitute one so no request leaves the process.
+vi.mock('../src/data/collection_fetch.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/data/collection_fetch.js')>();
+  return { collectionFetch: vi.fn(actual.collectionFetch) };
+});
+
 const credentials = {
   CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
   CLOUDFLARE_GATEWAY_ID: 'fingerprint-collection',
@@ -20,6 +27,16 @@ const credentials = {
 };
 const openrouterCredentials = { OPENROUTER_API_KEY: 'sk-or-v1-test-openrouter-credential-do-not-log' };
 const allCredentials = { ...credentials, ...openrouterCredentials };
+const googleCredentials = { GEMINI_API_KEY: 'test-gemini-credential-do-not-log' };
+/** Two Gemini API models requested directly from Google AI Studio. */
+const googleInput = () => ({
+  ...input(), provider: 'google',
+  models: [
+    { id: 'gemini-a', family: 'gemini', model: 'gemini-3.8-flash' },
+    { id: 'gemma-b', family: 'gemma', model: 'gemma-4-27b-it' },
+  ],
+});
+const googleConfig = () => parseGatewayBankConfig(googleInput(), googleCredentials);
 const now = () => new Date('2026-09-23T00:00:00.000Z');
 const CORPUS = /\.corpus-([0-9a-f]{64})\.json$/;
 /** A deterministic run starting at `first`; steps of 7 visit all 355 values, so it never loops. */
@@ -258,6 +275,44 @@ describe('Gateway bank configuration', () => {
     expect(attempt).toThrow(`Invalid bank-update config: ${message}`);
     expect(attempt).not.toThrow(/secret/);
   });
+  it('requests Google models directly from AI Studio with only GEMINI_API_KEY', () => {
+    const parsed = parseGatewayBankConfig(googleInput(), { ...googleCredentials, CLOUDFLARE_ACCOUNT_ID: 'malformed', OPENROUTER_API_KEY: 'unused key' });
+    expect(parsed.models.map((model) => model.provider)).toEqual(['google', 'google']);
+    expect(parsed.google).toEqual({ apiKey: googleCredentials.GEMINI_API_KEY });
+    expect(parsed.gateway).toBeUndefined();
+    expect(parsed.openrouter).toBeUndefined();
+    const file = { ...googleInput(), google: { apiKey: 'file-key' } };
+    expect(parseGatewayBankConfig(file, googleCredentials).google?.apiKey).toBe(googleCredentials.GEMINI_API_KEY);
+    expect(parseGatewayBankConfig(file, {}).google?.apiKey).toBe('file-key');
+    const mixed = { ...openrouterInput(), models: [input().models[0]!, { id: 'gemini-a', family: 'gemini', provider: 'google', model: 'gemini-3.8-flash' }] };
+    expect(() => parseGatewayBankConfig(mixed, openrouterCredentials)).toThrow(/GEMINI_API_KEY is not set in the updater's environment; export it .* or set google\.apiKey$/);
+    expect(parseGatewayBankConfig(mixed, { ...openrouterCredentials, ...googleCredentials }).models.map((model) => model.provider)).toEqual(['openrouter', 'google']);
+  });
+  it('accepts pinned Gemini API model codes and rejects resource names, vendor prefixes, and floating aliases', () => {
+    const withRoute = (model: string) => ({ ...googleInput(), models: [{ ...googleInput().models[0]!, model }, googleInput().models[1]!] });
+    for (const model of ['gemini-3.8-flash', 'gemini-3.8-flash-preview-09-2026', 'gemma-4-31b-it', 'gemini-2.5-flash-lite']) {
+      expect(parseGatewayBankConfig(withRoute(model), googleCredentials).models[0]!.model).toBe(model);
+    }
+    for (const model of [
+      'models/gemini-3.8-flash', 'google/gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.8-flash-latest', 'Gemini-3.8-Flash',
+      'gemini-3.8-flash:generateContent', 'gemini..flash', '-gemini', '', 'tunedModels/probe',
+    ]) expect(() => parseGatewayBankConfig(withRoute(model), googleCredentials), model).toThrow('Invalid bank-update config');
+  });
+  it.each(['responses', 'messages'])('rejects the %s API format for Google AI Studio, which serves Chat Completions', (apiFormat) => {
+    const raw = { ...googleInput(), models: googleInput().models.map((model) => ({ ...model, apiFormat })) };
+    expect(() => parseGatewayBankConfig(raw, googleCredentials)).toThrow('Invalid bank-update config: Google AI Studio models must use the chat-completions apiFormat');
+  });
+  it.each([
+    [{ google: { apiKey: 'key', misspelledOption: 'value' } }, 'google has an unsupported field'],
+    [{ google: 'key' }, 'google must be an object'],
+  ])('rejects an invalid Google setting: %j', (override, message) => {
+    expect(() => parseGatewayBankConfig({ ...googleInput(), ...override }, googleCredentials)).toThrow(`Invalid bank-update config: ${message}`);
+  });
+  it('describes a malformed Gemini API key without echoing it', () => {
+    const attempt = () => parseGatewayBankConfig(googleInput(), { GEMINI_API_KEY: 'secret key' });
+    expect(attempt).toThrow('Invalid bank-update config: GEMINI_API_KEY must be a nonempty key without whitespace (got 10 characters, including whitespace)');
+    expect(attempt).not.toThrow(/secret/);
+  });
 
   it('parses pooled scoring and requires both of its fields', () => {
     expect(parseGatewayBankConfig({ ...input(), scoring: 'pooled-sets-v1', requestsPerProbe: 8 }, credentials))
@@ -283,6 +338,31 @@ describe('Gateway collection and atomic bank updates', () => {
     await writeFile(outputPath, 'previous-bank-bytes\n');
   });
   afterEach(async () => { await rm(directory, { recursive: true, force: true }); });
+
+  it('sends requests through its own transport, bounded by timeoutMs, when no fetch is injected', async () => {
+    vi.mocked(collectionFetch).mockClear();
+    const fetch = gateway();
+    const close = vi.fn(async () => {});
+    vi.mocked(collectionFetch).mockReturnValueOnce({ fetch, close });
+    const result = await updateGatewayBank(config(), { outputPath, now });
+    expect(result.changed).toBe(true);
+    expect(collectionFetch).toHaveBeenCalledExactlyOnceWith(500);
+    expect(fetch).toHaveBeenCalledTimes(10);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('closes its own transport when a collection fails', async () => {
+    const close = vi.fn(async () => {});
+    vi.mocked(collectionFetch).mockReturnValueOnce({ fetch: vi.fn(async () => { throw new TypeError('fetch failed'); }), close });
+    await expect(updateGatewayBank(config(), { outputPath, now })).rejects.toThrow(/Could not reach/);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('uses an injected fetch instead of its own transport', async () => {
+    vi.mocked(collectionFetch).mockClear();
+    await updateGatewayBank(config(), { outputPath, fetch: gateway(), now });
+    expect(collectionFetch).not.toHaveBeenCalled();
+  });
 
   it('collects uncached, independent train/validation JSON responses and writes the enrollment result', async () => {
     const fetch = gateway();
@@ -1061,6 +1141,85 @@ describe('OpenRouter collection', () => {
   });
 });
 
+describe('Google AI Studio collection', () => {
+  const key = googleCredentials.GEMINI_API_KEY;
+  let directory: string;
+  let outputPath: string;
+  beforeEach(async () => {
+    directory = await mkdtemp(join(tmpdir(), 'logitping-bank-google-'));
+    outputPath = join(directory, 'default_bank.json');
+    await writeFile(outputPath, 'previous-bank-bytes\n');
+  });
+  afterEach(async () => { await rm(directory, { recursive: true, force: true }); });
+
+  /** Answers each model's runs with constant offset + run as Chat Completions JSON, without relay cache headers. */
+  function studio() {
+    const runs = new Map<string, number>();
+    return vi.fn<typeof globalThis.fetch>(async (_url, init) => {
+      const { model } = JSON.parse(String(init?.body)) as { model: string };
+      const run = (runs.get(model) ?? 0) + 1;
+      runs.set(model, run);
+      const reply = steppedRun((model.startsWith('gemini-') ? 10 : 200) + run).join(' ');
+      return new Response(JSON.stringify({ choices: [{ index: 0, message: { role: 'assistant', content: reply }, finish_reason: 'stop' }] }), { headers: { 'content-type': 'application/json' } });
+    });
+  }
+
+  it('collects through the OpenAI-compatible Gemini API with bearer auth and no relay headers', async () => {
+    const fetch = studio();
+    const result = await updateGatewayBank(googleConfig(), { outputPath, fetch, now });
+    expect(fetch).toHaveBeenCalledTimes(10);
+    for (const [url, init] of fetch.mock.calls) {
+      expect(String(url)).toBe('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
+      const headers = new Headers(init?.headers);
+      expect(headers.get('authorization')).toBe(`Bearer ${key}`);
+      expect([...headers.keys()].filter((name) => name.startsWith('cf-aig-') || name.startsWith('x-openrouter-'))).toEqual([]);
+      expect(headers.get('accept')).toBe('application/json');
+      expect(init?.redirect).toBe('error');
+      const body = JSON.parse(String(init?.body));
+      expect(body.stream).toBe(false);
+      expect(['gemini-3.8-flash', 'gemma-4-27b-it']).toContain(body.model);
+    }
+    expect(result.bank.models.map((model) => model.profiles)).toEqual(createFingerprintBank({
+      source: 'Expected fixture', protocol: config().protocol, checkpoints: [64],
+      models: [10, 200].map((offset, index) => ({
+        id: `m${index}`, family: 'f',
+        training: [1, 2, 3].map((n) => steppedRun(offset + n)),
+        validation: [4, 5].map((n) => steppedRun(offset + n)),
+      })),
+    }).models.map((model) => model.profiles));
+    for (const model of result.bank.models) {
+      expect(model.provenance).toMatch(/^Google AI Studio Gemini API; collected 2026-09-23T00:00:00\.000Z; integer-v1; corpus sha256:/);
+      // AI Studio keeps no response cache, so there is nothing to bypass.
+      expect(model.provenance).toContain(' cache=none;');
+    }
+    expect(result.bank.models[0]!.provenance).toContain('; model=gemini-3.8-flash; api=chat-completions; stream=false; training=3; validation=2;');
+    expect(result.bank.models.map((model) => model.family)).toEqual(['gemini', 'gemma']);
+    expect(result.bank.calibration?.source).toMatch(/^Google AI Studio Gemini API; collected 2026-09-23T00:00:00\.000Z;/);
+    expect(await readFile(outputPath, 'utf8')).not.toContain(key);
+  });
+
+  it('labels a bank mixing OpenRouter and Google AI Studio by both providers', async () => {
+    const custom = parseGatewayBankConfig({
+      ...openrouterInput(), models: [input().models[0]!, { id: 'gemini-a', family: 'gemini', provider: 'google', model: 'gemini-3.8-flash' }],
+    }, { ...openrouterCredentials, ...googleCredentials });
+    const fetch = studio();
+    const { bank } = await updateGatewayBank(custom, { outputPath, fetch, now });
+    for (const [url, init] of fetch.mock.calls) {
+      const google = JSON.parse(String(init?.body)).model === 'gemini-3.8-flash';
+      expect(String(url)).toBe(google ? 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions');
+      expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${google ? key : openrouterCredentials.OPENROUTER_API_KEY}`);
+    }
+    expect(bank.models[0]!.provenance).toContain(' cache=bypassed;');
+    expect(bank.calibration?.source).toMatch(/^OpenRouter API and Google AI Studio Gemini API; collected /);
+  });
+
+  it('redacts the Gemini API key from errors', async () => {
+    const fetch: typeof globalThis.fetch = async () => { throw new Error(`upstream echoed ${key}`); };
+    await expect(updateGatewayBank(googleConfig(), { outputPath, fetch, now }))
+      .rejects.toThrow(/^gemini-a training run 1: upstream echoed \[redacted\]$/);
+  });
+});
+
 const referenceC = { id: 'reference-c', family: 'gpt', model: 'openai/reference-c' };
 const [referenceA, referenceB] = input().models as [typeof referenceC, typeof referenceC];
 const later = () => new Date('2026-09-24T00:00:00.000Z');
@@ -1245,6 +1404,21 @@ describe('Incremental bank updates', () => {
     expect(saved.calibration).toMatchObject({ heldOutRuns: 6, sequentialValidated: false });
     expect(result.bank).toEqual(saved);
     expect(await entries(directory)).toEqual(['default_bank.json']);
+  });
+
+  it('enrolls a Gemini model from Google AI Studio into an existing bank without re-collecting the others', async () => {
+    const gemini = { id: 'gemini-3.8-flash', family: 'gemini', provider: 'google', model: 'gemini-3.8-flash' };
+    let run = 0;
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => response(steppedRun(300 + ++run).join(' ')));
+    const result = await updateGatewayBank(parseGatewayBankConfig({ ...input(), maxRequests: 15, models: [referenceA, referenceB, gemini] }, { ...allCredentials, ...googleCredentials }), {
+      outputPath, fetch, now: later, incremental: true,
+    });
+    expect(fetch).toHaveBeenCalledTimes(5);
+    for (const [url] of fetch.mock.calls) expect(String(url)).toBe('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
+    expect(result.bank.models.slice(0, 2)).toEqual(base.models);
+    expect(result.bank.models[2]).toMatchObject({ id: 'gemini-3.8-flash', family: 'gemini', status: 'calibrated' });
+    expect(result.bank.models[2]!.provenance).toMatch(/^Google AI Studio Gemini API; collected 2026-09-24T00:00:00\.000Z;/);
+    expect(result.bank.calibration?.source).toMatch(/^Cloudflare AI Gateway REST and Google AI Studio Gemini API; integer-v1; incremental update collected 1 and retained 2 models;/);
   });
 
   it('keeps enrolled models without requests when the provider switches', async () => {

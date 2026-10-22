@@ -12,6 +12,19 @@ const fake = vi.hoisted(() => ({
   requests: [] as ProbeRequest[],
   /** When set, the fake CLI calls this as it starts, then waits to be cancelled instead of answering. */
   onStart: undefined as (() => void) | undefined,
+  /** Options each AntigravityDriver was constructed with. */
+  antigravity: [] as unknown[],
+}));
+vi.mock('../src/drivers/antigravity_driver.js', () => ({
+  AntigravityDriver: class {
+    readonly name = 'antigravity';
+    readonly granularity = 'token';
+    constructor(options: unknown) { fake.antigravity.push(options); }
+    async *stream(request: ProbeRequest) {
+      fake.requests.push(request);
+      yield '17 '.repeat(128);
+    }
+  },
 }));
 vi.mock('../src/drivers/codex_driver.js', () => ({
   CodexDriver: class {
@@ -73,6 +86,7 @@ describe('CLI bank selection', () => {
     previousExitCode = process.exitCode;
     process.exitCode = undefined;
     fake.requests.length = 0;
+    fake.antigravity.length = 0;
     fake.onStart = undefined;
     prompts.answers.length = 0;
     stdout = '';
@@ -120,6 +134,33 @@ describe('CLI bank selection', () => {
     deliver('SIGTERM', before);
     expect(exit).toHaveBeenCalledWith(130);
     await running;
+  });
+
+  it('runs --driver antigravity through agy with the model override and returns collection-only JSON', async () => {
+    await main(['node', 'lping', '--driver', 'antigravity', '--model', 'gemini-3.8-flash-low', '--no-tokenizer', '--json']);
+    const result = JSON.parse(stdout);
+    expect(result).toMatchObject({ status: 'UNCALIBRATED', model: null, streamGranularity: 'token' });
+    expect(result.reason).toContain('No calibrated bank for antigravity');
+    expect(result.warnings.join(' ')).toContain('Antigravity can start a tool before the probe stops it');
+    expect(fake.antigravity).toEqual([{ model: 'gemini-3.8-flash-low' }]);
+    expect(fake.requests).toHaveLength(1);
+    expect(process.exitCode).toBe(2);
+  });
+
+  it('chooses Antigravity at the interactive connection prompt', async () => {
+    prompts.answers.push('antigravity', undefined);
+    const restore = stubTerminal();
+    try { await main(['node', 'lping']); } finally { restore(); }
+    expect(stderr).not.toContain('Error:');
+    expect(fake.antigravity).toEqual([{}]);
+    expect(stdout).toContain('UNCALIBRATED');
+  });
+
+  it.each(['gemini', 'constructor', 'toString'])('rejects the unknown driver %s before starting any CLI', async (driver) => {
+    await main(['node', 'lping', '--driver', driver, '--json']);
+    expect(JSON.parse(stdout)).toMatchObject({ status: 'ERROR', error: 'Driver must be claude, codex, or antigravity' });
+    expect(fake.antigravity).toHaveLength(0);
+    expect(fake.requests).toHaveLength(0);
   });
 
   it('runs --driver codex without a bank and returns collection-only JSON', async () => {

@@ -51,7 +51,7 @@ export interface LaunchContext {
 }
 
 export abstract class CliDriver implements ProbeTransport {
-  /** Also the default executable name. */
+  /** The transport label; also the default executable name unless `executable()` is overridden. */
   abstract readonly name: string;
   abstract readonly granularity: StreamGranularity;
   constructor(protected readonly options: DriverOptions = {}) {
@@ -61,6 +61,16 @@ export abstract class CliDriver implements ProbeTransport {
   }
   protected abstract args(): string[];
   protected abstract decoder(): EventDecoder;
+
+  /** The default executable, which messages also name. */
+  protected executable(): string {
+    return this.name;
+  }
+
+  /** What the CLI reads on stdin for `prompt`; override for CLIs that take structured input. */
+  protected stdin(prompt: string): string {
+    return prompt;
+  }
 
   /** Arguments for one launch; override to adapt them to the installed CLI's configuration. */
   protected async launchArgs(_context: LaunchContext): Promise<string[]> {
@@ -85,8 +95,9 @@ export abstract class CliDriver implements ProbeTransport {
       return stdout;
     } catch (error) {
       context.signal.throwIfAborted();
-      if (asRecord(error).code === 'ENOENT') throw notFound(this.name);
-      throw cliError(`${this.name} ${args.slice(0, 2).join(' ')} failed; check that the installed version supports it (run ${this.name} --help)`);
+      const executable = this.executable();
+      if (asRecord(error).code === 'ENOENT') throw notFound(executable);
+      throw cliError(`${executable} ${args.slice(0, 2).join(' ')} failed; check that the installed version supports it (run ${executable} --help)`);
     }
   }
 
@@ -97,14 +108,15 @@ export abstract class CliDriver implements ProbeTransport {
       scope.signal.throwIfAborted();
       directory = await mkdtemp(join(tmpdir(), 'logitping-'));
       scope.signal.throwIfAborted();
-      const binary = this.options.binary ?? this.name;
+      const executable = this.executable();
+      const binary = this.options.binary ?? executable;
       // The complete environment; execa must not merge process.env back in.
       const env = this.options.env ?? inheritedEnvironment();
       const args = await this.launchArgs({ binary, cwd: directory, env, signal: scope.signal });
       scope.signal.throwIfAborted();
       const child = execa(binary, args, {
         cwd: directory,
-        input: request.prompt,
+        input: this.stdin(request.prompt),
         env,
         extendEnv: false,
         shell: false,
@@ -130,7 +142,7 @@ export abstract class CliDriver implements ProbeTransport {
           if (!line.trim()) return [];
           if (line.length > 1_048_576) throw cliError('CLI event exceeded 1 MiB');
           let event: unknown;
-          try { event = JSON.parse(line); } catch { throw cliError(`${this.name} emitted malformed JSONL`); }
+          try { event = JSON.parse(line); } catch { throw cliError(`${executable} emitted malformed JSONL`); }
           return decoder.decode(asRecord(event));
         };
         if (child.stdout) {
@@ -155,8 +167,8 @@ export abstract class CliDriver implements ProbeTransport {
         scope.signal.throwIfAborted();
         const { error } = await outcome;
         if (error) {
-          if (asRecord(error).code === 'ENOENT') throw notFound(this.name);
-          throw cliError(`${this.name} probe failed; check the CLI login and supported flags (run ${this.name} --help)`);
+          if (asRecord(error).code === 'ENOENT') throw notFound(executable);
+          throw cliError(`${executable} probe failed; check the CLI login and supported flags (run ${executable} --help)`);
         }
         pending += utf8.end();
         for (const text of decodeLine(pending)) yield text;

@@ -17,7 +17,7 @@ node dist/bin/logitping.js --help
 
 `npm ci` installs the locked dependencies and runs the `prepare` build. `npm run check` runs TypeScript checks, the test suite, and a clean build. `npm run test:package` packs and installs the local tarball into a temporary prefix, then checks both CLI names, ESM/CommonJS exports, declarations, a local HTTP probe, interrupt cleanup, and bank creation.
 
-The tests and package smoke test need no provider credentials, paid model requests, or installed Claude/Codex CLI. They use synthetic fixtures, loopback HTTP servers, temporary files, and fake subprocesses. Allow loopback listening, child processes, and temporary-directory access in a sandbox. Dependency installation may require registry access; the package smoke test installs its tarball with npm's offline mode.
+The tests and package smoke test need no provider credentials, paid model requests, or installed Claude, Codex, or Antigravity CLI. They use synthetic fixtures, loopback HTTP servers, temporary files, and fake subprocesses. Allow loopback listening, child processes, and temporary-directory access in a sandbox. Dependency installation may require registry access; the package smoke test installs its tarball with npm's offline mode.
 
 Useful commands while iterating:
 
@@ -36,7 +36,7 @@ Run the complete checks above before submitting code or packaging changes. For d
 | --- | --- |
 | `src/cli.ts`, `src/index.ts` | CLI and public library entry points |
 | `src/core/` | Probe pipeline, HTTP clients, wire formats, errors, and cancellation |
-| `src/drivers/` | Claude and Codex subprocess adapters |
+| `src/drivers/` | Claude, Codex, and Antigravity subprocess adapters |
 | `src/probes/` | Reproducible prompts and strict incremental integer parsing |
 | `src/math/` | Statistical features, distances, nuisance projection, and sequential tests |
 | `src/data/` | Bank validation, enrollment, updater, and the bundled reference bank |

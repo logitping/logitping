@@ -3,12 +3,12 @@ import { loadGatewayBankConfig, planGatewayBankUpdate, providerLabel, readIncrem
 
 const command = new Command()
   .name('update-bank')
-  .description('Collect reference probes through Cloudflare AI Gateway or OpenRouter and atomically refresh a fingerprint bank')
+  .description('Collect reference probes through Cloudflare AI Gateway, OpenRouter, or Google AI Studio and atomically refresh a fingerprint bank')
   .option('--config <path>', 'JSON configuration file', process.env.LOGITPING_BANK_CONFIG || 'config/bank-update.json')
   .option('--output <path>', 'bank JSON destination', 'src/data/default_bank.json')
   .option('--restart', 'discard saved collection progress and start a new request budget')
   .option('--incremental', 'collect only configured models the output bank does not already enroll, then merge them into it')
-  .option('--dry-run', 'validate configuration and report request budgets without contacting Cloudflare or OpenRouter');
+  .option('--dry-run', 'validate configuration and report request budgets without contacting any provider');
 
 function describePlan(plan, config, incremental) {
   if (incremental) {

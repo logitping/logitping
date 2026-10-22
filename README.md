@@ -16,7 +16,7 @@ The project website is live at [logitping.com](https://logitping.com), with an i
 
 **Experimental 0.2.1.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
-The bundled bank contains **13 models collected through OpenRouter on 2026-10-03**, with 10 training and 5 threshold-calibration runs per model. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
+The bundled bank contains **15 models**: 13 collected through OpenRouter on 2026-10-03, and `gemini-3.8-flash` and `gemini-4-argon` collected directly from Google AI Studio on 2026-10-21, each with 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
 ## Install
 
@@ -96,17 +96,18 @@ A local replay of 65 threshold-calibration runs produced 24 label matches and 41
 | --- | --- |
 | OpenAI-compatible Chat Completions or Responses API | Compares samples with API references when protocol settings match |
 | Anthropic Messages API | Compares samples with API references when protocol settings match |
-| Locally authenticated Claude or Codex CLI | Collects samples and returns `UNCALIBRATED`; identification needs a bank enrolled through that driver |
+| Locally authenticated Claude, Codex, or Antigravity (`agy`) CLI | Collects samples and returns `UNCALIBRATED`; identification needs a bank enrolled through that driver |
 | CLI with `--allow-transport-mismatch` | Experimental comparison with API references; a match is reported as `HEURISTIC_MATCH` |
 
 API compatibility permits a comparison; it does not establish accuracy across hosts, API formats, or streaming modes. The bundled bank requires English, 512 samples, and omitted temperature (`null` in the bank). Other settings require a matching bank. The [CLI reference](docs/cli.md) covers custom banks, token budgets, streaming, JSON errors, and credential handling.
 
-Local CLI probes reuse your login and may incur provider usage or charges. Run them only with trusted binaries and backends. Codex may start a tool before the driver detects and terminates it; its temporary working directory and read-only configuration are not a complete isolation boundary. Read the [transport limitations](docs/transports.md) first.
+Local CLI probes reuse your login and may incur provider usage or charges. Run them only with trusted binaries and backends. Codex and Antigravity may start a tool before the driver detects and terminates it; their temporary working directory and restricted settings are not a complete isolation boundary. Read the [transport limitations](docs/transports.md) first.
 
 ```sh
 # Collection only with the bundled API bank; normally exits with code 2.
 lping --driver claude --json
 lping --driver codex --json
+lping --driver antigravity --json
 ```
 
 ## Library

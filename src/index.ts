@@ -3,6 +3,7 @@ export { HttpClient, completionURL, type ApiFormat, type HttpClientOptions, type
 export { LogitpingError, type LogitpingErrorCode, type LogitpingErrorOptions } from './core/errors.js';
 export type * from './core/types.js';
 export { CliDriver, type DriverOptions, type EventDecoder, type LaunchContext } from './drivers/base.js';
+export { AntigravityDriver } from './drivers/antigravity_driver.js';
 export { ClaudeDriver } from './drivers/claude_driver.js';
 export { CodexDriver } from './drivers/codex_driver.js';
 export { defaultBank, loadBank, pooledBank, validateBank } from './data/bank_loader.js';
