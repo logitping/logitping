@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FingerprintBank } from '../src/core/types.js';
 import { loadBank } from '../src/data/bank_loader.js';
+import { collectionFetch } from '../src/data/collection_fetch.js';
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import { loadGatewayBankConfig, parseGatewayBankConfig, type GatewayTarget } from '../src/data/gateway_config.js';
 import { planGatewayBankUpdate, readIncrementalBase } from '../src/data/gateway_plan.js';
@@ -12,6 +13,12 @@ import { updateGatewayBank } from '../src/data/gateway_update.js';
 import { findRepeatingCycle } from '../src/data/repetition.js';
 import { FEATURE_DIMENSION } from '../src/math/ordered_block.js';
 import { integerPrompt } from '../src/probes/templates.js';
+
+// Keep the real transport; tests that inject no fetch substitute one so no request leaves the process.
+vi.mock('../src/data/collection_fetch.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/data/collection_fetch.js')>();
+  return { collectionFetch: vi.fn(actual.collectionFetch) };
+});
 
 const credentials = {
   CLOUDFLARE_ACCOUNT_ID: 'a'.repeat(32),
@@ -331,6 +338,31 @@ describe('Gateway collection and atomic bank updates', () => {
     await writeFile(outputPath, 'previous-bank-bytes\n');
   });
   afterEach(async () => { await rm(directory, { recursive: true, force: true }); });
+
+  it('sends requests through its own transport, bounded by timeoutMs, when no fetch is injected', async () => {
+    vi.mocked(collectionFetch).mockClear();
+    const fetch = gateway();
+    const close = vi.fn(async () => {});
+    vi.mocked(collectionFetch).mockReturnValueOnce({ fetch, close });
+    const result = await updateGatewayBank(config(), { outputPath, now });
+    expect(result.changed).toBe(true);
+    expect(collectionFetch).toHaveBeenCalledExactlyOnceWith(500);
+    expect(fetch).toHaveBeenCalledTimes(10);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('closes its own transport when a collection fails', async () => {
+    const close = vi.fn(async () => {});
+    vi.mocked(collectionFetch).mockReturnValueOnce({ fetch: vi.fn(async () => { throw new TypeError('fetch failed'); }), close });
+    await expect(updateGatewayBank(config(), { outputPath, now })).rejects.toThrow(/Could not reach/);
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('uses an injected fetch instead of its own transport', async () => {
+    vi.mocked(collectionFetch).mockClear();
+    await updateGatewayBank(config(), { outputPath, fetch: gateway(), now });
+    expect(collectionFetch).not.toHaveBeenCalled();
+  });
 
   it('collects uncached, independent train/validation JSON responses and writes the enrollment result', async () => {
     const fetch = gateway();

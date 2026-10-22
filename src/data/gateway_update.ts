@@ -9,6 +9,7 @@ import { integerPrompt } from '../probes/templates.js';
 import { errorCode, syncDirectory } from '../util/fs.js';
 import { MAX_PAYLOAD_BYTES } from '../util/validate.js';
 import { loadBank, validateBank } from './bank_loader.js';
+import { collectionFetch } from './collection_fetch.js';
 import { createFingerprintBank, VARIANCE_METHOD } from './enrollment.js';
 import { completedRuns, newGatewayCheckpoint, readGatewayCheckpoint, saveGatewayCheckpoint, type GatewayCheckpoint } from './gateway_checkpoint.js';
 import { parseGatewayBankConfig, type GatewayBankConfig, type GatewayTarget } from './gateway_config.js';
@@ -359,7 +360,12 @@ export async function updateGatewayBank(input: GatewayBankConfig, options: BankU
     }
     // The checkpoint covers only the models this update collects.
     const targets = { ...config, models: plan.collect };
-    const collection = plan.collect.length ? await collectProbes(targets, checkpointPath, options) : undefined;
+    let collection: Awaited<ReturnType<typeof collectProbes>> | undefined;
+    if (plan.collect.length) {
+      const transport = options.fetch ? undefined : collectionFetch(config.timeoutMs);
+      try { collection = await collectProbes(targets, checkpointPath, transport ? { ...options, fetch: transport.fetch } : options); }
+      finally { await transport?.close(); }
+    }
     options.signal?.throwIfAborted();
     const collected = collection && enroll(targets, collection.state, base?.nuisanceDirections);
     const bank = base ? merge(config, plan, base, collected) : collected!;

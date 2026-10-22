@@ -8,9 +8,14 @@
 - The bank updater can request models directly from Google AI Studio (`"provider": "google"`, key in `GEMINI_API_KEY`) through Google's OpenAI-compatible Chat Completions endpoint, with no relay in between. Provenance records `cache=none` for these models, since there is no response cache to bypass.
 - `CliDriver` subclasses can override `executable()`, the default command and the name used in messages, and `stdin()`, the text written for a prompt.
 
+### Fixed
+
+- The bank updater no longer fails requests that take longer than 300 s. A non-streaming reply sends no headers until generation ends, and Node's built-in fetch stopped waiting for them after 300 s, short of the 600 s `timeoutMs` maximum. Updater requests now go through their own connection pool, whose header and body limits follow `timeoutMs`. It uses undici, bundled into the maintainer tooling only, so the updater needs Node.js 22.19 or later; the published library is unchanged.
+
 ### Bundled reference bank
 
 - Enrolls `gemini-3.8-flash` (family `gemini`), collected directly from Google AI Studio on **2026-10-21**: 10 training and 5 threshold-calibration runs of 512 English integers, with an 8,192-token output budget. The 13 earlier references are unchanged, and replaying their stored runs gives the same results as before. The pooled bank does not include Gemini. See [bank documentation](docs/bank.md).
+- Enrolls `gemini-4-argon` (family `gemini`), also collected directly from Google AI Studio on **2026-10-21**, with a 32,768-token output budget, its maximum. About 4 in 10 of its replies were cut off at that limit and sent again, so expect many Argon probes to end `INCONCLUSIVE` with a short reply; probe it with `--max-tokens 32768`. At 512 integers the two Gemini models are hard to tell apart: replays of their stored runs are `INCONCLUSIVE`, never a wrong match, and adding Argon turned the two `gemini-3.8-flash` matches of the 14-model bank into `INCONCLUSIVE`.
 
 ### Documentation
 

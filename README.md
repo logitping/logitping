@@ -16,7 +16,7 @@ The project website is live at [logitping.com](https://logitping.com), with an i
 
 **Experimental 0.2.1.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
-The bundled bank contains **14 models**: 13 collected through OpenRouter on 2026-10-03, and `gemini-3.8-flash` collected directly from Google AI Studio on 2026-10-21, each with 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
+The bundled bank contains **15 models**: 13 collected through OpenRouter on 2026-10-03, and `gemini-3.8-flash` and `gemini-4-argon` collected directly from Google AI Studio on 2026-10-21, each with 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
 ## Install
 

@@ -4,27 +4,29 @@
 
 ## Collection snapshot
 
-This describes the checked-in bank: the 13 models of the experimental `0.2.1` npm release, whose bank is unchanged since `0.1.0`, plus `gemini-3.8-flash` (family `gemini`), added on 2026-10-21 and not yet released. The 13 earlier entries are byte for byte the released ones. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
+This describes the checked-in bank: the 13 models of the experimental `0.2.1` npm release, whose bank is unchanged since `0.1.0`, plus `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC) and not yet released. The 13 earlier entries are byte for byte the released ones. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
 
 | Setting | Value |
 | --- | --- |
-| Collection provider | OpenRouter (13 models); Google AI Studio directly, with no relay (`gemini-3.8-flash`) |
-| Collection timestamp | `2026-10-03T10:19:52.961Z` (13 models); `2026-10-21T12:49:38.534Z` (`gemini-3.8-flash`); both UTC |
-| References | 14 calibrated model entries |
-| Accepted runs | 10 training + 5 threshold-calibration runs per model; 210 total |
+| Collection provider | OpenRouter (13 models); Google AI Studio directly, with no relay (`gemini-3.8-flash`, `gemini-4-argon`) |
+| Collection timestamp | `2026-10-03T10:19:52.961Z` (13 models); `2026-10-21T12:49:38.534Z` (`gemini-3.8-flash`); `2026-10-21T23:38:01.740Z` (`gemini-4-argon`); all UTC |
+| References | 15 calibrated model entries |
+| Accepted runs | 10 training + 5 threshold-calibration runs per model; 225 total |
 | Protocol | `integer-v1`, English, first 512 integers in `[1, 355]` |
 | Transport | `api`; collection requests used `stream: false` |
 | Temperature | Omitted (`null` in the bank) |
-| Output-token limit | 8,192 per request, including reasoning where applicable |
+| Output-token limit | 8,192 per request, including reasoning where applicable; 32,768 for `gemini-4-argon` |
 | Distance checkpoints | 64, 128, 256, 512 integers |
 | Nuisance directions | None |
 | Early stopping | Disabled: `sequentialValidated: false` |
 
 `calibrated` means that empirical distance envelopes were fitted. The five runs called `validation` in the data are used to set those envelopes; they are not an independent final evaluation set. Model labels record requested catalog routes, not independently attested backend identities. OpenRouter routing can select different upstream hosts, and the bank does not record the serving host of each run. The Gemini requests went straight to Google's OpenAI-compatible Chat Completions endpoint.
 
+`gemini-4-argon` used up an 8,192-token budget, which reasoning shares, before finishing its answer, so it was collected with 32,768 tokens, its maximum output. Even then, 10 of its 25 replies that ended were cut off at the limit before 512 integers. Those requests were sent again, and provenance does not count them, because the updater stops at a cut-off reply instead of retrying it. Two more Argon requests timed out and were sent again. Argon's references therefore describe only replies that finish within 32,768 tokens; expect a similar share of Argon probes to end `INCONCLUSIVE` with a short reply.
+
 ## Model list
 
-Every entry used the 8,192-token output limit above. These are the routes and formats recorded at collection time, not a promise of ongoing catalog availability or access for every account. Routes with a vendor prefix were requested through OpenRouter; `gemini-3.8-flash` was requested from Google AI Studio.
+Every entry except `gemini-4-argon` used the 8,192-token output limit above; Argon used 32,768. These are the routes and formats recorded at collection time, not a promise of ongoing catalog availability or access for every account. Routes with a vendor prefix were requested through OpenRouter; the two Gemini models were requested from Google AI Studio.
 
 | Bank model ID | Requested route | API format | Token-limit field |
 | --- | --- | --- | --- |
@@ -42,8 +44,9 @@ Every entry used the 8,192-token output limit above. These are the routes and fo
 | `claude-sonnet-5` | `anthropic/claude-sonnet-5` | `messages` | `max_tokens` |
 | `claude-fable-5` | `anthropic/claude-fable-5` | `messages` | `max_tokens` |
 | `gemini-3.8-flash` | `gemini-3.8-flash` | `chat-completions` | `max_tokens` |
+| `gemini-4-argon` | `gemini-4-argon` | `chat-completions` | `max_tokens` |
 
-The probe CLI defaults to 2,624 output tokens for 512 integers. Use `--max-tokens 8192` to match this bank's collection limit; a smaller budget can truncate reasoning models before all integers arrive. Matching the budget and format does not establish transfer across hosts or streaming modes.
+The probe CLI defaults to 2,624 output tokens for 512 integers. Use `--max-tokens 8192` to match this bank's collection limit, or `--max-tokens 32768` for `gemini-4-argon`; a smaller budget can truncate reasoning models before all integers arrive. Matching the budget and format does not establish transfer across hosts or streaming modes.
 
 ## Evaluation status
 
@@ -68,14 +71,18 @@ The four wrong matches in the second diagnostic were:
 
 All four had nominal `confidence` above 99.99%. This demonstrates why a relative likelihood must not be presented as a validated identity probability. The catalog labels themselves also remain assumptions about the requested routes.
 
-After `gemini-3.8-flash` was added on 2026-10-21, the same replay of all 70 stored runs through the 14-model bank reproduced every one of the 65 results above. Gemini's five runs gave:
+After the two Gemini models were added, the same replay of all 75 stored runs through the 15-model bank reproduced every one of the 65 results above. The ten Gemini runs gave:
 
-| Diagnostic | Label matches | Wrong matches | `INCONCLUSIVE` | `UNKNOWN_MODEL` |
-| --- | --- | --- | --- | --- |
-| Full bundled bank | 2 | 0 | 3 | 0 |
-| Remove `gemini-3.8-flash` before each replay | Not applicable | 0 | 5 | 0 |
+| Tested model | Bank | Label matches | Wrong matches | `INCONCLUSIVE` | `UNKNOWN_MODEL` |
+| --- | --- | --- | --- | --- | --- |
+| `gemini-3.8-flash` | Full bundled bank | 0 | 0 | 5 | 0 |
+| `gemini-3.8-flash` | Without `gemini-3.8-flash` | Not applicable | 0 | 5 | 0 |
+| `gemini-4-argon` | Full bundled bank | 0 | 0 | 5 | 0 |
+| `gemini-4-argon` | Without `gemini-4-argon` | Not applicable | 0 | 5 | 0 |
 
-With Gemini removed, 11 to 13 of the 13 remaining distance envelopes accepted each run, so none was rejected as `UNKNOWN_MODEL`. The highest weights went to `gpt-6-astra` and `gpt-6.1-sol`, split too evenly to name either. An unenrolled model from another vendor can therefore fall inside the envelopes of enrolled ones. The same caveats apply: these runs also fitted Gemini's thresholds, and five runs are not an accuracy estimate.
+The two Gemini models' outputs are hard to tell apart at 512 integers. Before Argon was enrolled, the 14-model bank matched two of Flash's runs; adding Argon turned both into `INCONCLUSIVE`. Without Argon in the bank, three of Argon's five runs gave `gemini-3.8-flash` 90–98% of the weight, short of a match.
+
+With both Gemini models removed, each Gemini run still fell inside 4 to 13 of the 13 remaining distance envelopes, so none was rejected as `UNKNOWN_MODEL`. The highest weights went to `gpt-6-astra` and `gpt-6.1-sol`, split too evenly to name either. An unenrolled model from another vendor can therefore fall inside the envelopes of enrolled ones. The same caveats apply: these runs also fitted the Gemini models' thresholds, and five runs per model are not an accuracy estimate.
 
 Before making stronger claims, evaluate new, independent runs across known and unenrolled models, collection dates, serving hosts, streaming modes, and supported transports. Report confusion matrices, the rate of inconclusive results, incorrect matches, OOD rejection, and short or malformed output, including rejected collection attempts. Evaluate every stopping checkpoint separately if early stopping is proposed.
 
@@ -87,15 +94,16 @@ The 13 OpenRouter models reference the corpus with digest:
 163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225
 ```
 
-`gemini-3.8-flash` references a separate corpus with digest:
+`gemini-3.8-flash` and `gemini-4-argon` each reference a separate corpus, with digests:
 
 ```text
-ccf4eb2395577f019a6fc45cc8295ba647e7babd269ed52ed6c51945069c2d06
+ccf4eb2395577f019a6fc45cc8295ba647e7babd269ed52ed6c51945069c2d06  gemini-3.8-flash
+a1dcbf342056bf36db7dfa24d1b3b3a2844d51b486cf001c1c098b90e600e0e3  gemini-4-argon
 ```
 
 Each digest is SHA-256 over UTF-8 `JSON.stringify({ protocol, checkpoints, models })` in that property order, using the corpus fields. It is not the digest of the entire file: the file also includes `schemaVersion`, `collectedAt`, and a trailing newline.
 
-During the release review, the matching local corpus reproduced the digest and every fitted `integerProbabilities` and `profiles` field through `createFingerprintBank()`. The Gemini corpus does the same for its entry. The corpus is currently a Git-ignored maintainer file; it is not distributed in this repository or npm tarballs, and no public download is available yet. External users therefore cannot currently reproduce these diagnostics from the repository alone. Publishing reviewed data, its usage terms, and an evaluation recipe remains release follow-up work.
+During the release review, the matching local corpus reproduced the digest and every fitted `integerProbabilities` and `profiles` field through `createFingerprintBank()`. Each Gemini corpus does the same for its entry. The corpus is currently a Git-ignored maintainer file; it is not distributed in this repository or npm tarballs, and no public download is available yet. External users therefore cannot currently reproduce these diagnostics from the repository alone. Publishing reviewed data, its usage terms, and an evaluation recipe remains release follow-up work.
 
 Maintainers with the matching corpus can reproduce the diagnostic from the repository root after building. Replace `CORPUS_PATH` with the local corpus path, and run it once per corpus; this command only reads local data and performs no provider requests:
 
@@ -130,7 +138,7 @@ NODE
 
 ## Experimental pooled bank
 
-`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers the 13 OpenRouter models, not `gemini-3.8-flash`, collected through OpenRouter on 2026-10-11 without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Its provenance records the corpus SHA-256, `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf`. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
+`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers the 13 OpenRouter models, not the Gemini models, collected through OpenRouter on 2026-10-11 without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Its provenance records the corpus SHA-256, `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf`. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
 
 Exploratory leave-group-out results on that collection. "Unenrolled" means the model was removed from the bank and its runs probed against the rest.
 
