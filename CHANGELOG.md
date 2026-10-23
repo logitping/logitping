@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 — 2026-10-23
+
+Fixes how the Antigravity driver reports a turn that `agy`'s backend refused. The bundled banks, library API, and other transports are unchanged from 0.3.0.
 
 ### Fixed
 

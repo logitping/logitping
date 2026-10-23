@@ -4,7 +4,7 @@
 
 ## Collection snapshot
 
-This describes the bank included in the experimental `0.3.0` npm release: the 13 models of the `0.1.0` bank, unchanged, plus `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC). The 13 earlier entries are byte for byte the ones released in `0.1.0` through `0.2.1`. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
+This describes the bank included in the experimental `0.3.1` npm release, unchanged since `0.3.0`: the 13 models of the `0.1.0` bank, unchanged, plus `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC). The 13 earlier entries are byte for byte the ones released in `0.1.0` through `0.2.1`. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
 
 | Setting | Value |
 | --- | --- |

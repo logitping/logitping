@@ -16,7 +16,7 @@ A repository administrator still needs to enable private vulnerability reporting
 
 ## Versions and response expectations
 
-The current npm release is experimental version `0.3.0`; no stable release or long-term support branch is currently offered. Include the package version and, for a source build, the commit in your report. Fixes are intended for the current development line; older commits do not have a promised backport policy.
+The current npm release is experimental version `0.3.1`; no stable release or long-term support branch is currently offered. Include the package version and, for a source build, the commit in your report. Fixes are intended for the current development line; older commits do not have a promised backport policy.
 
 Reports and fixes are handled on a best-effort basis. There is no guaranteed response time, remediation deadline, or bounty program. Once a private channel is established, coordinate disclosure and any credit with the maintainer rather than assuming a publication date.
 
