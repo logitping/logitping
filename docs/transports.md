@@ -16,4 +16,4 @@ MCP servers and agent plugins are outside this version's scope.
 
 ## Platform coverage
 
-CI runs on Linux with Node.js 22 and 24. The release review also exercised the test suite and tarball on macOS with Node.js 26.10. Windows is not covered by CI; the Windows argument restrictions above do not establish complete Windows compatibility. Claude, Codex, and `agy` versions and global configuration can change transport behavior, so validate the versions used in your deployment.
+CI runs on Linux with Node.js 22 and 24. The 0.3.0 release review also ran the test suite and tarball checks on macOS with Node.js 24.22 and 26.12. Windows is not covered by CI; the Windows argument restrictions above do not establish complete Windows compatibility. Claude, Codex, and `agy` versions and global configuration can change transport behavior, so validate the versions used in your deployment.

@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-23
+
+Adds an Antigravity CLI driver and direct Google AI Studio collection, and enrolls two Gemini models in the bundled bank, which now has 15. The 13 earlier references and the pooled bank are unchanged.
 
 ### Added
 
@@ -11,6 +13,10 @@
 ### Fixed
 
 - The bank updater no longer fails requests that take longer than 300 s. A non-streaming reply sends no headers until generation ends, and Node's built-in fetch stopped waiting for them after 300 s, short of the 600 s `timeoutMs` maximum. Updater requests now go through their own connection pool, whose header and body limits follow `timeoutMs`. It uses undici, bundled into the maintainer tooling only, so the updater needs Node.js 22.19 or later; the published library is unchanged.
+
+### Development dependency security
+
+- Updated the `vite` development dependency to `6.4.4` and `vitest` to `4.1.12`. They address advisories in vite and its bundled `launch-editor` ([GHSA-587h-7wmj-h5pm](https://github.com/advisories/GHSA-587h-7wmj-h5pm), [GHSA-r825-w8mm-5pxw](https://github.com/advisories/GHSA-r825-w8mm-5pxw), [GHSA-698v-4r3x-3vcv](https://github.com/advisories/GHSA-698v-4r3x-3vcv), [GHSA-rq7h-c2jc-7f22](https://github.com/advisories/GHSA-rq7h-c2jc-7f22), [GHSA-9jrq-w75r-8gcw](https://github.com/advisories/GHSA-9jrq-w75r-8gcw)) and in `@vitest/mocker` ([GHSA-qxg6-89mg-rqv8](https://github.com/advisories/GHSA-qxg6-89mg-rqv8), [GHSA-xp26-3454-mjgp](https://github.com/advisories/GHSA-xp26-3454-mjgp)). These packages are used by test tooling and are not bundled into the published runtime.
 
 ### Bundled reference bank
 
