@@ -20,6 +20,8 @@ const agyStep = (fields: Record<string, unknown>) => ({
 const agyResult = (fields: Record<string, unknown> = {}) => ({
   event: 'result', result: { conversation_id: conversation, status: 'SUCCESS', response: '17 355 42\n', num_turns: 1, ...fields },
 });
+/** The result error agy 1.4.5 reports after an error_message step when its backend refuses the turn. */
+const refusal = 'FAILED_PRECONDITION (code 400): User location is not supported for the API use.';
 /** A decoder that has accepted the init event. */
 const startedAgy = () => {
   const decoder = new AntigravityEventDecoder();
@@ -95,6 +97,28 @@ describe('CLI event decoders', () => {
     expect(() => startedAgy().decode(agyStep({ state: 'ERROR' }))).toThrow('Antigravity reported an unsuccessful probe');
     // agy reports a rejected prompt in a result without an init event.
     expect(() => new AntigravityEventDecoder().decode(agyResult({ status: 'ERROR', response: '' }))).toThrow('Antigravity reported an unsuccessful probe');
+  });
+  it('reports an Antigravity error_message step as a failed probe, not a tool action', () => {
+    const decoder = startedAgy();
+    expect(decoder.decode(agyStep({ step_index: 0, state: 'DONE', step_type: 'user_input' }))).toEqual([]);
+    expect(decoder.decode(agyStep({ state: 'DONE', step_type: 'error_message' }))).toEqual([]);
+    expect(() => decoder.decode(agyResult({ status: 'ERROR', response: '', error: refusal }))).toThrow(expect.objectContaining({
+      code: 'CLI_FAILED', message: expect.stringMatching(/^Antigravity reported an unsuccessful probe/),
+    }));
+  });
+  it('never accepts an Antigravity turn that reported an error_message step', () => {
+    const decoder = startedAgy();
+    decoder.decode(agyStep({ state: 'DONE', step_type: 'error_message' }));
+    expect(() => decoder.decode(agyResult())).toThrow('Antigravity reported an unsuccessful probe');
+  });
+  it.each([
+    [refusal, 'Antigravity reported an unsuccessful probe: FAILED_PRECONDITION (code 400); the backend does not serve requests from this location'],
+    ['RESOURCE_EXHAUSTED (code 429): Quota exceeded for user@example.com', 'Antigravity reported an unsuccessful probe: RESOURCE_EXHAUSTED (code 429)'],
+    ['NOT_A_STATUS (code 400): text', 'Antigravity reported an unsuccessful probe'],
+    ['quota exceeded for sk-secret', 'Antigravity reported an unsuccessful probe'],
+    [42, 'Antigravity reported an unsuccessful probe'],
+  ])('names only the status and code of Antigravity error %j', (error, message) => {
+    expect(() => startedAgy().decode(agyResult({ status: 'ERROR', response: '', error }))).toThrow(expect.objectContaining({ message }));
   });
   it('ignores Antigravity text from another conversation', () => {
     const decoder = startedAgy();
@@ -357,6 +381,12 @@ process.stdin.on('data', chunk => { input += chunk; }).on('end', () => {
     setInterval(() => {}, 100);
     return;
   }
+  if (process.env.FAKE_AGY === 'refusal') {
+    step({ step_index: 0, state: 'DONE', step_type: 'user_input' });
+    step({ state: 'DONE', step_type: 'error_message' });
+    send({ event: 'result', result: { conversation_id: 'c', status: 'ERROR', response: '', error: ${JSON.stringify(refusal)} } });
+    process.exit(3);
+  }
   step({ state: 'DONE', text_delta: JSON.stringify({ args, input }) });
   send({ event: 'result', result: { conversation_id: 'c', status: 'SUCCESS', response: '' } });
 });
@@ -379,6 +409,11 @@ process.stdin.on('data', chunk => { input += chunk; }).on('end', () => {
       const pid = Number((await stream.next()).value);
       await expect(stream.next()).rejects.toMatchObject({ code: 'CLI_FAILED', message: expect.stringContaining('tool action') });
       expect(() => process.kill(pid, 0)).toThrow();
+    });
+    it('reports a refused agy turn with its status rather than as a tool action or exit failure', async () => {
+      await expect(agy('refusal').stream({ prompt: 'test', maxTokens: 10 }).next()).rejects.toMatchObject({
+        code: 'CLI_FAILED', message: expect.stringContaining('FAILED_PRECONDITION (code 400); the backend does not serve requests from this location'),
+      });
     });
     it('names the agy executable when it is missing', async () => {
       await expect(new AntigravityDriver({ env: { PATH: join(directory, 'empty') } }).stream({ prompt: 'test', maxTokens: 1 }).next())

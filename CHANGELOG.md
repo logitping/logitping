@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- An Antigravity probe that `agy`'s backend refused no longer fails as `Antigravity attempted a tool action during the probe; aborted`. `agy` ends a refused turn with an `error_message` step, which the driver mistook for a tool. The probe now fails as `Antigravity reported an unsuccessful probe` and names the backend's status and code, such as `FAILED_PRECONDITION (code 400)`, but never its message text. For a request refused because of the user's location, it adds a fixed note saying so. A turn with an `error_message` step is never accepted.
+
 ## 0.3.0 — 2026-10-23
 
 Adds an Antigravity CLI driver and direct Google AI Studio collection, and enrolls two Gemini models in the bundled bank, which now has 15. The 13 earlier references and the pooled bank are unchanged.
