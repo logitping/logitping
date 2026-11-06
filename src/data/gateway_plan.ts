@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { FingerprintBank, ModelFingerprint } from '../core/types.js';
 import { errorCode, readBoundedText } from '../util/fs.js';
 import { MAX_PAYLOAD_BYTES } from '../util/validate.js';
@@ -28,6 +29,7 @@ export const PROVIDER_LABELS: Readonly<Record<GatewayProvider, string>> = {
   cloudflare: 'Cloudflare AI Gateway REST',
   openrouter: 'OpenRouter API',
   google: 'Google AI Studio Gemini API',
+  openai: 'OpenAI API',
 };
 
 const PROVIDERS = Object.keys(PROVIDER_LABELS) as GatewayProvider[];
@@ -52,20 +54,34 @@ export function collectionSettings(target: GatewayTarget): string {
   return `${reuseSettings(target)}${target.maxTokens};`;
 }
 
+/** Whether `bank` was collected under the configured protocol. */
+export function sameProtocol(bank: FingerprintBank, config: GatewayBankConfig): boolean {
+  return (['id', 'language', 'targetSamples', 'temperature', 'transport'] as const).every((key) => bank.protocol[key] === config.protocol[key]);
+}
+
+/** Whether an enrolled model records the collection `target` configures. */
+export function enrolledAs(model: ModelFingerprint, target: GatewayTarget, checkpoints: readonly number[]): boolean {
+  return model.status === 'calibrated' && model.family === target.family &&
+    model.profiles.map((profile) => profile.sampleCount).join() === checkpoints.join() &&
+    // Switching provider or token limit alone keeps a model: accepted runs were complete either way.
+    model.provenance.includes(reuseSettings(target));
+}
+
+/** The digest that names a corpus in its models' provenance and its file name. */
+export function corpusDigest({ protocol, checkpoints, models }: { protocol: unknown; checkpoints: unknown; models: unknown }): string {
+  return createHash('sha256').update(JSON.stringify({ protocol, checkpoints, models })).digest('hex');
+}
+
 /**
  * Without `base`, collect every configured model. With it, collect only models the bank
  * does not already enroll under the configured protocol, checkpoints, and settings.
  */
 export function planGatewayBankUpdate(config: GatewayBankConfig, base?: FingerprintBank): BankUpdatePlan {
   const enrolled = new Map(base?.models.map((model) => [model.id, model]));
-  const protocol = (['id', 'language', 'targetSamples', 'temperature', 'transport'] as const)
-    .every((key) => base?.protocol[key] === config.protocol[key]);
+  const protocol = base !== undefined && sameProtocol(base, config);
   const reusable = (target: GatewayTarget) => {
     const model = enrolled.get(target.id);
-    return protocol && model?.status === 'calibrated' && model.family === target.family &&
-      model.profiles.map((profile) => profile.sampleCount).join() === config.checkpoints.join() &&
-      // Switching provider or token limit alone keeps a model: accepted runs were complete either way.
-      model.provenance.includes(reuseSettings(target));
+    return protocol && model !== undefined && enrolledAs(model, target, config.checkpoints);
   };
   const collect = config.models.filter((target) => !reusable(target));
   const retained = config.models.filter(reusable);

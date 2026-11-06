@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -13,7 +13,7 @@ import { collectionFetch } from './collection_fetch.js';
 import { createFingerprintBank, VARIANCE_METHOD } from './enrollment.js';
 import { completedRuns, newGatewayCheckpoint, readGatewayCheckpoint, saveGatewayCheckpoint, type GatewayCheckpoint } from './gateway_checkpoint.js';
 import { parseGatewayBankConfig, type GatewayBankConfig, type GatewayTarget } from './gateway_config.js';
-import { collectionSettings, enrolledProvider, parseIncrementalBase, planGatewayBankUpdate, PROVIDER_LABELS, providerLabel, type BankUpdatePlan } from './gateway_plan.js';
+import { collectionSettings, corpusDigest, enrolledProvider, parseIncrementalBase, planGatewayBankUpdate, PROVIDER_LABELS, providerLabel, type BankUpdatePlan } from './gateway_plan.js';
 import { attachPooledScoring } from './pooled_enrollment.js';
 import { findRepeatingCycle } from './repetition.js';
 
@@ -88,7 +88,7 @@ function safeError(error: unknown, config: GatewayBankConfig): string {
   let message = error.message;
   // Probe errors contain only counts and positions; never mangle them or wrapped context.
   if (!(error instanceof RedactedError || error instanceof ShortProbeError || error instanceof IntegerOutputError || error instanceof LoopingProbeError)) {
-    for (const secret of [config.gateway?.apiToken, config.gateway?.accountId, config.openrouter?.apiKey, config.google?.apiKey]) {
+    for (const secret of [config.gateway?.apiToken, config.gateway?.accountId, config.openrouter?.apiKey, config.google?.apiKey, config.openai?.apiKey]) {
       if (secret) message = message.replaceAll(secret, '[redacted]');
     }
     if (config.gateway) {
@@ -135,6 +135,15 @@ function relay(config: GatewayBankConfig, target: GatewayTarget): Relay {
       // The complete Chat Completions endpoint: from the /openai base, completionURL would insert /v1.
       baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
       headers: { 'Authorization': `Bearer ${config.google!.apiKey}` },
+    };
+  }
+  if (target.provider === 'openai') {
+    // Requested from OpenAI directly, not through a relay. Prompt caching reuses a computed
+    // prompt prefix but still generates each reply, so no response cache exists to bypass.
+    return {
+      name: 'OpenAI',
+      baseURL: 'https://api.openai.com/v1',
+      headers: { 'Authorization': `Bearer ${config.openai!.apiKey}` },
     };
   }
   if (target.provider === 'openrouter') {
@@ -291,7 +300,7 @@ async function collectProbes(config: GatewayBankConfig, checkpointPath: string, 
 /** The corpus a collection's provenance names: protocol, checkpoints, and every accepted run. */
 function corpus(config: GatewayBankConfig, state: GatewayCheckpoint) {
   const content = { protocol: config.protocol, checkpoints: config.checkpoints, models: state.models };
-  return { content, digest: createHash('sha256').update(JSON.stringify(content)).digest('hex') };
+  return { content, digest: corpusDigest(content) };
 }
 
 /** Calibrate the collected `config.models`, recording each model's collection in its provenance. */
@@ -307,7 +316,7 @@ function enroll(config: GatewayBankConfig, state: GatewayCheckpoint, nuisanceDir
     const target = config.models[index]!;
     const rejected = shortResponses[index]!;
     const invalid = invalidResponses[index]!;
-    model.provenance = `${PROVIDER_LABELS[target.provider]}; ${details}${collectionSettings(target)} cache=${target.provider === 'google' ? 'none' : 'bypassed'}; variance=${VARIANCE_METHOD}; retries=${rejected.training + rejected.validation + invalid.training + invalid.validation}; short-training-responses=${rejected.training}; short-validation-responses=${rejected.validation}; invalid-training-responses=${invalid.training}; invalid-validation-responses=${invalid.validation}; maxProbeRetries=${config.maxProbeRetries}`;
+    model.provenance = `${PROVIDER_LABELS[target.provider]}; ${details}${collectionSettings(target)} cache=${target.provider === 'google' || target.provider === 'openai' ? 'none' : 'bypassed'}; variance=${VARIANCE_METHOD}; retries=${rejected.training + rejected.validation + invalid.training + invalid.validation}; short-training-responses=${rejected.training}; short-validation-responses=${rejected.validation}; invalid-training-responses=${invalid.training}; invalid-validation-responses=${invalid.validation}; maxProbeRetries=${config.maxProbeRetries}`;
   }
   return config.requestsPerProbe === undefined ? bank : attachPooledScoring(bank, models, { requestsPerProbe: config.requestsPerProbe });
 }

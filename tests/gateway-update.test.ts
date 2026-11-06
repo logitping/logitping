@@ -37,6 +37,16 @@ const googleInput = () => ({
   ],
 });
 const googleConfig = () => parseGatewayBankConfig(googleInput(), googleCredentials);
+const openaiCredentials = { OPENAI_API_KEY: 'sk-test-openai-credential-do-not-log' };
+/** Two models requested directly from the OpenAI API, one in each of its wire formats. */
+const openaiInput = () => ({
+  ...input(), provider: 'openai',
+  models: [
+    { id: 'gpt-a', family: 'gpt', model: 'gpt-6.1-sol', apiFormat: 'responses' },
+    { id: 'gpt-b', family: 'gpt', model: 'gpt-6-astra', tokenLimitField: 'max_completion_tokens' },
+  ],
+});
+const openaiConfig = () => parseGatewayBankConfig(openaiInput(), openaiCredentials);
 const now = () => new Date('2026-09-23T00:00:00.000Z');
 const CORPUS = /\.corpus-([0-9a-f]{64})\.json$/;
 /** A deterministic run starting at `first`; steps of 7 visit all 355 values, so it never loops. */
@@ -312,6 +322,51 @@ describe('Gateway bank configuration', () => {
     const attempt = () => parseGatewayBankConfig(googleInput(), { GEMINI_API_KEY: 'secret key' });
     expect(attempt).toThrow('Invalid bank-update config: GEMINI_API_KEY must be a nonempty key without whitespace (got 10 characters, including whitespace)');
     expect(attempt).not.toThrow(/secret/);
+  });
+  it('requests OpenAI models directly with only OPENAI_API_KEY', () => {
+    const parsed = parseGatewayBankConfig(openaiInput(), { ...openaiCredentials, CLOUDFLARE_ACCOUNT_ID: 'malformed', OPENROUTER_API_KEY: 'unused key', GEMINI_API_KEY: 'unused key' });
+    expect(parsed.models.map((model) => model.provider)).toEqual(['openai', 'openai']);
+    expect(parsed.openai).toEqual({ apiKey: openaiCredentials.OPENAI_API_KEY });
+    expect(parsed.gateway).toBeUndefined();
+    expect(parsed.openrouter).toBeUndefined();
+    expect(parsed.google).toBeUndefined();
+    const file = { ...openaiInput(), openai: { apiKey: 'file-key' } };
+    expect(parseGatewayBankConfig(file, openaiCredentials).openai?.apiKey).toBe(openaiCredentials.OPENAI_API_KEY);
+    expect(parseGatewayBankConfig(file, {}).openai?.apiKey).toBe('file-key');
+    const mixed = { ...openrouterInput(), models: [input().models[0]!, { id: 'gpt-a', family: 'gpt', provider: 'openai', model: 'gpt-6.1-sol' }] };
+    expect(() => parseGatewayBankConfig(mixed, openrouterCredentials)).toThrow(/OPENAI_API_KEY is not set in the updater's environment; export it .* or set openai\.apiKey$/);
+    expect(parseGatewayBankConfig(mixed, { ...openrouterCredentials, ...openaiCredentials }).models.map((model) => model.provider)).toEqual(['openrouter', 'openai']);
+  });
+  it('accepts pinned OpenAI model IDs and rejects catalog prefixes and floating aliases', () => {
+    const withRoute = (model: string) => ({ ...openaiInput(), models: [{ ...openaiInput().models[0]!, model }, openaiInput().models[1]!] });
+    for (const model of ['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-5.6-luna', 'gpt-4o-2024-08-06']) {
+      expect(parseGatewayBankConfig(withRoute(model), openaiCredentials).models[0]!.model).toBe(model);
+    }
+    for (const model of [
+      'openai/gpt-6-sol', 'chat-latest', 'gpt-6-latest', 'GPT-6-Sol', 'ft:gpt-6-sol:org:probe:abc', 'gpt..sol', '-gpt', '', 'a'.repeat(129),
+    ]) expect(() => parseGatewayBankConfig(withRoute(model), openaiCredentials), model).toThrow('Invalid bank-update config');
+  });
+  it('rejects the Anthropic Messages format for the OpenAI API', () => {
+    const raw = { ...openaiInput(), models: openaiInput().models.map(({ id, family, model }) => ({ id, family, model, apiFormat: 'messages' })) };
+    expect(() => parseGatewayBankConfig(raw, openaiCredentials)).toThrow('Invalid bank-update config: OpenAI API models must use the chat-completions or responses apiFormat');
+  });
+  it.each([
+    [{ openai: { apiKey: 'key', misspelledOption: 'value' } }, 'openai has an unsupported field'],
+    [{ openai: 'key' }, 'openai must be an object'],
+  ])('rejects an invalid OpenAI setting: %j', (override, message) => {
+    expect(() => parseGatewayBankConfig({ ...openaiInput(), ...override }, openaiCredentials)).toThrow(`Invalid bank-update config: ${message}`);
+  });
+  it('describes a malformed OpenAI API key without echoing it', () => {
+    const attempt = () => parseGatewayBankConfig(openaiInput(), { OPENAI_API_KEY: 'secret key' });
+    expect(attempt).toThrow('Invalid bank-update config: OPENAI_API_KEY must be a nonempty key without whitespace (got 10 characters, including whitespace)');
+    expect(attempt).not.toThrow(/secret/);
+  });
+  it.each(['config/bank-update.json', 'config/pooled-bank-update.json'])('validates checked-in %s, with every GPT model requested directly from OpenAI', async (path) => {
+    const parsed = await loadGatewayBankConfig(path, { ...openrouterCredentials, ...googleCredentials, ...openaiCredentials });
+    const gpt = parsed.models.filter((model) => model.family === 'gpt');
+    expect(gpt.length).toBeGreaterThan(0);
+    for (const model of gpt) expect([model.provider, model.model]).toEqual(['openai', model.id]);
+    expect(parsed.models.filter((model) => model.family !== 'gpt').map((model) => model.provider)).not.toContain('openai');
   });
 
   it('parses pooled scoring and requires both of its fields', () => {
@@ -1220,7 +1275,143 @@ describe('Google AI Studio collection', () => {
   });
 });
 
-const referenceC = { id: 'reference-c', family: 'gpt', model: 'openai/reference-c' };
+describe('OpenAI API collection', () => {
+  const key = openaiCredentials.OPENAI_API_KEY;
+  let directory: string;
+  let outputPath: string;
+  beforeEach(async () => {
+    directory = await mkdtemp(join(tmpdir(), 'logitping-bank-openai-'));
+    outputPath = join(directory, 'default_bank.json');
+    await writeFile(outputPath, 'previous-bank-bytes\n');
+  });
+  afterEach(async () => { await rm(directory, { recursive: true, force: true }); });
+
+  /** Answers runs offset + 1, offset + 2, ... in the wire format of the requested path, without relay cache headers. */
+  function platform() {
+    const offsets: Record<string, number> = { 'gpt-6.1-sol': 10, 'gpt-6-astra': 200, 'openai/reference-a': 20, 'reference-a': 300, 'reference-c': 100 };
+    const runs = new Map<string, number>();
+    return vi.fn<typeof globalThis.fetch>(async (url, init) => {
+      const { model } = JSON.parse(String(init?.body)) as { model: string };
+      const run = (runs.get(model) ?? 0) + 1;
+      runs.set(model, run);
+      const text = steppedRun(offsets[model]! + run).join(' ');
+      const body = String(url).endsWith('/responses')
+        ? {
+          id: 'resp_1', object: 'response', model, status: 'completed', error: null, incomplete_details: null,
+          output: [
+            { id: 'rs_1', type: 'reasoning', summary: [] },
+            { id: 'msg_1', type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text, annotations: [] }] },
+          ],
+        }
+        : {
+          id: 'chatcmpl-1', object: 'chat.completion', model,
+          choices: [{ index: 0, message: { role: 'assistant', content: text, refusal: null }, finish_reason: 'stop' }],
+        };
+      return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
+    });
+  }
+
+  it('collects from api.openai.com in each configured format with bearer auth and no relay headers', async () => {
+    const fetch = platform();
+    const result = await updateGatewayBank(openaiConfig(), { outputPath, fetch, now });
+    expect(fetch).toHaveBeenCalledTimes(10);
+    for (const [url, init] of fetch.mock.calls) {
+      const headers = new Headers(init?.headers);
+      expect(headers.get('authorization')).toBe(`Bearer ${key}`);
+      expect([...headers.keys()].filter((name) => name.startsWith('cf-aig-') || name.startsWith('x-openrouter-'))).toEqual([]);
+      expect(headers.get('accept')).toBe('application/json');
+      expect(init?.redirect).toBe('error');
+      const body = JSON.parse(String(init?.body));
+      expect(body.stream).toBe(false);
+      // protocol.temperature is null: some of these models reject a custom temperature.
+      expect(body).not.toHaveProperty('temperature');
+      if (body.model === 'gpt-6.1-sol') {
+        expect(String(url)).toBe('https://api.openai.com/v1/responses');
+        expect(body).toMatchObject({ max_output_tokens: 384, store: false });
+      } else {
+        expect(body.model).toBe('gpt-6-astra');
+        expect(String(url)).toBe('https://api.openai.com/v1/chat/completions');
+        expect(body.max_completion_tokens).toBe(384);
+      }
+    }
+    expect(result.bank.models.map((model) => model.profiles)).toEqual(createFingerprintBank({
+      source: 'Expected fixture', protocol: config().protocol, checkpoints: [64],
+      models: [10, 200].map((offset, index) => ({
+        id: `m${index}`, family: 'f',
+        training: [1, 2, 3].map((n) => steppedRun(offset + n)),
+        validation: [4, 5].map((n) => steppedRun(offset + n)),
+      })),
+    }).models.map((model) => model.profiles));
+    for (const model of result.bank.models) {
+      expect(model.provenance).toMatch(/^OpenAI API; collected 2026-09-23T00:00:00\.000Z; integer-v1; corpus sha256:/);
+      // Prompt caching reuses a prefix and still generates each reply, so there is nothing to bypass.
+      expect(model.provenance).toContain(' cache=none;');
+    }
+    expect(result.bank.models[0]!.provenance).toContain('; model=gpt-6.1-sol; api=responses; stream=false; training=3; validation=2; sampling=first-64; max_output_tokens=384;');
+    expect(result.bank.models[1]!.provenance).toContain('; model=gpt-6-astra; api=chat-completions; stream=false; training=3; validation=2; sampling=first-64; max_completion_tokens=384;');
+    expect(result.bank.calibration?.source).toMatch(/^OpenAI API; collected 2026-09-23T00:00:00\.000Z;/);
+    expect(await readFile(outputPath, 'utf8')).not.toContain(key);
+  });
+
+  it('sends each key only to its own provider in a bank mixing OpenRouter and the OpenAI API', async () => {
+    const custom = parseGatewayBankConfig({
+      ...openrouterInput(), models: [input().models[0]!, { id: 'gpt-a', family: 'gpt', provider: 'openai', model: 'gpt-6.1-sol' }],
+    }, { ...openrouterCredentials, ...openaiCredentials });
+    const fetch = platform();
+    const { bank } = await updateGatewayBank(custom, { outputPath, fetch, now });
+    expect(fetch).toHaveBeenCalledTimes(10);
+    for (const [url, init] of fetch.mock.calls) {
+      const direct = JSON.parse(String(init?.body)).model === 'gpt-6.1-sol';
+      expect(String(url)).toBe(direct ? 'https://api.openai.com/v1/chat/completions' : 'https://openrouter.ai/api/v1/chat/completions');
+      expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${direct ? key : openrouterCredentials.OPENROUTER_API_KEY}`);
+    }
+    expect(bank.models[0]!.provenance).toContain(' cache=bypassed;');
+    expect(bank.models[1]!.provenance).toContain(' cache=none;');
+    expect(bank.calibration?.source).toMatch(/^OpenRouter API and OpenAI API; collected /);
+  });
+
+  it('redacts the OpenAI API key from errors', async () => {
+    const fetch: typeof globalThis.fetch = async () => { throw new Error(`upstream echoed ${key}`); };
+    await expect(updateGatewayBank(openaiConfig(), { outputPath, fetch, now }))
+      .rejects.toThrow(/^gpt-a training run 1: upstream echoed \[redacted\]$/);
+  });
+
+  it('replaces a model moved off its OpenRouter route, adds a new one, and keeps the others without requests', async () => {
+    const before = (await updateGatewayBank(openrouterConfig(), { outputPath, fetch: routes(), now })).bank;
+    const moved = parseGatewayBankConfig({
+      ...openrouterInput(), maxRequests: 15,
+      models: [
+        { id: 'reference-a', family: 'gpt', provider: 'openai', model: 'reference-a' },
+        referenceB,
+        { id: 'reference-c', family: 'gpt', provider: 'openai', model: 'reference-c' },
+      ],
+    }, { ...openrouterCredentials, ...openaiCredentials });
+    const plan = planGatewayBankUpdate(moved, before);
+    expect(plan.collect.map((target) => target.id)).toEqual(['reference-a', 'reference-c']);
+    expect(plan).toMatchObject({ retain: ['reference-b'], replace: ['reference-a'], remove: [], providerChanged: [], requiredRuns: 10 });
+
+    const fetch = platform();
+    const result = await updateGatewayBank(moved, { outputPath, fetch, now: later, incremental: true });
+    expect(fetch).toHaveBeenCalledTimes(10);
+    for (const [url, init] of fetch.mock.calls) {
+      expect(String(url)).toBe('https://api.openai.com/v1/chat/completions');
+      expect(new Headers(init?.headers).get('authorization')).toBe(`Bearer ${key}`);
+    }
+    expect(result.bank.models.map((model) => model.id)).toEqual(['reference-a', 'reference-b', 'reference-c']);
+    expect(result.bank.models[1]).toEqual(before.models[1]);
+    const replaced = expectedModel('reference-a', 'gpt', 300);
+    expect(result.bank.models[0]).toMatchObject({ profiles: replaced.profiles, integerProbabilities: replaced.integerProbabilities });
+    expect(result.bank.models[0]!.provenance).toMatch(/^OpenAI API; collected 2026-09-24T00:00:00\.000Z;/);
+    expect(result.bank.calibration?.source).toMatch(/^OpenRouter API and OpenAI API; integer-v1; incremental update collected 2 and retained 1 models;/);
+
+    // Once enrolled under the new IDs, repeating the command costs nothing.
+    const again = platform();
+    expect(await updateGatewayBank(moved, { outputPath, fetch: again, now: later, incremental: true })).toMatchObject({ changed: false, requests: 0 });
+    expect(again).not.toHaveBeenCalled();
+  });
+});
+
+const referenceC ={ id: 'reference-c', family: 'gpt', model: 'openai/reference-c' };
 const [referenceA, referenceB] = input().models as [typeof referenceC, typeof referenceC];
 const later = () => new Date('2026-09-24T00:00:00.000Z');
 

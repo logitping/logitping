@@ -3,7 +3,7 @@ import { loadGatewayBankConfig, planGatewayBankUpdate, providerLabel, readIncrem
 
 const command = new Command()
   .name('update-bank')
-  .description('Collect reference probes through Cloudflare AI Gateway, OpenRouter, or Google AI Studio and atomically refresh a fingerprint bank')
+  .description('Collect reference probes through Cloudflare AI Gateway, OpenRouter, Google AI Studio, or the OpenAI API and atomically refresh a fingerprint bank')
   .option('--config <path>', 'JSON configuration file', process.env.LOGITPING_BANK_CONFIG || 'config/bank-update.json')
   .option('--output <path>', 'bank JSON destination', 'src/data/default_bank.json')
   .option('--restart', 'discard saved collection progress and start a new request budget')

@@ -6,8 +6,8 @@ import { isIntegerInRange, isRecord, MAX_SAMPLES, MODEL_ID_PATTERN } from '../ut
 /** Hard cap on requests across all resumes of one collection. */
 export const MAX_REQUESTS = 1_000;
 
-/** Services that serve bank-update requests: relays to upstream model providers, or Google AI Studio directly. */
-export type GatewayProvider = 'cloudflare' | 'openrouter' | 'google';
+/** Services that serve bank-update requests: relays to upstream model providers, or Google AI Studio and the OpenAI API directly. */
+export type GatewayProvider = 'cloudflare' | 'openrouter' | 'google' | 'openai';
 
 export interface GatewayTarget {
   id: string;
@@ -31,6 +31,8 @@ export interface GatewayBankConfig {
   openrouter?: { apiKey: string };
   /** Gemini API credentials; present only when a model uses Google AI Studio. */
   google?: { apiKey: string };
+  /** OpenAI API credentials; present only when a model uses the OpenAI API. */
+  openai?: { apiKey: string };
   protocol: FingerprintBank['protocol'];
   checkpoints: number[];
   trainingRuns: number;
@@ -82,7 +84,7 @@ function credential(fromEnv: string | undefined, fromFile: unknown, variable: st
 }
 
 function isProvider(value: unknown): value is GatewayProvider {
-  return value === 'cloudflare' || value === 'openrouter' || value === 'google';
+  return value === 'cloudflare' || value === 'openrouter' || value === 'google' || value === 'openai';
 }
 
 /** Pinned catalog routes; dynamic routers would mix models under one label. */
@@ -92,11 +94,11 @@ function route(provider: GatewayProvider, model: unknown): string {
     check(!value.startsWith('dynamic/') && !value.includes('..') && !value.endsWith('/'), 'use an explicit model, not dynamic routing');
     return value;
   }
-  if (provider === 'google') {
-    // A Gemini API model code such as gemini-3.8-flash, without the models/ prefix of its
-    // resource name. Aliases ending in -latest move to newer models.
-    const value = text(model, /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/, 'model must be a Gemini API model code');
-    check(value.length <= 128 && !value.endsWith('-latest'), 'use a pinned Gemini API model code, not a -latest alias');
+  if (provider === 'google' || provider === 'openai') {
+    // The provider's own code for the model, such as gemini-3.8-flash or gpt-6.1-sol, without a
+    // models/ or openai/ prefix. Aliases ending in -latest, such as chat-latest, move to newer models.
+    const value = text(model, /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/, `model must be ${provider === 'google' ? 'a Gemini API model code' : 'an OpenAI API model ID'}`);
+    check(value.length <= 128 && !value.endsWith('-latest'), 'use a pinned model, not a -latest alias');
     return value;
   }
   // author/slug with an optional variant such as :free or :thinking. Floating ~author
@@ -113,16 +115,18 @@ function route(provider: GatewayProvider, model: unknown): string {
 /** Environment overrides file credentials. Returned config contains a secret; never log it. */
 export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = process.env): GatewayBankConfig {
   const root = object(input, 'root');
-  keys(root, ['schemaVersion', 'provider', 'gateway', 'openrouter', 'google', 'protocol', 'checkpoints', 'trainingRuns', 'validationRuns', 'timeoutMs', 'requestDelayMs', 'maxRequests', 'maxProbeRetries', 'maxShortResponseRetries', 'scoring', 'requestsPerProbe', 'models'], 'root');
+  keys(root, ['schemaVersion', 'provider', 'gateway', 'openrouter', 'google', 'openai', 'protocol', 'checkpoints', 'trainingRuns', 'validationRuns', 'timeoutMs', 'requestDelayMs', 'maxRequests', 'maxProbeRetries', 'maxShortResponseRetries', 'scoring', 'requestsPerProbe', 'models'], 'root');
   check(root.schemaVersion === 1, 'schemaVersion must be 1');
   const defaultProvider = root.provider ?? 'cloudflare';
-  check(isProvider(defaultProvider), 'provider must be cloudflare, openrouter, or google');
+  check(isProvider(defaultProvider), 'provider must be cloudflare, openrouter, google, or openai');
   const gateway = object(root.gateway ?? {}, 'gateway');
   keys(gateway, ['accountId', 'gatewayId', 'apiToken'], 'gateway');
   const openrouter = object(root.openrouter ?? {}, 'openrouter');
   keys(openrouter, ['apiKey'], 'openrouter');
   const google = object(root.google ?? {}, 'google');
   keys(google, ['apiKey'], 'google');
+  const openai = object(root.openai ?? {}, 'openai');
+  keys(openai, ['apiKey'], 'openai');
   const protocol = object(root.protocol, 'protocol');
   keys(protocol, ['id', 'transport', 'language', 'targetSamples', 'temperature'], 'protocol');
   check(protocol.id === undefined || protocol.id === 'integer-v1', 'only integer-v1 is supported');
@@ -161,7 +165,7 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
     const family = text(entry.family, /^[\x20-\x7e]{1,128}$/, 'invalid model family');
     check(family.trim().length > 0, 'model family cannot be blank');
     const provider = entry.provider ?? defaultProvider;
-    check(isProvider(provider), 'model provider must be cloudflare, openrouter, or google');
+    check(isProvider(provider), 'model provider must be cloudflare, openrouter, google, or openai');
     const model = route(provider, entry.model);
     // The same catalog identifier may be enrolled once through each provider.
     check(!ids.has(id) && !routes.has(`${provider} ${model}`), 'model ids and catalog identifiers must be unique');
@@ -173,6 +177,7 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
     check(apiFormat === 'chat-completions' || apiFormat === 'responses' || apiFormat === 'messages', 'invalid apiFormat');
     // Google's OpenAI-compatible endpoint serves Chat Completions only.
     check(provider !== 'google' || apiFormat === 'chat-completions', 'Google AI Studio models must use the chat-completions apiFormat');
+    check(provider !== 'openai' || apiFormat !== 'messages', 'OpenAI API models must use the chat-completions or responses apiFormat');
     const tokenLimitField = entry.tokenLimitField ?? (apiFormat === 'responses' ? 'max_output_tokens' : 'max_tokens');
     check(tokenLimitField === 'max_tokens' || tokenLimitField === 'max_completion_tokens' || tokenLimitField === 'max_output_tokens', 'invalid tokenLimitField');
     check(apiFormat === 'responses' ? tokenLimitField === 'max_output_tokens'
@@ -200,11 +205,15 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
   const geminiKey = uses('google')
     ? credential(env.GEMINI_API_KEY, google.apiKey, 'GEMINI_API_KEY', 'google.apiKey', /^[\x21-\x7e]{1,4096}$/, 'a nonempty key without whitespace')
     : undefined;
+  const openaiKey = uses('openai')
+    ? credential(env.OPENAI_API_KEY, openai.apiKey, 'OPENAI_API_KEY', 'openai.apiKey', /^[\x21-\x7e]{1,4096}$/, 'a nonempty key without whitespace')
+    : undefined;
   return {
     schemaVersion: 1,
     ...(cloudflare ? { gateway: cloudflare } : {}),
     ...(apiKey ? { openrouter: { apiKey } } : {}),
     ...(geminiKey ? { google: { apiKey: geminiKey } } : {}),
+    ...(openaiKey ? { openai: { apiKey: openaiKey } } : {}),
     // Models may use different wire formats; the bank calibrates any HTTP API probe.
     protocol: { id: 'integer-v1', language, targetSamples, temperature, transport: 'api' },
     checkpoints: counts, trainingRuns, validationRuns, timeoutMs, requestDelayMs, maxRequests, maxProbeRetries,

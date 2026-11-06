@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. The bundled banks are unchanged until the next refresh.
+
+### Added
+
+- The bank updater can request models directly from OpenAI (`"provider": "openai"`, key in `OPENAI_API_KEY`) through `https://api.openai.com/v1`, using Chat Completions or Responses, with no relay in between. Provenance records `cache=none` for these models, since there is no response cache to bypass.
+- `config/bank-update.json` and `config/pooled-bank-update.json` add `gpt-6.1-terra`. It is not enrolled until each bank is refreshed.
+- `npm run bank:pooled` can fit a pooled bank from several collections without new requests: repeat `--bank` and `--corpus`, and pass `--config` to set each model's route and settings. `config/pooled-openai-collection.json` collects only the OpenAI models, so the pooled bank can be refreshed without collecting the Claude models again.
+
+### Changed
+
+- `config/bank-update.json` requests the seven GPT models it already listed from OpenAI under their official IDs, instead of through `openai/…` routes on OpenRouter, so it now also needs `OPENAI_API_KEY`. Because the routes changed, `npm run bank:update -- --incremental` collects these models again and keeps the Claude and Gemini models unchanged.
+- `config/pooled-bank-update.json` moves the same seven models to OpenAI and needs `OPENAI_API_KEY` too. Pooled banks refuse `--incremental`, so a full refresh of the pooled bank collects every model again, including the Claude models through OpenRouter.
+
 ## 0.3.1 — 2026-10-23
 
 Fixes how the Antigravity driver reports a turn that `agy`'s backend refused. The bundled banks, library API, and other transports are unchanged from 0.3.0.
