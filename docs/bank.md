@@ -155,34 +155,52 @@ NODE
 
 `--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers 14 models, not the Gemini models: the eight `gpt-*` models, collected directly from OpenAI on 2026-11-06, and the six Claude models, whose runs were collected through OpenRouter on 2026-10-11 and reused. Both collections ran without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Pooled cutoffs and pair statistics were fitted on the runs of all 14 models; the Claude envelopes are unchanged. Provenance records each model's corpus SHA-256: `5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b` for GPT and `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf` for Claude. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
 
-The results below were measured on the earlier pooled bank: 13 models, all collected through OpenRouter on 2026-10-11. They have not been repeated on the current bank, whose GPT references come from another provider and include `gpt-6.1-terra`. Probes sent through OpenRouter are now compared with GPT references collected directly from OpenAI, and that transfer has not been evaluated.
-
-Exploratory leave-group-out results on that earlier collection. "Unenrolled" means the model was removed from the bank and its runs probed against the rest.
+Exploratory leave-group-out results follow. Each group of 8 runs was probed against a bank fitted without those runs. "Unenrolled" means the model was removed from the bank and its runs probed against the rest. The "earlier bank" had 13 models, all collected through OpenRouter on 2026-10-11. The 1 × 512 row comes from a 512-integer collection made the same day; it has not been repeated, because there is no comparable 40-run direct collection.
 
 | Probe | Enrolled model named wrongly | Unenrolled model named | `gpt-6.1-sol` / `gpt-6-astra` named correctly |
 | --- | --- | --- | --- |
-| 1 × 512 integers, default engine (fresh 512-integer collection) | 0/519 | 51/519 (10%) | 0/80 |
-| 8 × 64 integers, pooled bank | 1/65 | 9/65 (14%) | 6/10 |
+| 1 × 512 integers, default engine, 2026-10-11 | 0/519 | 51/519 (10%) | 0/80 |
+| 8 × 64 integers, earlier pooled bank | 1/65 | 9/65 (14%) | 6/10 |
+| 8 × 64 integers, current pooled bank | 2/70 (3%) | 11/70 (16%) | 2/10 |
 
 Treat these as exploratory:
 
-- The pooled test was designed after the collection results were seen.
-- The 8-request samples are small: 9/65 has a 95% interval of about 7–24%.
-- The pooled mode did not meet the predeclared target of naming unenrolled models at most 10% of the time.
-- Unenrolled models were named as similar models from the same vendor. In the pooled test, none was named as a model from another vendor.
+- The pooled test was designed after the first collection's results were seen.
+- The samples are small. On the current bank, the 95% intervals are about 1–10% for 2/70, 9–26% for 11/70, and 6–51% for 2/10.
+- The current bank misses all three predeclared targets: enrolled models named wrongly under 1%, unenrolled models named at most 10%, and the pair named correctly at least 50% of the time. The earlier bank met only the pair target.
+- Unenrolled models were named as similar models from the same vendor. In the pooled tests, none was named as a model from another vendor.
 
 The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.
 
-Most pooled errors involve two pairs of models. To locate them, the pooled test was repeated with 10 different groupings of each model's 40 runs into 5 probes of 8, giving 50 probes per model. The first grouping is the one in the table above.
+To locate the errors, the pooled test was repeated with 10 different groupings of each model's 40 runs into 5 probes of 8, giving 50 probes per model. The first grouping is the one in the table above. Across all groupings, the earlier bank named the right model in 487/650 probes (75%) and the current bank in 464/700 (66%). The first three rows below have every model enrolled; the rest test a model removed from the bank.
 
-| Tested model | Bank | Named instead | Probes |
+| Tested model | Bank | Named instead | Earlier bank | Current bank |
+| --- | --- | --- | --- | --- |
+| `gpt-6-astra` | All models | `gpt-6.1-sol` | 10/50 | 14/50 |
+| `gpt-6.1-sol` | All models | `gpt-6-astra` | 1/50 | 16/50 |
+| Each other model | All models | Any other model | 0/550 | 0/600 |
+| `gpt-6-astra` | Without the tested model | `gpt-6.1-sol` | 50/50 | 45/50 |
+| `gpt-6.1-sol` | Without the tested model | `gpt-6-astra` | 6/50 | 34/50 |
+| `gpt-6-luna` | Without the tested model | `gpt-6-sol` | 25/50 | 2/50 |
+| `gpt-5.6-luna` | Without the tested model | `gpt-6-sol` | 2/50 | 21/50 |
+| `gpt-5.6-terra` | Without the tested model | Another GPT model | 2/50 | 10/50 |
+| Each other model | Without the tested model | A same-vendor model | 4/400 | 2/450 |
+
+**In these tests, the current bank does not separate `gpt-6.1-sol` and `gpt-6-astra`.** Across the groupings, it named them correctly in 8/100 probes, down from 55/100 on the earlier bank. A result naming either one does not rule out the other. Every wrong answer with all models enrolled was between these two. The cause is unknown: the GPT references changed provider and date together, and the samples are small, so these tests cannot separate those explanations from chance.
+
+These counts replace figures published here earlier: 48/50, 26/50 and 9/50, and 0/50 for `gpt-6.1-sol` named as `gpt-6-astra`. Those came from a script that was not kept and used different random groupings. The earlier claim that the confusion ran only one way depended on those groupings: here, the earlier bank named `gpt-6.1-sol` as `gpt-6-astra` once in 50 probes.
+
+The groupings reuse the runs each bank was built from, so these counts show where errors concentrate, not how often they occur on new data.
+
+Probes can also come from a different collection than the bank. This tests references across provider and about four weeks, for the seven GPT models in both banks: 50 probes per model, with no run scored against a bank it helped fit. The groupings still reuse each model's same 40 runs.
+
+| Probes from | Bank | Other five GPT models: correct, wrong | `gpt-6.1-sol` / `gpt-6-astra`: correct, wrong |
 | --- | --- | --- | --- |
-| `gpt-6-astra` | Without `gpt-6-astra` | `gpt-6.1-sol` | 48/50 |
-| `gpt-6-luna` | Without `gpt-6-luna` | `gpt-6-sol` | 26/50 |
-| Each other model | Without the tested model | A same-vendor model | 12/550 (2.2%) |
-| `gpt-6-astra` | All 13 models | `gpt-6.1-sol` | 9/50 |
-| Each other model | All 13 models | Any other model | 0/600 |
+| OpenRouter, 2026-10-11 | Current | 208/250, 0 | 14/100, 17 |
+| OpenAI, 2026-11-06 | Earlier | 210/250, 0 | 38/100, 12 |
 
-The confusion between `gpt-6-astra` and `gpt-6.1-sol` runs one way. With both models enrolled, `gpt-6-astra` was named as `gpt-6.1-sol` in 9 of 50 probes; `gpt-6.1-sol` was never named as `gpt-6-astra`. Removed from the bank, `gpt-6.1-sol` was named as `gpt-6-astra` in 2 of 50 probes. A `gpt-6.1-sol` result therefore does not rule out `gpt-6-astra`, while a `gpt-6-astra` result was not observed for `gpt-6.1-sol`.
+So references for the five other models carried across provider and date with no wrong answers in 500 probes. This has been measured only for the pooled bank; default-bank probes through OpenRouter against the direct GPT references have not been evaluated.
 
-The groupings reuse the collection that the earlier bank was built from, so these counts show where errors concentrate, not how often they occur on new data. Three offline changes to the pooled test were tried on the same groupings: a novelty test on the pooled score, a fit test for each feature group, and a minimum lead over the second-best model. Those that lowered the unenrolled rate below 10%, to 7.5–9.5%, also cut correct single-model results for enrolled models from 73% to 34–62%. None was adopted.
+Three offline changes to the pooled test were tried on the earlier collection: a novelty test on the pooled score, a fit test for each feature group, and a minimum lead over the second-best model. Those that lowered the unenrolled rate below 10%, to 7.5–9.5%, also cut correct single-model results for enrolled models from 73% to 34–62%. None was adopted.
+
+[`scripts/research/pooled-eval.mjs`](../scripts/research/README.md#pooled-evaluation) computes the pooled counts above from the stored runs, which are not in this repository.
