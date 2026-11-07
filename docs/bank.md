@@ -138,9 +138,11 @@ NODE
 
 ## Experimental pooled bank
 
-`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers the 13 OpenRouter models, not the Gemini models, collected through OpenRouter on 2026-10-11 without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Its provenance records the corpus SHA-256, `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf`. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
+`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers 14 models, not the Gemini models: the eight `gpt-*` models, collected directly from OpenAI on 2026-11-06, and the six Claude models, whose runs were collected through OpenRouter on 2026-10-11 and reused. Both collections ran without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Pooled cutoffs and pair statistics were fitted on the runs of all 14 models; the Claude envelopes are unchanged. Provenance records each model's corpus SHA-256: `5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b` for GPT and `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf` for Claude. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
 
-Exploratory leave-group-out results on that collection. "Unenrolled" means the model was removed from the bank and its runs probed against the rest.
+The results below were measured on the earlier pooled bank: 13 models, all collected through OpenRouter on 2026-10-11. They have not been repeated on the current bank, whose GPT references come from another provider and include `gpt-6.1-terra`. Probes sent through OpenRouter are now compared with GPT references collected directly from OpenAI, and that transfer has not been evaluated.
+
+Exploratory leave-group-out results on that earlier collection. "Unenrolled" means the model was removed from the bank and its runs probed against the rest.
 
 | Probe | Enrolled model named wrongly | Unenrolled model named | `gpt-6.1-sol` / `gpt-6-astra` named correctly |
 | --- | --- | --- | --- |
@@ -168,4 +170,4 @@ Most pooled errors involve two pairs of models. To locate them, the pooled test 
 
 The confusion between `gpt-6-astra` and `gpt-6.1-sol` runs one way. With both models enrolled, `gpt-6-astra` was named as `gpt-6.1-sol` in 9 of 50 probes; `gpt-6.1-sol` was never named as `gpt-6-astra`. Removed from the bank, `gpt-6.1-sol` was named as `gpt-6-astra` in 2 of 50 probes. A `gpt-6.1-sol` result therefore does not rule out `gpt-6-astra`, while a `gpt-6-astra` result was not observed for `gpt-6.1-sol`.
 
-The groupings reuse the collection that the bank was built from, so these counts show where errors concentrate, not how often they occur on new data. Three offline changes to the pooled test were tried on the same groupings: a novelty test on the pooled score, a fit test for each feature group, and a minimum lead over the second-best model. Those that lowered the unenrolled rate below 10%, to 7.5–9.5%, also cut correct single-model results for enrolled models from 73% to 34–62%. None was adopted.
+The groupings reuse the collection that the earlier bank was built from, so these counts show where errors concentrate, not how often they occur on new data. Three offline changes to the pooled test were tried on the same groupings: a novelty test on the pooled score, a fit test for each feature group, and a minimum lead over the second-best model. Those that lowered the unenrolled rate below 10%, to 7.5–9.5%, also cut correct single-model results for enrolled models from 73% to 34–62%. None was adopted.
