@@ -19,8 +19,9 @@ The corpora are git-ignored and stay at the repository root:
 - `research-512.local.json.corpus-73559ea6….json`: 13 models × 40 runs × 512 integers.
 - `research-64.local.json.corpus-4d34afe7….json`: 13 models × 40 runs × 64 integers.
 - `pooled-openai.local.json.corpus-5472cb6f….json`: 8 GPT models × 40 runs × 64 integers.
+- `pair-heldout.local.json.corpus-bbd00932….json`: `gpt-6.1-sol` and `gpt-6-astra` × 40 runs × 64 integers.
 
-The first two were collected through OpenRouter on 2026-10-11, the third directly from OpenAI on 2026-11-06.
+The first two were collected through OpenRouter on 2026-10-11. The other two came directly from OpenAI, on 2026-11-06 and 2026-11-07.
 
 Example: `KS=4,8 node scripts/research/gate-test.mjs research-64.local.json.corpus-4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf.json`
 
@@ -34,6 +35,7 @@ Run `npm run build` first; `pooled-eval.mjs` writes JSON to stdout. The earlier 
 | Current bank, leave-group-out | `pooled-openai.local.json.corpus-5472….json research-64.local.json.corpus-4d34….json` |
 | 2026-10-11 runs against the current bank | `research-64.local.json.corpus-4d34….json --bank src/data/pooled_bank.json` |
 | 2026-11-06 runs against the earlier bank | `pooled-openai.local.json.corpus-5472….json --bank earlier-pooled-bank.local.json` |
+| Held-out pair runs against each bank | `pair-heldout.local.json.corpus-bbd0….json --bank src/data/pooled_bank.json`, then `--bank earlier-pooled-bank.local.json` |
 
 In the second row the OpenAI corpus comes first, so it supplies the GPT runs and the 2026-10-11 corpus supplies only the Claude runs, in the current bank's model order.
 
@@ -41,7 +43,7 @@ On 2026-11-07 the first row reproduced the published 45/65, 1/65, 9/65 and 6/10 
 
 ## Held-out test of `gpt-6.1-sol` and `gpt-6-astra`
 
-This plan was committed on 2026-11-07, before these runs were collected. Leave-group-out on the current bank named this pair correctly in 2/10 probes, down from 6/10 on the earlier bank, but those runs also built the banks. This test scores both banks on runs that neither was fitted from.
+This plan was committed on 2026-11-07 in `0f2e4ce`, before these runs were collected. Leave-group-out on the current bank named this pair correctly in 2/10 probes, down from 6/10 on the earlier bank, but those runs also built the banks. This test scores both banks on runs that neither was fitted from.
 
 - **Collection:** [`pair-heldout-collection.json`](pair-heldout-collection.json) requests 40 runs of 64 integers per model directly from OpenAI, under the current bank's settings, with a hard cap of 80 requests.
 - **Banks:** both unchanged: `src/data/pooled_bank.json` as of this commit, and the earlier bank at `bb30c2a`.
@@ -57,6 +59,17 @@ Limits, known in advance:
 - The test favors the current bank. The new runs use the same route as its references and come a day later; the earlier bank's references came through OpenRouter about four weeks earlier.
 - It says nothing about probes sent through OpenRouter.
 - 80 runs is a small sample, and the 10 groupings reuse them.
+
+### Outcome
+
+The collection ran on 2026-11-07: 80 runs from 80 requests, with no retries. Every run has 64 integers in range, and none repeats a run from an earlier collection.
+
+| Bank | Correct | Wrong | Several candidates | No candidate | Correct, first grouping |
+|---|---|---|---|---|---|
+| Current | 15/100 | 25/100 | 48/100 | 12/100 | 2/10 |
+| Earlier | 16/100 | 40/100 | 27/100 | 17/100 | 1/10 |
+
+Neither bank separates the pair. Following the rule, the current bank was kept, and the docs say that `--pooled` does not reliably tell these two models apart.
 
 ## Implementation check
 

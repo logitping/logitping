@@ -167,7 +167,7 @@ Treat these as exploratory:
 
 - The pooled test was designed after the first collection's results were seen.
 - The samples are small. On the current bank, the 95% intervals are about 1–10% for 2/70, 9–26% for 11/70, and 6–51% for 2/10.
-- The current bank misses all three predeclared targets: enrolled models named wrongly under 1%, unenrolled models named at most 10%, and the pair named correctly at least 50% of the time. The earlier bank met only the pair target.
+- The current bank misses all three predeclared targets: enrolled models named wrongly under 1%, unenrolled models named at most 10%, and the pair named correctly at least 50% of the time. The earlier bank met only the pair target, and [missed it on new runs](#held-out-runs-of-gpt-61-sol-and-gpt-6-astra).
 - Unenrolled models were named as similar models from the same vendor. In the pooled tests, none was named as a model from another vendor.
 
 The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.
@@ -186,7 +186,7 @@ To locate the errors, the pooled test was repeated with 10 different groupings o
 | `gpt-5.6-terra` | Without the tested model | Another GPT model | 2/50 | 10/50 |
 | Each other model | Without the tested model | A same-vendor model | 4/400 | 2/450 |
 
-**In these tests, the current bank does not separate `gpt-6.1-sol` and `gpt-6-astra`.** Across the groupings, it named them correctly in 8/100 probes, down from 55/100 on the earlier bank. A result naming either one does not rule out the other. Every wrong answer with all models enrolled was between these two. The cause is unknown: the GPT references changed provider and date together, and the samples are small, so these tests cannot separate those explanations from chance.
+**Neither pooled bank separates `gpt-6.1-sol` and `gpt-6-astra` on runs from other collections.** Across the groupings, the current bank named them correctly in 8/100 probes and the earlier bank in 55/100. But the earlier bank's 55/100 was measured on the same collection it was built from; on runs from later collections it got 38/100 and 16/100 (see below). A result naming either one does not rule out the other. Every wrong answer with all models enrolled was between these two. Why the two collections gave such different leave-group-out results is unknown.
 
 These counts replace figures published here earlier: 48/50, 26/50 and 9/50, and 0/50 for `gpt-6.1-sol` named as `gpt-6-astra`. Those came from a script that was not kept and used different random groupings. The earlier claim that the confusion ran only one way depended on those groupings: here, the earlier bank named `gpt-6.1-sol` as `gpt-6-astra` once in 50 probes.
 
@@ -200,6 +200,24 @@ Probes can also come from a different collection than the bank. This tests refer
 | OpenAI, 2026-11-06 | Earlier | 210/250, 0 | 38/100, 12 |
 
 So references for the five other models carried across provider and date with no wrong answers in 500 probes. This has been measured only for the pooled bank; default-bank probes through OpenRouter against the direct GPT references have not been evaluated.
+
+### Held-out runs of `gpt-6.1-sol` and `gpt-6-astra`
+
+On 2026-11-07, 40 new runs of each of these two models were collected directly from OpenAI under the current bank's settings. Neither bank was built from them. The test and the rule for reading it were committed before the runs were collected; see [the plan](../scripts/research/README.md#held-out-test-of-gpt-61-sol-and-gpt-6-astra). Each bank was probed with 10 groupings of the 80 runs, 100 probes in all.
+
+| Result | Current bank | Earlier bank |
+| --- | --- | --- |
+| Correct single model | 15/100 | 16/100 |
+| Wrong single model | 25/100 | 40/100 |
+| Several candidates | 48/100 | 27/100 |
+| No candidate | 12/100 | 17/100 |
+| Correct, first grouping only | 2/10 | 1/10 |
+
+Neither bank met the plan's bar of at least 50 correct and at most 20 wrong, so the current bank was kept. With runs from another collection, this pair was named correctly in 14–38 of 100 probes in every test.
+
+- The test favors the current bank: the new runs use the same route as its references and came a day later.
+- Counts vary between collections: the earlier bank got 38/100 on the 2026-11-06 runs and 16/100 on these.
+- Probes sent through OpenRouter were not tested.
 
 Three offline changes to the pooled test were tried on the earlier collection: a novelty test on the pooled score, a fit test for each feature group, and a minimum lead over the second-best model. Those that lowered the unenrolled rate below 10%, to 7.5–9.5%, also cut correct single-model results for enrolled models from 73% to 34–62%. None was adopted.
 
