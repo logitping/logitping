@@ -2,12 +2,12 @@
 
 ## Unreleased
 
-Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. The pooled bank is refreshed with them and adds `gpt-6.1-terra`; the default bank is unchanged until its next refresh.
+Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. Both bundled banks are refreshed with them and add `gpt-6.1-terra`.
 
 ### Added
 
 - The bank updater can request models directly from OpenAI (`"provider": "openai"`, key in `OPENAI_API_KEY`) through `https://api.openai.com/v1`, using Chat Completions or Responses, with no relay in between. Provenance records `cache=none` for these models, since there is no response cache to bypass.
-- `config/bank-update.json` and `config/pooled-bank-update.json` add `gpt-6.1-terra`. The pooled bank enrolls it; the default bank does not until its next refresh.
+- `config/bank-update.json` and `config/pooled-bank-update.json` add `gpt-6.1-terra`, which both bundled banks now enroll.
 - `npm run bank:pooled` can fit a pooled bank from several collections without new requests: repeat `--bank` and `--corpus`, and pass `--config` to set each model's route and settings. `config/pooled-openai-collection.json` collects only the OpenAI models, so the pooled bank can be refreshed without collecting the Claude models again.
 
 ### Changed
@@ -17,6 +17,7 @@ Adds direct OpenAI collection to the bank updater and moves the GPT models in th
 
 ### Bundled reference bank
 
+- The default bank now has 16 models. Its eight GPT models, including the new `gpt-6.1-terra`, were collected directly from OpenAI on **2026-11-06**: 10 training and 5 threshold-calibration runs of 512 English integers, with an 8,192-token output budget. Its Claude and Gemini entries are unchanged. Probes through OpenRouter now compare against GPT references collected directly from OpenAI, which has not been evaluated. See [bank documentation](docs/bank.md).
 - The pooled bank now has 14 models. Its eight GPT models, including the new `gpt-6.1-terra`, were collected directly from OpenAI on **2026-11-06**: 25 training and 15 held-out runs of 64 English integers each. Its six Claude models reuse their runs from **2026-10-11**, collected through OpenRouter, with their envelopes unchanged. Pooled cutoffs and pair statistics were fitted anew on all 14. The published pooled results were measured on the earlier 13-model bank and have not been repeated, and probes through OpenRouter now compare against GPT references collected directly from OpenAI. See [bank documentation](docs/bank.md).
 
 ## 0.3.1 — 2026-10-23

@@ -4,14 +4,14 @@
 
 ## Collection snapshot
 
-This describes the bank included in the experimental `0.3.1` npm release, unchanged since `0.3.0`: the 13 models of the `0.1.0` bank, unchanged, plus `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC). The 13 earlier entries are byte for byte the ones released in `0.1.0` through `0.2.1`. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
+This describes the bank in this repository, which is newer than the experimental `0.3.1` npm release. It has 16 models: the eight `gpt-*` models, including the new `gpt-6.1-terra`, collected directly from OpenAI on 2026-11-06 (UTC); the six Claude models of the `0.1.0` bank, byte for byte; and `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC) and also unchanged. The `0.3.1` release instead has 15 models, with seven GPT models collected through OpenRouter on 2026-10-03. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
 
 | Setting | Value |
 | --- | --- |
-| Collection provider | OpenRouter (13 models); Google AI Studio directly, with no relay (`gemini-3.8-flash`, `gemini-4-argon`) |
-| Collection timestamp | `2026-10-03T10:19:52.961Z` (13 models); `2026-10-21T12:49:38.534Z` (`gemini-3.8-flash`); `2026-10-21T23:38:01.740Z` (`gemini-4-argon`); all UTC |
-| References | 15 calibrated model entries |
-| Accepted runs | 10 training + 5 threshold-calibration runs per model; 225 total |
+| Collection provider | OpenAI directly, with no relay (8 GPT models); OpenRouter (6 Claude models); Google AI Studio directly, with no relay (`gemini-3.8-flash`, `gemini-4-argon`) |
+| Collection timestamp | `2026-11-06T22:22:10.199Z` (GPT models); `2026-10-03T10:19:52.961Z` (Claude models); `2026-10-21T12:49:38.534Z` (`gemini-3.8-flash`); `2026-10-21T23:38:01.740Z` (`gemini-4-argon`); all UTC |
+| References | 16 calibrated model entries |
+| Accepted runs | 10 training + 5 threshold-calibration runs per model; 240 total |
 | Protocol | `integer-v1`, English, first 512 integers in `[1, 355]` |
 | Transport | `api`; collection requests used `stream: false` |
 | Temperature | Omitted (`null` in the bank) |
@@ -20,23 +20,24 @@ This describes the bank included in the experimental `0.3.1` npm release, unchan
 | Nuisance directions | None |
 | Early stopping | Disabled: `sequentialValidated: false` |
 
-`calibrated` means that empirical distance envelopes were fitted. The five runs called `validation` in the data are used to set those envelopes; they are not an independent final evaluation set. Model labels record requested catalog routes, not independently attested backend identities. OpenRouter routing can select different upstream hosts, and the bank does not record the serving host of each run. The Gemini requests went straight to Google's OpenAI-compatible Chat Completions endpoint.
+`calibrated` means that empirical distance envelopes were fitted. The five runs called `validation` in the data are used to set those envelopes; they are not an independent final evaluation set. Model labels record requested catalog routes, not independently attested backend identities. OpenRouter routing can select different upstream hosts, and the bank does not record the serving host of each run. The GPT requests went straight to OpenAI's API, and the Gemini requests to Google's OpenAI-compatible Chat Completions endpoint.
 
 `gemini-4-argon` used up an 8,192-token budget, which reasoning shares, before finishing its answer, so it was collected with 32,768 tokens, its maximum output. Even then, 10 of its 25 replies that ended were cut off at the limit before 512 integers. Those requests were sent again, and provenance does not count them, because the updater stops at a cut-off reply instead of retrying it. Two more Argon requests timed out and were sent again. Argon's references therefore describe only replies that finish within 32,768 tokens; expect a similar share of Argon probes to end `INCONCLUSIVE` with a short reply.
 
 ## Model list
 
-Every entry except `gemini-4-argon` used the 8,192-token output limit above; Argon used 32,768. These are the routes and formats recorded at collection time, not a promise of ongoing catalog availability or access for every account. Routes with a vendor prefix were requested through OpenRouter; the two Gemini models were requested from Google AI Studio.
+Every entry except `gemini-4-argon` used the 8,192-token output limit above; Argon used 32,768. These are the routes and formats recorded at collection time, not a promise of ongoing catalog availability or access for every account. Routes with a vendor prefix were requested through OpenRouter; the GPT models were requested from OpenAI, and the two Gemini models from Google AI Studio.
 
 | Bank model ID | Requested route | API format | Token-limit field |
 | --- | --- | --- | --- |
-| `gpt-6.1-sol` | `openai/gpt-6.1-sol` | `responses` | `max_output_tokens` |
-| `gpt-6-sol` | `openai/gpt-6-sol` | `responses` | `max_output_tokens` |
-| `gpt-6-luna` | `openai/gpt-6-luna` | `responses` | `max_output_tokens` |
-| `gpt-6-astra` | `openai/gpt-6-astra` | `chat-completions` | `max_completion_tokens` |
-| `gpt-5.6-luna` | `openai/gpt-5.6-luna` | `responses` | `max_output_tokens` |
-| `gpt-5.6-terra` | `openai/gpt-5.6-terra` | `responses` | `max_output_tokens` |
-| `gpt-5.6-sol` | `openai/gpt-5.6-sol` | `responses` | `max_output_tokens` |
+| `gpt-6.1-sol` | `gpt-6.1-sol` | `responses` | `max_output_tokens` |
+| `gpt-6.1-terra` | `gpt-6.1-terra` | `responses` | `max_output_tokens` |
+| `gpt-6-sol` | `gpt-6-sol` | `responses` | `max_output_tokens` |
+| `gpt-6-luna` | `gpt-6-luna` | `responses` | `max_output_tokens` |
+| `gpt-6-astra` | `gpt-6-astra` | `chat-completions` | `max_completion_tokens` |
+| `gpt-5.6-luna` | `gpt-5.6-luna` | `responses` | `max_output_tokens` |
+| `gpt-5.6-terra` | `gpt-5.6-terra` | `responses` | `max_output_tokens` |
+| `gpt-5.6-sol` | `gpt-5.6-sol` | `responses` | `max_output_tokens` |
 | `claude-sonnet-5.5` | `anthropic/claude-sonnet-5.5` | `messages` | `max_tokens` |
 | `claude-opus-5.5` | `anthropic/claude-opus-5.5` | `messages` | `max_tokens` |
 | `claude-fable-5.1` | `anthropic/claude-fable-5.1` | `messages` | `max_tokens` |
@@ -51,6 +52,21 @@ The probe CLI defaults to 2,624 output tokens for 512 integers. Use `--max-token
 ## Evaluation status
 
 There is no published independent estimate of real-model identification accuracy, unknown-model error rates, or latency savings. Keep early stopping disabled until independent sequential evaluation supports enabling it.
+
+Replaying the 80 stored threshold-calibration runs through the current 16-model bank, at 512 samples with early stopping disabled and no provider requests, gave:
+
+| Tested models | Bank | Label matches | Wrong matches | `INCONCLUSIVE` | `UNKNOWN_MODEL` |
+| --- | --- | --- | --- | --- | --- |
+| GPT (40 runs) | Full bundled bank | 14 | 0 | 26 | 0 |
+| GPT (40 runs) | Without the tested label | Not applicable | 1 | 39 | 0 |
+| Claude (30 runs) | Full bundled bank | 16 | 0 | 14 | 0 |
+| Claude (30 runs) | Without the tested label | Not applicable | 3 | 22 | 5 |
+| Gemini (10 runs) | Full bundled bank | 0 | 0 | 10 | 0 |
+| Gemini (10 runs) | Without the tested label | Not applicable | 1 | 9 | 0 |
+
+The five wrong matches were `gpt-6-astra` named as `gpt-6.1-sol` once, `claude-fable-5.1` as `claude-fable-5` once, `claude-fable-5` as `claude-fable-5.1` twice, and `gemini-3.8-flash` as `gemini-4-argon` once. On the full bank, all five runs of `gpt-6.1-sol`, `gpt-6.1-terra`, `gpt-6-astra`, and `gpt-5.6-sol` were `INCONCLUSIVE`. The full-bank rows reuse samples that fitted the tested model's thresholds, so none of this estimates independent accuracy.
+
+The results below describe earlier banks, whose GPT references were collected through OpenRouter.
 
 The 2026-10-03 release review replayed the 65 stored threshold-calibration runs through `fingerprint()` at 512 samples with early stopping disabled. It made no provider requests:
 
@@ -88,22 +104,18 @@ Before making stronger claims, evaluate new, independent runs across known and u
 
 ## Data availability and reproducibility
 
-The 13 OpenRouter models reference the corpus with digest:
+The eight GPT models and the six Claude models each reference their own corpus, and `gemini-3.8-flash` and `gemini-4-argon` each reference a separate one, with digests:
 
 ```text
-163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225
-```
-
-`gemini-3.8-flash` and `gemini-4-argon` each reference a separate corpus, with digests:
-
-```text
+74df5aa4c36a4ea42eba4ab3822d5dba8e988d4b24533832736591d9df070381  GPT models
+163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225  Claude models; also holds the superseded GPT runs
 ccf4eb2395577f019a6fc45cc8295ba647e7babd269ed52ed6c51945069c2d06  gemini-3.8-flash
 a1dcbf342056bf36db7dfa24d1b3b3a2844d51b486cf001c1c098b90e600e0e3  gemini-4-argon
 ```
 
 Each digest is SHA-256 over UTF-8 `JSON.stringify({ protocol, checkpoints, models })` in that property order, using the corpus fields. It is not the digest of the entire file: the file also includes `schemaVersion`, `collectedAt`, and a trailing newline.
 
-During the release review, the matching local corpus reproduced the digest and every fitted `integerProbabilities` and `profiles` field through `createFingerprintBank()`. Each Gemini corpus does the same for its entry. The corpus is currently a Git-ignored maintainer file; it is not distributed in this repository or npm tarballs, and no public download is available yet. External users therefore cannot currently reproduce these diagnostics from the repository alone. Publishing reviewed data, its usage terms, and an evaluation recipe remains release follow-up work.
+During the release review, the matching local corpus reproduced the digest and every fitted `integerProbabilities` and `profiles` field through `createFingerprintBank()`. Each Gemini corpus does the same for its entry, and the GPT corpus for its eight entries. The corpus is currently a Git-ignored maintainer file; it is not distributed in this repository or npm tarballs, and no public download is available yet. External users therefore cannot currently reproduce these diagnostics from the repository alone. Publishing reviewed data, its usage terms, and an evaluation recipe remains release follow-up work.
 
 Maintainers with the matching corpus can reproduce the diagnostic from the repository root after building. Replace `CORPUS_PATH` with the local corpus path, and run it once per corpus; this command only reads local data and performs no provider requests:
 
@@ -116,6 +128,9 @@ const corpus = JSON.parse(readFileSync(process.env.CORPUS_PATH, 'utf8'));
 const bank = defaultBank();
 const totals = { full: {}, excluded: {} };
 for (const model of corpus.models) {
+  // A corpus can hold superseded runs of a model that was collected again later.
+  const digest = /corpus sha256:([0-9a-f]{64})/.exec(bank.models.find(ref => ref.id === model.id).provenance)[1];
+  if (!process.env.CORPUS_PATH.includes(digest)) continue;
   for (const samples of model.validation) {
     for (const mode of ['full', 'excluded']) {
       const references = mode === 'full' ? bank : {
