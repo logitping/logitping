@@ -4,7 +4,7 @@
 
 ## Collection snapshot
 
-This describes the bank in this repository, which is newer than the experimental `0.3.1` npm release. It has 16 models: the eight `gpt-*` models, including the new `gpt-6.1-terra`, collected directly from OpenAI on 2026-11-06 (UTC); the six Claude models of the `0.1.0` bank, byte for byte; and `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC) and also unchanged. The `0.3.1` release instead has 15 models, with seven GPT models collected through OpenRouter on 2026-10-03. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
+This describes the bank included in the experimental `0.4.0` npm release. It has 16 models: the eight `gpt-*` models, including the new `gpt-6.1-terra`, collected directly from OpenAI on 2026-11-06 (UTC); the six Claude models of the `0.1.0` bank, byte for byte; and `gemini-3.8-flash` and `gemini-4-argon` (family `gemini`), both collected on 2026-10-21 (UTC) and also unchanged. The `0.3.0` release instead has 15 models, with seven GPT models collected through OpenRouter on 2026-10-03. The checked-in [bank](../src/data/default_bank.json) and its per-model provenance are the source of truth after any refresh. That source link requires a repository checkout; from an installed package, `defaultBank()` returns the bundled bank and its provenance.
 
 | Setting | Value |
 | --- | --- |
