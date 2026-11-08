@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-11-08
 
-Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. Both bundled banks are refreshed with them and add `gpt-6.1-terra`.
+Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. Both bundled banks are refreshed with them and add `gpt-6.1-terra`. It also includes the Antigravity fix prepared as 0.3.1, which was never published to npm, so this release follows 0.3.0.
 
 ### Added
 
@@ -15,6 +15,10 @@ Adds direct OpenAI collection to the bank updater and moves the GPT models in th
 - `config/bank-update.json` requests the seven GPT models it already listed from OpenAI under their official IDs, instead of through `openai/…` routes on OpenRouter, so it now also needs `OPENAI_API_KEY`. Because the routes changed, `npm run bank:update -- --incremental` collects these models again and keeps the Claude and Gemini models unchanged.
 - `config/pooled-bank-update.json` moves the same seven models to OpenAI and needs `OPENAI_API_KEY` too. Pooled banks refuse `--incremental`, so a full refresh of the pooled bank collects every model again, including the Claude models through OpenRouter.
 
+### Fixed
+
+- An Antigravity probe that `agy`'s backend refused no longer fails as `Antigravity attempted a tool action during the probe; aborted`. `agy` ends a refused turn with an `error_message` step, which the driver mistook for a tool. The probe now fails as `Antigravity reported an unsuccessful probe` and names the backend's status and code, such as `FAILED_PRECONDITION (code 400)`, but never its message text. For a request refused because of the user's location, it adds a fixed note saying so. A turn with an `error_message` step is never accepted.
+
 ### Bundled reference bank
 
 - The default bank now has 16 models. Its eight GPT models, including the new `gpt-6.1-terra`, were collected directly from OpenAI on **2026-11-06**: 10 training and 5 threshold-calibration runs of 512 English integers, with an 8,192-token output budget. Its Claude and Gemini entries are unchanged. Probes through OpenRouter now compare against GPT references collected directly from OpenAI, which has not been evaluated. See [bank documentation](docs/bank.md).
@@ -22,14 +26,6 @@ Adds direct OpenAI collection to the bank updater and moves the GPT models in th
 - **Neither the refreshed nor the previous pooled bank reliably separates `gpt-6.1-sol` and `gpt-6-astra`.** On 80 new runs from OpenAI that no bank was built from, the refreshed bank named them correctly in 15 of 100 probes and the previous bank in 16, with 25 and 40 wrong. Either model can be named as the other. In leave-group-out tests the refreshed bank named the pair correctly in 2 of 10 probes, compared with 6 of 10 published for the previous bank. That 6 of 10 was measured on the same collection the previous bank was built from, and the previous bank did worse on runs from later collections.
 - In exploratory leave-group-out tests, the refreshed pooled bank named the right model in 43 of 70 probes. It named enrolled models wrongly in 2/70 probes, compared with 1/65, and unenrolled models in 11/70, compared with 9/65. All its wrong answers with every model enrolled were between `gpt-6.1-sol` and `gpt-6-astra`. See [bank documentation](docs/bank.md#experimental-pooled-bank).
 - The bank notes replace their repeated-grouping counts with ones from a script now kept in `scripts/research/`. The earlier claim that this pair's errors ran only one way depended on the random groupings.
-
-## 0.3.1 — 2026-10-23
-
-Fixes how the Antigravity driver reports a turn that `agy`'s backend refused. The bundled banks, library API, and other transports are unchanged from 0.3.0.
-
-### Fixed
-
-- An Antigravity probe that `agy`'s backend refused no longer fails as `Antigravity attempted a tool action during the probe; aborted`. `agy` ends a refused turn with an `error_message` step, which the driver mistook for a tool. The probe now fails as `Antigravity reported an unsuccessful probe` and names the backend's status and code, such as `FAILED_PRECONDITION (code 400)`, but never its message text. For a request refused because of the user's location, it adds a fixed note saying so. A turn with an `error_message` step is never accepted.
 
 ## 0.3.0 — 2026-10-23
 
