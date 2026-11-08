@@ -16,7 +16,7 @@ The project website is live at [logitping.com](https://logitping.com), with an i
 
 **Experimental 0.3.1.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
-The bundled bank contains **15 models**: 13 collected through OpenRouter on 2026-10-03, and `gemini-3.8-flash` and `gemini-4-argon` collected directly from Google AI Studio on 2026-10-21, each with 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
+The bundled bank contains **16 models**: eight GPT models collected directly from OpenAI on 2026-11-06, six Claude models collected through OpenRouter on 2026-10-03, and `gemini-3.8-flash` and `gemini-4-argon` collected directly from Google AI Studio on 2026-10-21, each with 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
 ## Install
 
@@ -39,7 +39,7 @@ The [npm package](https://www.npmjs.com/package/logitping) includes ESM/CommonJS
 
 This example probes `openai/gpt-6.1-sol` through OpenRouter using the Responses format and 8,192 output-token budget recorded in its reference fingerprint. You need an OpenRouter account with access to that route and an API key already exported as `OPENROUTER_API_KEY` through your shell or secret manager. `.env` files are not loaded automatically.
 
-**Running this command sends one provider request and may incur charges, including reasoning tokens.** It does not refresh the bank or retry a failed probe. The CLI streams the response; the bank was collected without streaming, and transfer between those modes has not been independently evaluated. OpenRouter documents its [Responses endpoint and authentication](https://openrouter.ai/docs/api/reference/responses/overview).
+**Running this command sends one provider request and may incur charges, including reasoning tokens.** It does not refresh the bank or retry a failed probe. The CLI streams the response; the bank was collected without streaming, and its GPT references directly from OpenAI, so this compares across streaming modes and providers. That transfer has not been independently evaluated. OpenRouter documents its [Responses endpoint and authentication](https://openrouter.ai/docs/api/reference/responses/overview).
 
 ```sh
 LOGITPING_API_KEY="${OPENROUTER_API_KEY:?Export OPENROUTER_API_KEY first}" \
@@ -71,7 +71,7 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 
 ### Experimental: pooled short requests
 
-`--pooled` sends 8 requests of 64 integers instead of one of 512. It costs about 0.72× as much, and it separates models with similar outputs better: on the 2026-10-11 collection, it named `gpt-6.1-sol` or `gpt-6-astra` correctly in 6 of 10 probes, where the default probe was inconclusive in every run. Between these two, its errors ran one way: with both enrolled, `gpt-6-astra` was sometimes named as `gpt-6.1-sol`, never the reverse. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
+`--pooled` sends 8 requests of 64 integers instead of one of 512, at about 0.72× the cost. In exploratory tests of the current bank, it named the right model in 43 of 70 probes and the wrong one in 2. **Do not rely on it to tell `gpt-6.1-sol` from `gpt-6-astra`:** all 30 wrong answers across 700 repeated probes were between these two, and either can be named as the other. On 80 new runs that no bank was built from, it named them correctly in 15 of 100 probes, and the bank it replaced did so in 16. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it: models removed from the bank were still named in 11 of 70 probes. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
 
     lping --endpoint https://openrouter.ai/api/v1 --model openai/gpt-6.1-sol --api-format responses --max-tokens 4096 --pooled --json
 

@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. Both bundled banks are refreshed with them and add `gpt-6.1-terra`.
+
+### Added
+
+- The bank updater can request models directly from OpenAI (`"provider": "openai"`, key in `OPENAI_API_KEY`) through `https://api.openai.com/v1`, using Chat Completions or Responses, with no relay in between. Provenance records `cache=none` for these models, since there is no response cache to bypass.
+- `config/bank-update.json` and `config/pooled-bank-update.json` add `gpt-6.1-terra`, which both bundled banks now enroll.
+- `npm run bank:pooled` can fit a pooled bank from several collections without new requests: repeat `--bank` and `--corpus`, and pass `--config` to set each model's route and settings. `config/pooled-openai-collection.json` collects only the OpenAI models, so the pooled bank can be refreshed without collecting the Claude models again.
+
+### Changed
+
+- `config/bank-update.json` requests the seven GPT models it already listed from OpenAI under their official IDs, instead of through `openai/…` routes on OpenRouter, so it now also needs `OPENAI_API_KEY`. Because the routes changed, `npm run bank:update -- --incremental` collects these models again and keeps the Claude and Gemini models unchanged.
+- `config/pooled-bank-update.json` moves the same seven models to OpenAI and needs `OPENAI_API_KEY` too. Pooled banks refuse `--incremental`, so a full refresh of the pooled bank collects every model again, including the Claude models through OpenRouter.
+
+### Bundled reference bank
+
+- The default bank now has 16 models. Its eight GPT models, including the new `gpt-6.1-terra`, were collected directly from OpenAI on **2026-11-06**: 10 training and 5 threshold-calibration runs of 512 English integers, with an 8,192-token output budget. Its Claude and Gemini entries are unchanged. Probes through OpenRouter now compare against GPT references collected directly from OpenAI, which has not been evaluated. See [bank documentation](docs/bank.md).
+- The pooled bank now has 14 models. Its eight GPT models, including the new `gpt-6.1-terra`, were collected directly from OpenAI on **2026-11-06**: 25 training and 15 held-out runs of 64 English integers each. Its six Claude models reuse their runs from **2026-10-11**, collected through OpenRouter, with their envelopes unchanged. Pooled cutoffs and pair statistics were fitted anew on all 14.
+- **Neither the refreshed nor the previous pooled bank reliably separates `gpt-6.1-sol` and `gpt-6-astra`.** On 80 new runs from OpenAI that no bank was built from, the refreshed bank named them correctly in 15 of 100 probes and the previous bank in 16, with 25 and 40 wrong. Either model can be named as the other. In leave-group-out tests the refreshed bank named the pair correctly in 2 of 10 probes, compared with 6 of 10 published for the previous bank. That 6 of 10 was measured on the same collection the previous bank was built from, and the previous bank did worse on runs from later collections.
+- In exploratory leave-group-out tests, the refreshed pooled bank named the right model in 43 of 70 probes. It named enrolled models wrongly in 2/70 probes, compared with 1/65, and unenrolled models in 11/70, compared with 9/65. All its wrong answers with every model enrolled were between `gpt-6.1-sol` and `gpt-6-astra`. See [bank documentation](docs/bank.md#experimental-pooled-bank).
+- The bank notes replace their repeated-grouping counts with ones from a script now kept in `scripts/research/`. The earlier claim that this pair's errors ran only one way depended on the random groupings.
+
 ## 0.3.1 — 2026-10-23
 
 Fixes how the Antigravity driver reports a turn that `agy`'s backend refused. The bundled banks, library API, and other transports are unchanged from 0.3.0.

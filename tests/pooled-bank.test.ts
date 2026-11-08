@@ -95,17 +95,22 @@ describe('pooled enrollment', () => {
 });
 
 describe('bundled pooled bank', () => {
-  it('loads a validated 13-model bank of 8 requests × 64 integers', async () => {
+  it('loads a validated 14-model bank of 8 requests × 64 integers', async () => {
     const bank = await pooledBank();
     expect(bank).toMatchObject({
       schemaVersion: 2,
       protocol: { id: 'integer-v1', language: 'en', targetSamples: 64, temperature: null, transport: 'api', requestsPerProbe: 8, scoring: 'pooled-sets-v1' },
       pooled: { alpha: 0.2, bootstrap: { draws: 2000, seed: 20261011 } },
     });
-    expect(bank.models).toHaveLength(13);
-    expect(bank.pooled!.pairs).toHaveLength(156);
+    expect(bank.models).toHaveLength(14);
+    expect(bank.pooled!.pairs).toHaveLength(182);
     expect(bank.pooled!.models.map((model) => model.id)).toEqual(bank.models.map((model) => model.id));
-    for (const model of bank.models) expect(model.provenance).toContain('corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf;');
+    // GPT runs come from the 2026-11-06 OpenAI collection; Claude runs are reused from 2026-10-11.
+    for (const model of bank.models) {
+      expect(model.provenance).toContain(model.family === 'claude'
+        ? 'corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf;'
+        : 'corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b;');
+    }
   });
 
   it('returns an independent copy', async () => {

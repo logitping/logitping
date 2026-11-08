@@ -18,49 +18,64 @@
     {
       "id": "gpt-6.1-sol",
       "family": "gpt",
-      "model": "openai/gpt-6.1-sol",
+      "provider": "openai",
+      "model": "gpt-6.1-sol",
+      "apiFormat": "responses",
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-6.1-terra",
+      "family": "gpt",
+      "provider": "openai",
+      "model": "gpt-6.1-terra",
       "apiFormat": "responses",
       "maxTokens": 8192
     },
     {
       "id": "gpt-6-sol",
       "family": "gpt",
-      "model": "openai/gpt-6-sol",
+      "provider": "openai",
+      "model": "gpt-6-sol",
       "apiFormat": "responses",
       "maxTokens": 8192
     },
     {
       "id": "gpt-6-luna",
       "family": "gpt",
-      "model": "openai/gpt-6-luna",
+      "provider": "openai",
+      "model": "gpt-6-luna",
       "apiFormat": "responses",
       "maxTokens": 8192
     },
     {
       "id": "gpt-6-astra",
       "family": "gpt",
-      "model": "openai/gpt-6-astra",
+      "provider": "openai",
+      "model": "gpt-6-astra",
       "tokenLimitField": "max_completion_tokens",
       "maxTokens": 8192
     },
     {
       "id": "gpt-5.6-luna",
       "family": "gpt",
-      "model": "openai/gpt-5.6-luna",
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
       "apiFormat": "responses",
       "maxTokens": 8192
     },
     {
       "id": "gpt-5.6-terra",
       "family": "gpt",
-      "model": "openai/gpt-5.6-terra",
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
       "apiFormat": "responses",
       "maxTokens": 8192
     },
     {
       "id": "gpt-5.6-sol",
       "family": "gpt",
-      "model": "openai/gpt-5.6-sol",
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
       "apiFormat": "responses",
       "maxTokens": 8192
     },
