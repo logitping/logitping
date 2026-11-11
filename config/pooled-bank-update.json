@@ -12,7 +12,7 @@
   ],
   "trainingRuns": 25,
   "validationRuns": 15,
-  "timeoutMs": 120000,
+  "timeoutMs": 600000,
   "requestDelayMs": 1000,
   "maxRequests": 800,
   "maxProbeRetries": 5,
@@ -103,6 +103,13 @@
       "maxTokens": 4096
     },
     {
+      "id": "claude-fable-5.2",
+      "family": "claude",
+      "model": "anthropic/claude-fable-5.2",
+      "apiFormat": "messages",
+      "maxTokens": 4096
+    },
+    {
       "id": "claude-opus-5",
       "family": "claude",
       "model": "anthropic/claude-opus-5",
@@ -122,6 +129,27 @@
       "model": "anthropic/claude-fable-5",
       "apiFormat": "messages",
       "maxTokens": 4096
+    },
+    {
+      "id": "gemini-3.8-flash",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-3.8-flash",
+      "maxTokens": 4096
+    },
+    {
+      "id": "gemini-4-argon",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-argon",
+      "maxTokens": 32768
+    },
+    {
+      "id": "gemini-4-carbon",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-carbon",
+      "maxTokens": 32768
     }
   ],
   "scoring": "pooled-sets-v1",
