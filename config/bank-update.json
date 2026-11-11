@@ -101,6 +101,13 @@
       "maxTokens": 8192
     },
     {
+      "id": "claude-fable-5.2",
+      "family": "claude",
+      "model": "anthropic/claude-fable-5.2",
+      "apiFormat": "messages",
+      "maxTokens": 16384
+    },
+    {
       "id": "claude-opus-5",
       "family": "claude",
       "model": "anthropic/claude-opus-5",
@@ -133,6 +140,13 @@
       "family": "gemini",
       "provider": "google",
       "model": "gemini-4-argon",
+      "maxTokens": 32768
+    },
+    {
+      "id": "gemini-4-carbon",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-carbon",
       "maxTokens": 32768
     }
   ]
