@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+Enrolls `claude-fable-5.2` and `gemini-4-carbon` in the default bank, and `claude-fable-5.2` and all three Gemini models in the pooled bank. Both banks now have 18 models, and their earlier references are unchanged.
+
+### Added
+
+- `config/bank-update.json` adds `claude-fable-5.2`, requested through OpenRouter, and `gemini-4-carbon`, requested directly from Google AI Studio. A full refresh now needs 270 runs under the same 300-request cap, which leaves room for 30 retries instead of 60.
+- `config/pooled-fable-gemini-collection.json` collects only `claude-fable-5.2` and the three Gemini models for the pooled bank, so they can be added without collecting the other 14 again.
+
+### Changed
+
+- `config/pooled-bank-update.json` adds the same four models, so it now also needs `GEMINI_API_KEY`, and allows 600 s per request for Argon. A full pooled refresh needs 720 runs under the same 800-request cap, which leaves room for 80 retries instead of 240.
+
+### Bundled reference bank
+
+- Enrolls `claude-fable-5.2` (family `claude`), collected through OpenRouter on **2026-11-11**: 10 training and 5 threshold-calibration runs of 512 English integers, with a 16,384-token output budget; probe it with `--max-tokens 16384`. Replays of its stored runs are `INCONCLUSIVE`: its own reference gets most of the weight, but each run also falls inside nearly every other model's distance envelope.
+- Enrolls `gemini-4-carbon` (family `gemini`), also collected directly from Google AI Studio on **2026-11-11**, with a 32,768-token output budget; probe it with `--max-tokens 32768`. At 512 integers Carbon and Argon are hard to tell apart: with both enrolled, replays of Carbon's runs are `INCONCLUSIVE`, and with Carbon removed, one of its five runs is named as `gemini-4-argon`.
+- Replaying the 80 earlier stored runs gives the same results as on the 16-model bank, except that two wrong matches with the tested label removed are now `INCONCLUSIVE`: `gpt-6-astra` named as `gpt-6.1-sol`, and `gemini-3.8-flash` named as `gemini-4-argon`. See [bank documentation](docs/bank.md#evaluation-status).
+- The pooled bank adds `claude-fable-5.2` and `gemini-3.8-flash`, `gemini-4-argon` and `gemini-4-carbon`, collected on **2026-11-11**: 25 training and 15 held-out runs of 64 English integers each, with 4,096 output tokens per request, or 32,768 for Argon and Carbon. The 14 earlier models keep their envelopes. Refitting the pooled cutoffs on all 18 changed those of four Claude models slightly and left every pair statistic between earlier models unchanged.
+- In exploratory leave-group-out tests, the 18-model pooled bank named the right model in 57 of 90 probes. It named enrolled models wrongly in 2/90, the same two `gpt-6.1-sol`/`gpt-6-astra` answers as before, and unenrolled models in 16/90, compared with 11/70. **The five extra are all `gemini-4-carbon`:** removed from the bank, it was named as `gemini-4-argon` in all 50 repeated probes. The four new models were never named wrongly while enrolled, and the held-out `gpt-6.1-sol`/`gpt-6-astra` results are unchanged. See [bank documentation](docs/bank.md#experimental-pooled-bank).
+
 ## 0.4.0 — 2026-11-08
 
 Adds direct OpenAI collection to the bank updater and moves the GPT models in the checked-in configuration to it. Both bundled banks are refreshed with them and add `gpt-6.1-terra`. It also includes the Antigravity fix prepared as 0.3.1, which was never published to npm, so this release follows 0.3.0.

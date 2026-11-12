@@ -6,7 +6,7 @@ import { loadGatewayBankConfig, parseGatewayBankConfig } from '../src/data/gatew
 import { updateGatewayBank } from '../src/data/gateway_update.js';
 import { refitPooledBank, type PooledCollection } from '../src/data/pooled_refit.js';
 
-const keys = { OPENAI_API_KEY: 'sk-test-openai-credential', OPENROUTER_API_KEY: 'sk-or-test-credential' };
+const keys = { OPENAI_API_KEY: 'sk-test-openai-credential', OPENROUTER_API_KEY: 'sk-or-test-credential', GEMINI_API_KEY: 'test-gemini-credential' };
 const settings = {
   schemaVersion: 1, protocol: { language: 'en', targetSamples: 64, temperature: null }, checkpoints: [64],
   trainingRuns: 3, validationRuns: 2, timeoutMs: 500, requestDelayMs: 0, maxRequests: 15,
@@ -133,6 +133,19 @@ describe('checked-in OpenAI collection for the pooled bank', () => {
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
     // Without scoring the updater writes the v1 bank that a refit combines.
+    expect(collection).not.toHaveProperty('scoring');
+  });
+});
+
+describe('checked-in collection of the Fable 5.2 and Gemini models for the pooled bank', () => {
+  it('requests those models exactly as the pooled configuration does', async () => {
+    const collection = await loadGatewayBankConfig('config/pooled-fable-gemini-collection.json', keys);
+    const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
+    const ids = collection.models.map((model) => model.id);
+    expect(ids).toEqual(['claude-fable-5.2', 'gemini-3.8-flash', 'gemini-4-argon', 'gemini-4-carbon']);
+    expect(collection.models).toEqual(pooled.models.filter((model) => ids.includes(model.id)));
+    expect(collection.protocol).toEqual(pooled.protocol);
+    expect(collection.checkpoints).toEqual(pooled.checkpoints);
     expect(collection).not.toHaveProperty('scoring');
   });
 });

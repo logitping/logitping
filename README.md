@@ -16,7 +16,7 @@ The project website is live at [logitping.com](https://logitping.com), with an i
 
 **Experimental 0.4.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
-The bundled bank contains **16 models**: eight GPT models collected directly from OpenAI on 2026-11-06, six Claude models collected through OpenRouter on 2026-10-03, and `gemini-3.8-flash` and `gemini-4-argon` collected directly from Google AI Studio on 2026-10-21, each with 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
+The bundled bank contains **18 models**: eight GPT models collected directly from OpenAI on 2026-11-06; seven Claude models collected through OpenRouter, six on 2026-10-03 and `claude-fable-5.2` on 2026-11-11; and three Gemini models collected directly from Google AI Studio, `gemini-3.8-flash` and `gemini-4-argon` on 2026-10-21 and `gemini-4-carbon` on 2026-11-11. Each has 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
 ## Install
 
@@ -71,7 +71,7 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 
 ### Experimental: pooled short requests
 
-`--pooled` sends 8 requests of 64 integers instead of one of 512, at about 0.72× the cost. In exploratory tests of the current bank, it named the right model in 43 of 70 probes and the wrong one in 2. **Do not rely on it to tell `gpt-6.1-sol` from `gpt-6-astra`:** all 30 wrong answers across 700 repeated probes were between these two, and either can be named as the other. On 80 new runs that no bank was built from, it named them correctly in 15 of 100 probes, and the bank it replaced did so in 16. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it: models removed from the bank were still named in 11 of 70 probes. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
+`--pooled` sends 8 requests of 64 integers instead of one of 512, at about 0.72× the cost. In exploratory tests of the current bank, it named the right model in 57 of 90 probes and the wrong one in 2. **Do not rely on it to tell `gpt-6.1-sol` from `gpt-6-astra`:** all 30 wrong answers across 900 repeated probes were between these two, and either can be named as the other. On 80 new runs that no bank was built from, it named them correctly in 15 of 100 probes, and the bank before `0.4.0` did so in 16. A single-model result is a `HEURISTIC_MATCH` (exit code 2), because an unenrolled model from the same vendor can produce it: models removed from the bank were still named in 16 of 90 probes, and `gemini-4-carbon` removed was named as `gemini-4-argon` every time. **Each probe sends 8 provider requests.** See [bank status](docs/bank.md#experimental-pooled-bank).
 
     lping --endpoint https://openrouter.ai/api/v1 --model openai/gpt-6.1-sol --api-format responses --max-tokens 4096 --pooled --json
 
