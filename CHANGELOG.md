@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-11-12
 
 Enrolls `claude-fable-5.2` and `gemini-4-carbon` in the default bank, and `claude-fable-5.2` and all three Gemini models in the pooled bank. Both banks now have 18 models, and their earlier references are unchanged.
 
