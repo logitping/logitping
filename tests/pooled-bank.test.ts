@@ -95,22 +95,27 @@ describe('pooled enrollment', () => {
 });
 
 describe('bundled pooled bank', () => {
-  it('loads a validated 14-model bank of 8 requests × 64 integers', async () => {
+  it('loads a validated 18-model bank of 8 requests × 64 integers', async () => {
     const bank = await pooledBank();
     expect(bank).toMatchObject({
       schemaVersion: 2,
       protocol: { id: 'integer-v1', language: 'en', targetSamples: 64, temperature: null, transport: 'api', requestsPerProbe: 8, scoring: 'pooled-sets-v1' },
       pooled: { alpha: 0.2, bootstrap: { draws: 2000, seed: 20261011 } },
     });
-    expect(bank.models).toHaveLength(14);
-    expect(bank.pooled!.pairs).toHaveLength(182);
+    expect(bank.models).toHaveLength(18);
+    expect(bank.pooled!.pairs).toHaveLength(306);
     expect(bank.pooled!.models.map((model) => model.id)).toEqual(bank.models.map((model) => model.id));
-    // GPT runs come from the 2026-11-06 OpenAI collection; Claude runs are reused from 2026-10-11.
-    for (const model of bank.models) {
-      expect(model.provenance).toContain(model.family === 'claude'
-        ? 'corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf;'
-        : 'corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b;');
+    // GPT runs come from the 2026-11-06 OpenAI collection, the six earlier Claude models' runs are
+    // reused from 2026-10-11, and claude-fable-5.2 and the Gemini models come from 2026-11-11.
+    const collections: Record<string, string[]> = {
+      '5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b': ['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol'],
+      '4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf': ['claude-sonnet-5.5', 'claude-opus-5.5', 'claude-fable-5.1', 'claude-opus-5', 'claude-sonnet-5', 'claude-fable-5'],
+      'be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84': ['claude-fable-5.2', 'gemini-3.8-flash', 'gemini-4-argon', 'gemini-4-carbon'],
+    };
+    for (const [digest, ids] of Object.entries(collections)) {
+      for (const id of ids) expect(bank.models.find((model) => model.id === id)?.provenance).toContain(`corpus sha256:${digest};`);
     }
+    expect(Object.values(collections).flat().sort()).toEqual(bank.models.map((model) => model.id).sort());
   });
 
   it('returns an independent copy', async () => {

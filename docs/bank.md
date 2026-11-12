@@ -164,38 +164,50 @@ NODE
 
 ## Experimental pooled bank
 
-`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers 14 models, not `claude-fable-5.2` or the Gemini models: the eight `gpt-*` models, collected directly from OpenAI on 2026-11-06, and the six earlier Claude models, whose runs were collected through OpenRouter on 2026-10-11 and reused. Both collections ran without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request. Pooled cutoffs and pair statistics were fitted on the runs of all 14 models; the Claude envelopes are unchanged. Provenance records each model's corpus SHA-256: `5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b` for GPT and `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf` for Claude. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
+`--pooled` (library: `pooledBank()`) uses a second bundled bank, `src/data/pooled_bank.json`. It covers 18 models from three collections:
 
-Exploratory leave-group-out results follow. Each group of 8 runs was probed against a bank fitted without those runs. "Unenrolled" means the model was removed from the bank and its runs probed against the rest. The "earlier bank" had 13 models, all collected through OpenRouter on 2026-10-11. The 1 × 512 row comes from a 512-integer collection made the same day; it has not been repeated, because there is no comparable 40-run direct collection.
+- the eight `gpt-*` models, collected directly from OpenAI on 2026-11-06;
+- the six earlier Claude models, whose runs were collected through OpenRouter on 2026-10-11 and reused;
+- `claude-fable-5.2`, through OpenRouter, and the three Gemini models, directly from Google AI Studio, collected on 2026-11-11 (UTC).
+
+Every collection ran without streaming: 25 training and 15 held-out runs of 64 English integers per model, with 4,096 output tokens per request, except 32,768 for `gemini-4-argon` and `gemini-4-carbon`. Pooled cutoffs and pair statistics were fitted on the runs of all 18 models; the earlier models' envelopes are unchanged. Provenance records each model's corpus SHA-256: `5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b` for GPT, `4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf` for the six earlier Claude models, and `be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84` for `claude-fable-5.2` and the Gemini models. The `0.4.0` release has the first 14 models only. Each probe sends 8 requests; see [methodology](methodology.md#experimental-pooled-probe-pooled-sets-v1).
+
+Exploratory leave-group-out results follow. Each group of 8 runs was probed against a bank fitted without those runs. "Unenrolled" means the model was removed from the bank and its runs probed against the rest. The "earlier bank" had 13 models, all collected through OpenRouter on 2026-10-11; the "`0.4.0` bank" is the 14-model bank of that release. The 1 × 512 row comes from a 512-integer collection made the same day; it has not been repeated, because there is no comparable 40-run direct collection.
 
 | Probe | Enrolled model named wrongly | Unenrolled model named | `gpt-6.1-sol` / `gpt-6-astra` named correctly |
 | --- | --- | --- | --- |
 | 1 × 512 integers, default engine, 2026-10-11 | 0/519 | 51/519 (10%) | 0/80 |
 | 8 × 64 integers, earlier pooled bank | 1/65 | 9/65 (14%) | 6/10 |
-| 8 × 64 integers, current pooled bank | 2/70 (3%) | 11/70 (16%) | 2/10 |
+| 8 × 64 integers, `0.4.0` pooled bank (14 models) | 2/70 (3%) | 11/70 (16%) | 2/10 |
+| 8 × 64 integers, current pooled bank (18 models) | 2/90 (2%) | 16/90 (18%) | 2/10 |
+
+Adding `claude-fable-5.2` and the three Gemini models left every first-grouping result of the 14 earlier models unchanged, including both wrong answers. The five extra unenrolled names are all `gemini-4-carbon`: removed from the bank, each of its five probes named `gemini-4-argon`. With every model enrolled, the four new models were never named wrongly or left among several candidates: `claude-fable-5.2` was named correctly in 5 of its 5 probes and each Gemini model in 3, and the rest returned no candidate.
 
 Treat these as exploratory:
 
 - The pooled test was designed after the first collection's results were seen.
-- The samples are small. On the current bank, the 95% intervals are about 1–10% for 2/70, 9–26% for 11/70, and 6–51% for 2/10.
-- The current bank misses all three predeclared targets: enrolled models named wrongly under 1%, unenrolled models named at most 10%, and the pair named correctly at least 50% of the time. The earlier bank met only the pair target, and [missed it on new runs](#held-out-runs-of-gpt-61-sol-and-gpt-6-astra).
+- The samples are small. On the current bank, the 95% intervals are about 1–8% for 2/90, 11–27% for 16/90, and 6–51% for 2/10.
+- The current bank, like the `0.4.0` bank, misses all three predeclared targets: enrolled models named wrongly under 1%, unenrolled models named at most 10%, and the pair named correctly at least 50% of the time. The earlier bank met only the pair target, and [missed it on new runs](#held-out-runs-of-gpt-61-sol-and-gpt-6-astra).
 - Unenrolled models were named as similar models from the same vendor. In the pooled tests, none was named as a model from another vendor.
 
 The mode is therefore opt-in, and a single-model result is a `HEURISTIC_MATCH`.
 
-To locate the errors, the pooled test was repeated with 10 different groupings of each model's 40 runs into 5 probes of 8, giving 50 probes per model. The first grouping is the one in the table above. Across all groupings, the earlier bank named the right model in 487/650 probes (75%) and the current bank in 464/700 (66%). The first three rows below have every model enrolled; the rest test a model removed from the bank.
+To locate the errors, the pooled test was repeated with 10 different groupings of each model's 40 runs into 5 probes of 8, giving 50 probes per model. The first grouping is the one in the table above. Across all groupings, the earlier bank named the right model in 487/650 probes (75%), the `0.4.0` bank in 464/700 (66%), and the current bank in 613/900 (68%). The first three rows below have every model enrolled; the rest test a model removed from the bank.
 
-| Tested model | Bank | Named instead | Earlier bank | Current bank |
-| --- | --- | --- | --- | --- |
-| `gpt-6-astra` | All models | `gpt-6.1-sol` | 10/50 | 14/50 |
-| `gpt-6.1-sol` | All models | `gpt-6-astra` | 1/50 | 16/50 |
-| Each other model | All models | Any other model | 0/550 | 0/600 |
-| `gpt-6-astra` | Without the tested model | `gpt-6.1-sol` | 50/50 | 45/50 |
-| `gpt-6.1-sol` | Without the tested model | `gpt-6-astra` | 6/50 | 34/50 |
-| `gpt-6-luna` | Without the tested model | `gpt-6-sol` | 25/50 | 2/50 |
-| `gpt-5.6-luna` | Without the tested model | `gpt-6-sol` | 2/50 | 21/50 |
-| `gpt-5.6-terra` | Without the tested model | Another GPT model | 2/50 | 10/50 |
-| Each other model | Without the tested model | A same-vendor model | 4/400 | 2/450 |
+| Tested model | Bank | Named instead | Earlier bank | `0.4.0` bank | Current bank |
+| --- | --- | --- | --- | --- | --- |
+| `gpt-6-astra` | All models | `gpt-6.1-sol` | 10/50 | 14/50 | 14/50 |
+| `gpt-6.1-sol` | All models | `gpt-6-astra` | 1/50 | 16/50 | 16/50 |
+| Each other model | All models | Any other model | 0/550 | 0/600 | 0/800 |
+| `gpt-6-astra` | Without the tested model | `gpt-6.1-sol` | 50/50 | 45/50 | 45/50 |
+| `gpt-6.1-sol` | Without the tested model | `gpt-6-astra` | 6/50 | 34/50 | 34/50 |
+| `gpt-6-luna` | Without the tested model | `gpt-6-sol` | 25/50 | 2/50 | 2/50 |
+| `gpt-5.6-luna` | Without the tested model | `gpt-6-sol` | 2/50 | 21/50 | 21/50 |
+| `gpt-5.6-terra` | Without the tested model | Another GPT model | 2/50 | 10/50 | 10/50 |
+| `gemini-4-carbon` | Without the tested model | `gemini-4-argon` | Not enrolled | Not enrolled | 50/50 |
+| Each other model | Without the tested model | A same-vendor model | 4/400 | 2/450 | 2/600 |
+
+**An unenrolled `gemini-4-carbon` is named as `gemini-4-argon`** in all 50 probes, so a pooled result naming Argon does not rule out Carbon when Carbon is not enrolled. The reverse did not occur: with Argon removed, none of its 50 probes named Carbon or any other model. Removing `claude-fable-5.2` or `gemini-3.8-flash` also left every one of their probes without a candidate. Elsewhere, adding the four models changed one count of the 14 earlier models across all groupings: `claude-sonnet-5.5` was named correctly in 39/50 probes instead of 40/50, with one more probe returning no candidate.
 
 **Neither pooled bank separates `gpt-6.1-sol` and `gpt-6-astra` on runs from other collections.** Across the groupings, the current bank named them correctly in 8/100 probes and the earlier bank in 55/100. But the earlier bank's 55/100 was measured on the same collection it was built from; on runs from later collections it got 38/100 and 16/100 (see below). A result naming either one does not rule out the other. Every wrong answer with all models enrolled was between these two. Why the two collections gave such different leave-group-out results is unknown.
 
@@ -210,7 +222,7 @@ Probes can also come from a different collection than the bank. This tests refer
 | OpenRouter, 2026-10-11 | Current | 208/250, 0 | 14/100, 17 |
 | OpenAI, 2026-11-06 | Earlier | 210/250, 0 | 38/100, 12 |
 
-So references for the five other models carried across provider and date with no wrong answers in 500 probes. This has been measured only for the pooled bank; default-bank probes through OpenRouter against the direct GPT references have not been evaluated.
+The first row was measured on the `0.4.0` bank; the current bank gives the same counts. So references for the five other models carried across provider and date with no wrong answers in 500 probes. This has been measured only for the pooled bank; default-bank probes through OpenRouter against the direct GPT references have not been evaluated.
 
 ### Held-out runs of `gpt-6.1-sol` and `gpt-6-astra`
 
@@ -224,7 +236,7 @@ On 2026-11-07, 40 new runs of each of these two models were collected directly f
 | No candidate | 12/100 | 17/100 |
 | Correct, first grouping only | 2/10 | 1/10 |
 
-Neither bank met the plan's bar of at least 50 correct and at most 20 wrong, so the current bank was kept. With runs from another collection, this pair was named correctly in 14–38 of 100 probes in every test.
+The current bank in this table is the `0.4.0` bank; the 18-model bank gives the same counts on these runs. Neither bank met the plan's bar of at least 50 correct and at most 20 wrong, so the current bank was kept. With runs from another collection, this pair was named correctly in 14–38 of 100 probes in every test.
 
 - The test favors the current bank: the new runs use the same route as its references and came a day later.
 - Counts vary between collections: the earlier bank got 38/100 on the 2026-11-06 runs and 16/100 on these.

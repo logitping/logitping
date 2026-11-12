@@ -103,13 +103,6 @@
       "maxTokens": 4096
     },
     {
-      "id": "claude-fable-5.2",
-      "family": "claude",
-      "model": "anthropic/claude-fable-5.2",
-      "apiFormat": "messages",
-      "maxTokens": 4096
-    },
-    {
       "id": "claude-opus-5",
       "family": "claude",
       "model": "anthropic/claude-opus-5",
@@ -127,6 +120,13 @@
       "id": "claude-fable-5",
       "family": "claude",
       "model": "anthropic/claude-fable-5",
+      "apiFormat": "messages",
+      "maxTokens": 4096
+    },
+    {
+      "id": "claude-fable-5.2",
+      "family": "claude",
+      "model": "anthropic/claude-fable-5.2",
       "apiFormat": "messages",
       "maxTokens": 4096
     },
