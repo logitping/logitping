@@ -155,7 +155,11 @@ export function parseGatewayBankConfig(input: unknown, env: NodeJS.ProcessEnv = 
   check(Array.isArray(checkpoints) && checkpoints.length > 0 && checkpoints.length <= 32, 'provide 1–32 checkpoints');
   const counts = checkpoints.map((value) => integer(value, 64, targetSamples, 'checkpoint'));
   check(counts.every((value, i) => i === 0 || value > counts[i - 1]!) && counts.at(-1) === targetSamples, 'checkpoints must be sorted, unique, and end at targetSamples');
-  check(Array.isArray(root.models) && root.models.length >= 2 && root.models.length <= 32, 'provide 2–32 reference models');
+  // Pooled scoring needs two models. Without it, one model may be collected alone and combined
+  // offline with earlier collections (scripts/build-pooled-bank.mjs).
+  const minModels = requestsPerProbe === undefined ? 1 : 2;
+  check(Array.isArray(root.models) && root.models.length >= minModels && root.models.length <= 32,
+    `provide ${minModels}–32 reference models${requestsPerProbe === undefined ? '' : ' for pooled scoring'}`);
   const ids = new Set<string>();
   const routes = new Set<string>();
   const models = root.models.map((value): GatewayTarget => {

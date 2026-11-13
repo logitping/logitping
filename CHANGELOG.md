@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+Enrolls `gemini-4-hydrogen` in both banks, which now have 19 models; their earlier references are unchanged. The bank updater can now collect a single model.
+
+### Added
+
+- `config/bank-update.json` adds `gemini-4-hydrogen`, requested directly from Google AI Studio with a 65,536-token output budget, its documented maximum for one request: it always reasons before answering, and its reasoning counts against the limit. A full refresh now needs 285 runs under the same 300-request cap, which leaves room for 15 retries instead of 30.
+- `config/pooled-gemini-hydrogen-collection.json` collects only `gemini-4-hydrogen` for the pooled bank, so it can be added without collecting the other 18 again.
+
+### Changed
+
+- The bank updater accepts a single model when the configuration has no pooled scoring, so one new model can be collected by itself and combined with earlier collections by `scripts/build-pooled-bank.mjs`. A configuration with pooled scoring still needs two models and is still rejected before any request.
+- `config/pooled-bank-update.json` adds `gemini-4-hydrogen` with the same budget, after the other 18 models, because the pooled fit depends on model order. A full pooled refresh needs 760 runs under the same 800-request cap, which leaves room for 40 retries instead of 80.
+
+### Bundled reference bank
+
+- Enrolls `gemini-4-hydrogen` (family `gemini`), collected directly from Google AI Studio on **2026-11-13**: 10 training and 5 threshold-calibration runs of 512 English integers, with a 65,536-token output budget; probe it with `--max-tokens 65536`. Replays of its stored runs are `INCONCLUSIVE`: its own reference gets most of the weight on four of the five, but with Hydrogen removed the highest weight always goes to another Gemini model, and at 512 integers the four Gemini models are hard to tell apart.
+- Replaying the 90 earlier stored runs gives the same results as on the 18-model bank, except two that are now `INCONCLUSIVE`: a `claude-opus-5.5` run whose unchanged lead falls just short of the slightly higher threshold for 19 references, and the `gemini-4-carbon` run named as `gemini-4-argon` with Carbon removed, which now splits its weight between Argon and Hydrogen. See [bank documentation](docs/bank.md#evaluation-status).
+- The pooled bank adds `gemini-4-hydrogen`, collected on **2026-11-13**: 25 training and 15 held-out runs of 64 English integers, with 65,536 output tokens per request. The 18 earlier models keep their envelopes. Refitting the pooled cutoffs on all 19 changed those of `gemini-3.8-flash` and `gemini-4-argon` and left every pair statistic between earlier models unchanged.
+- In exploratory leave-group-out tests, the 19-model pooled bank named the right model in 61 of 95 probes. Every first-grouping result of the 18 earlier models is unchanged, including the two wrong `gpt-6.1-sol`/`gpt-6-astra` answers and the 16 unenrolled names. `gemini-4-hydrogen` was named correctly in 39 of 50 repeated probes and never wrongly; removed from the bank, it was named as `gemini-4-argon` in 5 of 50. The held-out `gpt-6.1-sol`/`gpt-6-astra` results are unchanged. See [bank documentation](docs/bank.md#experimental-pooled-bank).
+
 ## 0.5.0 — 2026-11-12
 
 Enrolls `claude-fable-5.2` and `gemini-4-carbon` in the default bank, and `claude-fable-5.2` and all three Gemini models in the pooled bank. Both banks now have 18 models, and their earlier references are unchanged.

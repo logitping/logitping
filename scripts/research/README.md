@@ -20,28 +20,30 @@ The corpora are git-ignored and stay at the repository root:
 - `research-64.local.json.corpus-4d34afe7….json`: 13 models × 40 runs × 64 integers.
 - `pooled-openai.local.json.corpus-5472cb6f….json`: 8 GPT models × 40 runs × 64 integers.
 - `pair-heldout.local.json.corpus-bbd00932….json`: `gpt-6.1-sol` and `gpt-6-astra` × 40 runs × 64 integers.
-- `pooled-fable-gemini.local.json.corpus-be70762f….json`: `claude-fable-5.2` and the three Gemini models × 40 runs × 64 integers.
+- `pooled-fable-gemini.local.json.corpus-be70762f….json`: `claude-fable-5.2` and the first three Gemini models × 40 runs × 64 integers.
+- `pooled-gemini-hydrogen.local.json.corpus-6a284c99….json`: `gemini-4-hydrogen` × 40 runs × 64 integers.
 
-The first two were collected through OpenRouter on 2026-10-11. The next two came directly from OpenAI, on 2026-11-06 and 2026-11-07. The last was collected on 2026-11-11 (UTC), through OpenRouter for `claude-fable-5.2` and directly from Google AI Studio for the Gemini models.
+The first two were collected through OpenRouter on 2026-10-11. The next two came directly from OpenAI, on 2026-11-06 and 2026-11-07. The fifth was collected on 2026-11-11 (UTC), through OpenRouter for `claude-fable-5.2` and directly from Google AI Studio for the Gemini models, and the last directly from Google AI Studio on 2026-11-13 (UTC).
 
 Example: `KS=4,8 node scripts/research/gate-test.mjs research-64.local.json.corpus-4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf.json`
 
 ## Pooled evaluation
 
-Run `npm run build` first; `pooled-eval.mjs` writes JSON to stdout. The earlier 13-model bank is at commit `bb30c2a`: `git show bb30c2a:src/data/pooled_bank.json > earlier-pooled-bank.local.json`. The 14-model `0.4.0` bank is at tag `v0.4.0`.
+Run `npm run build` first; `pooled-eval.mjs` writes JSON to stdout. The earlier 13-model bank is at commit `bb30c2a`: `git show bb30c2a:src/data/pooled_bank.json > earlier-pooled-bank.local.json`. The 14-model `0.4.0` bank is at tag `v0.4.0`, and the 18-model `0.5.0` bank at tag `v0.5.0`.
 
 | Test | Arguments |
 |---|---|
 | Earlier bank, leave-group-out | `research-64.local.json.corpus-4d34….json` |
 | `0.4.0` bank, leave-group-out | `pooled-openai.local.json.corpus-5472….json research-64.local.json.corpus-4d34….json` |
-| Current bank, leave-group-out | `pooled-openai.local.json.corpus-5472….json research-64.local.json.corpus-4d34….json pooled-fable-gemini.local.json.corpus-be70….json` |
+| `0.5.0` bank, leave-group-out | `pooled-openai.local.json.corpus-5472….json research-64.local.json.corpus-4d34….json pooled-fable-gemini.local.json.corpus-be70….json` |
+| Current bank, leave-group-out | `pooled-openai.local.json.corpus-5472….json research-64.local.json.corpus-4d34….json pooled-fable-gemini.local.json.corpus-be70….json pooled-gemini-hydrogen.local.json.corpus-6a28….json` |
 | 2026-10-11 runs against the current bank | `research-64.local.json.corpus-4d34….json --bank src/data/pooled_bank.json` |
 | 2026-11-06 runs against the earlier bank | `pooled-openai.local.json.corpus-5472….json --bank earlier-pooled-bank.local.json` |
 | Held-out pair runs against each bank | `pair-heldout.local.json.corpus-bbd0….json --bank src/data/pooled_bank.json`, then `--bank earlier-pooled-bank.local.json` |
 
-In the second and third rows the OpenAI corpus comes first, so it supplies the GPT runs and the 2026-10-11 corpus supplies only the Claude runs; the 2026-11-11 corpus then adds `claude-fable-5.2` and the Gemini models. That is each bank's model order, which the fit depends on, so the full fit of these runs is exactly the bundled bank.
+In the second to fourth rows the OpenAI corpus comes first, so it supplies the GPT runs and the 2026-10-11 corpus supplies only the Claude runs; the 2026-11-11 corpus then adds `claude-fable-5.2` and the first three Gemini models, and the 2026-11-13 corpus `gemini-4-hydrogen`. That is each bank's model order, which the fit depends on, so the full fit of these runs is exactly the bundled bank.
 
-On 2026-11-07 the first row reproduced the published 45/65, 1/65, 9/65 and 6/10 exactly. On 2026-11-12 the second row reproduced the `0.4.0` bank's 43/70, 2/70, 11/70 and 2/10, and 464/700 across groupings. An earlier script produced the bank notes' repeated groupings and was not kept, so those counts changed slightly when rerun with this script's random partitions.
+On 2026-11-07 the first row reproduced the published 45/65, 1/65, 9/65 and 6/10 exactly. On 2026-11-12 the second row reproduced the `0.4.0` bank's 43/70, 2/70, 11/70 and 2/10, and 464/700 across groupings. On 2026-11-14 the third row reproduced the `0.5.0` bank's 57/90, 2/90, 16/90 and 2/10, and 613/900 across groupings, and the 2026-10-11 and held-out pair runs reproduced their published counts against the `0.5.0` bank. An earlier script produced the bank notes' repeated groupings and was not kept, so those counts changed slightly when rerun with this script's random partitions.
 
 ## Held-out test of `gpt-6.1-sol` and `gpt-6-astra`
 

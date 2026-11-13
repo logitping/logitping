@@ -2,7 +2,9 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pooledBank } from '../src/data/bank_loader.js';
 import { loadGatewayBankConfig, parseGatewayBankConfig } from '../src/data/gateway_config.js';
+import { enrolledAs } from '../src/data/gateway_plan.js';
 import { updateGatewayBank } from '../src/data/gateway_update.js';
 import { refitPooledBank, type PooledCollection } from '../src/data/pooled_refit.js';
 
@@ -56,6 +58,16 @@ describe('pooled refit from several collections', () => {
     expect(refit.pooled).toEqual(single.pooled);
     expect(refit.models.map((model) => [model.profiles, model.integerProbabilities])).toEqual(single.models.map((model) => [model.profiles, model.integerProbabilities]));
     expect(refit.pooled).not.toEqual(refitPooledBank(parseGatewayBankConfig({ ...settings, models: [oldGpt, claude], scoring: 'pooled-sets-v1', requestsPerProbe: 2 }, keys), [old]).pooled);
+  });
+
+  it('combines one-model collections into the same scoring as one collection of the same runs', async () => {
+    const old = await collect('old', [oldGpt, claude]);
+    const refit = refitPooledBank(pooledConfig(), [await collect('gpt-a', [newGpt]), await collect('gpt-c', [addedGpt]), old]);
+    const single = (await updateGatewayBank(pooledConfig(), { outputPath: join(directory, 'single.json'), fetch: provider(), now })).bank;
+    expect(refit.models.map((model) => model.id)).toEqual(['gpt-a', 'gpt-c', 'claude-b']);
+    expect(refit.pooled).toEqual(single.pooled);
+    expect(refit.models.map((model) => [model.profiles, model.integerProbabilities])).toEqual(single.models.map((model) => [model.profiles, model.integerProbabilities]));
+    expect(refit.calibration?.source).toMatch(/; pooled refit of 3 collections without new requests;/);
   });
 
   it('keeps each reused model and its collection provenance unchanged', async () => {
@@ -133,6 +145,32 @@ describe('checked-in OpenAI collection for the pooled bank', () => {
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
     // Without scoring the updater writes the v1 bank that a refit combines.
+    expect(collection).not.toHaveProperty('scoring');
+  });
+});
+
+describe('checked-in pooled configuration', () => {
+  it('lists every bundled model first, in bank order, with the route and settings its stored collection records', async () => {
+    // Otherwise a refit that adds a new collection could not find a bundled model, or would fit another order.
+    const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
+    const bank = await pooledBank();
+    const listed = pooled.models.slice(0, bank.models.length);
+    expect(listed.map((target) => target.id)).toEqual(bank.models.map((model) => model.id));
+    for (const [index, model] of bank.models.entries()) expect(enrolledAs(model, listed[index]!, pooled.checkpoints), model.id).toBe(true);
+  });
+});
+
+describe('checked-in collection of gemini-4-hydrogen for the pooled bank', () => {
+  it('requests only that model, exactly as the pooled configuration does, with no other provider\'s key', async () => {
+    // Only a Gemini key is supplied: a model on any other provider would fail this load.
+    const collection = await loadGatewayBankConfig('config/pooled-gemini-hydrogen-collection.json', { GEMINI_API_KEY: keys.GEMINI_API_KEY });
+    const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
+    expect(collection.models.map((model) => model.id)).toEqual(['gemini-4-hydrogen']);
+    expect(collection.models).toEqual(pooled.models.filter((model) => model.id === 'gemini-4-hydrogen'));
+    // The pooled fit depends on model order, and this collection is combined last.
+    expect(pooled.models.at(-1)?.id).toBe('gemini-4-hydrogen');
+    expect(collection.protocol).toEqual(pooled.protocol);
+    expect(collection.checkpoints).toEqual(pooled.checkpoints);
     expect(collection).not.toHaveProperty('scoring');
   });
 });
