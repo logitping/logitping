@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-11-14
 
 Enrolls `gemini-4-hydrogen` in both banks, which now have 19 models; their earlier references are unchanged. The bank updater can now collect a single model.
 

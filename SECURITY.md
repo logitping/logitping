@@ -4,7 +4,7 @@
 
 Use [GitHub private vulnerability reporting](https://github.com/logitping/logitping/security/advisories/new) when the repository's **Report a vulnerability** form is available. Do not put exploit details, credentials, private endpoint URLs, or sensitive logs in a public issue, pull request, or discussion.
 
-**Channel status, 2026-11-12:** the repository is public, but GitHub private vulnerability reporting is not enabled, so the **Report a vulnerability** form is not available. This project has not published a dedicated security email address. Creating this file does not enable GitHub private reporting.
+**Channel status, 2026-11-14:** the repository is public, but GitHub private vulnerability reporting is not enabled, so the **Report a vulnerability** form is not available. This project has not published a dedicated security email address. Creating this file does not enable GitHub private reporting.
 
 Until the form is available:
 
@@ -16,7 +16,7 @@ A repository administrator still needs to enable private vulnerability reporting
 
 ## Versions and response expectations
 
-The current npm release is experimental version `0.5.0`; no stable release or long-term support branch is currently offered. Include the package version and, for a source build, the commit in your report. Fixes are intended for the current development line; older commits do not have a promised backport policy.
+The current npm release is experimental version `0.6.0`; no stable release or long-term support branch is currently offered. Include the package version and, for a source build, the commit in your report. Fixes are intended for the current development line; older commits do not have a promised backport policy.
 
 Reports and fixes are handled on a best-effort basis. There is no guaranteed response time, remediation deadline, or bounty program. Once a private channel is established, coordinate disclosure and any credit with the maintainer rather than assuming a publication date.
 
