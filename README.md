@@ -14,7 +14,7 @@ CI includes type checking, tests, builds, and package installation checks.
 
 The project website is live at [logitping.com](https://logitping.com), with an interactive output inspector, a methodology overview, and reference-bank details. Paste an existing model response into the browser playground to explore the protocol and results.
 
-**Experimental 0.5.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
+**Experimental 0.6.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
 
 The bundled bank contains **19 models**: eight GPT models collected directly from OpenAI on 2026-11-06; seven Claude models collected through OpenRouter, six on 2026-10-03 and `claude-fable-5.2` on 2026-11-11; and four Gemini models collected directly from Google AI Studio, `gemini-3.8-flash` and `gemini-4-argon` on 2026-10-21, `gemini-4-carbon` on 2026-11-11, and `gemini-4-hydrogen` on 2026-11-13. Each has 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
@@ -151,7 +151,7 @@ npm ci
 node dist/bin/logitping.js --help
 ```
 
-`npm ci` builds through `prepare`. When following CLI examples from a source checkout, replace `lping` with `node dist/bin/logitping.js`. To install your local build instead of the registry version, run `npm pack` and `npm install -g ./logitping-0.5.0.tgz`.
+`npm ci` builds through `prepare`. When following CLI examples from a source checkout, replace `lping` with `node dist/bin/logitping.js`. To install your local build instead of the registry version, run `npm pack` and `npm install -g ./logitping-0.6.0.tgz`.
 
 ## Documentation and contributing
 
