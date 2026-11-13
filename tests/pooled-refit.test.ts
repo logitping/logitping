@@ -58,6 +58,16 @@ describe('pooled refit from several collections', () => {
     expect(refit.pooled).not.toEqual(refitPooledBank(parseGatewayBankConfig({ ...settings, models: [oldGpt, claude], scoring: 'pooled-sets-v1', requestsPerProbe: 2 }, keys), [old]).pooled);
   });
 
+  it('combines one-model collections into the same scoring as one collection of the same runs', async () => {
+    const old = await collect('old', [oldGpt, claude]);
+    const refit = refitPooledBank(pooledConfig(), [await collect('gpt-a', [newGpt]), await collect('gpt-c', [addedGpt]), old]);
+    const single = (await updateGatewayBank(pooledConfig(), { outputPath: join(directory, 'single.json'), fetch: provider(), now })).bank;
+    expect(refit.models.map((model) => model.id)).toEqual(['gpt-a', 'gpt-c', 'claude-b']);
+    expect(refit.pooled).toEqual(single.pooled);
+    expect(refit.models.map((model) => [model.profiles, model.integerProbabilities])).toEqual(single.models.map((model) => [model.profiles, model.integerProbabilities]));
+    expect(refit.calibration?.source).toMatch(/; pooled refit of 3 collections without new requests;/);
+  });
+
   it('keeps each reused model and its collection provenance unchanged', async () => {
     const { old, fresh } = await collections();
     const refit = refitPooledBank(pooledConfig(), [fresh, old]);

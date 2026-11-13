@@ -171,7 +171,7 @@ describe('Gateway bank configuration', () => {
     { trainingRuns: 2 }, { validationRuns: 1 }, { timeoutMs: 0 }, { maxRequests: 9 },
     { maxShortResponseRetries: -1 }, { maxShortResponseRetries: 6 }, { maxShortResponseRetries: 1.5 },
     { maxProbeRetries: -1 }, { maxProbeRetries: 6 }, { maxProbeRetries: 1.5 },
-    { checkpoints: [64, 64] }, { checkpoints: [] }, { models: [input().models[0]] },
+    { checkpoints: [64, 64] }, { checkpoints: [] }, { models: [] },
     { protocol: { targetSamples: 63 } }, { protocol: { targetSamples: 64, language: 'fr' } },
     { protocol: { targetSamples: 64, temperature: -1 } }, { protocol: { targetSamples: 64, id: 'other' } },
     { models: input().models.map((model) => ({ ...model, sampleCount: 128 })) },
@@ -381,6 +381,15 @@ describe('Gateway bank configuration', () => {
   it('rejects a pooled configuration whose probe would exceed the sample limit before collecting', () => {
     const large = { ...input(), protocol: { ...input().protocol, targetSamples: 4096 }, checkpoints: [4096], scoring: 'pooled-sets-v1', requestsPerProbe: 8 };
     expect(() => parseGatewayBankConfig(large, credentials)).toThrow('targetSamples × requestsPerProbe must be at most 16384');
+  });
+
+  it('accepts a one-model collection, but rejects a one-model pooled configuration before collecting', () => {
+    // A lone new model is collected by itself and combined offline with earlier collections.
+    const one = { ...input(), models: input().models.slice(0, 1) };
+    expect(parseGatewayBankConfig(one, credentials).models.map((model) => model.id)).toEqual(['reference-a']);
+    // Pooled scoring needs two models; collecting first would spend every request before failing.
+    expect(() => parseGatewayBankConfig({ ...one, scoring: 'pooled-sets-v1', requestsPerProbe: 8 }, credentials))
+      .toThrow('Invalid bank-update config: provide 2–32 reference models for pooled scoring');
   });
 });
 
