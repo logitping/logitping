@@ -368,6 +368,18 @@ describe('Gateway bank configuration', () => {
     for (const model of gpt) expect([model.provider, model.model]).toEqual(['openai', model.id]);
     expect(parsed.models.filter((model) => model.family !== 'gpt').map((model) => model.provider)).not.toContain('openai');
   });
+  it.each(['config/bank-update.json', 'config/pooled-bank-update.json'])('validates checked-in %s, with every Gemini model requested directly from Google AI Studio', async (path) => {
+    const parsed = await loadGatewayBankConfig(path, { ...openrouterCredentials, ...googleCredentials, ...openaiCredentials });
+    const gemini = parsed.models.filter((model) => model.family === 'gemini');
+    expect(gemini.map((model) => model.id)).toEqual(['gemini-3.8-flash', 'gemini-4-argon', 'gemini-4-carbon', 'gemini-4-hydrogen']);
+    for (const model of gemini) expect([model.provider, model.model]).toEqual(['google', model.id]);
+  });
+  it('keeps every model the bundled default bank enrolls when the checked-in configuration updates it incrementally', async () => {
+    // A changed route or setting would collect an enrolled model again, at full price.
+    const parsed = await loadGatewayBankConfig('config/bank-update.json', { ...openrouterCredentials, ...googleCredentials, ...openaiCredentials });
+    const bank = await readIncrementalBase('src/data/default_bank.json');
+    expect(planGatewayBankUpdate(parsed, bank)).toMatchObject({ retain: bank.models.map((model) => model.id), replace: [], remove: [], providerChanged: [] });
+  });
 
   it('parses pooled scoring and requires both of its fields', () => {
     expect(parseGatewayBankConfig({ ...input(), scoring: 'pooled-sets-v1', requestsPerProbe: 8 }, credentials))

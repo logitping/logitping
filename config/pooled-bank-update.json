@@ -150,6 +150,13 @@
       "provider": "google",
       "model": "gemini-4-carbon",
       "maxTokens": 32768
+    },
+    {
+      "id": "gemini-4-hydrogen",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-hydrogen",
+      "maxTokens": 65536
     }
   ],
   "scoring": "pooled-sets-v1",
