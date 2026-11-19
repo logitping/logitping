@@ -136,12 +136,14 @@ describe('pooled refit from several collections', () => {
 });
 
 describe('checked-in OpenAI collection for the pooled bank', () => {
-  it('collects exactly the pooled configuration\'s OpenAI models, with no other provider\'s key', async () => {
+  it('requests its eight models exactly as the pooled configuration does, with no other provider\'s key', async () => {
     // Only an OpenAI key is supplied: a model on any other provider would fail this load.
     const collection = await loadGatewayBankConfig('config/pooled-openai-collection.json', { OPENAI_API_KEY: keys.OPENAI_API_KEY });
     const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
-    expect(collection.models.length).toBeGreaterThan(0);
-    expect(collection.models).toEqual(pooled.models.filter((model) => model.provider === 'openai'));
+    const ids = collection.models.map((model) => model.id);
+    // The GPT-6.2 models have their own collection: a refit refuses a model that two collections enroll.
+    expect(ids).toEqual(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol']);
+    expect(collection.models).toEqual(pooled.models.filter((model) => ids.includes(model.id)));
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
     // Without scoring the updater writes the v1 bank that a refit combines.
@@ -167,8 +169,20 @@ describe('checked-in collection of gemini-4-hydrogen for the pooled bank', () =>
     const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
     expect(collection.models.map((model) => model.id)).toEqual(['gemini-4-hydrogen']);
     expect(collection.models).toEqual(pooled.models.filter((model) => model.id === 'gemini-4-hydrogen'));
+    expect(collection.protocol).toEqual(pooled.protocol);
+    expect(collection.checkpoints).toEqual(pooled.checkpoints);
+    expect(collection).not.toHaveProperty('scoring');
+  });
+});
+
+describe('checked-in collection of the GPT-6.2 models for the pooled bank', () => {
+  it('requests only those models, exactly as the pooled configuration does, with no other provider\'s key', async () => {
+    // Only an OpenAI key is supplied: a model on any other provider would fail this load.
+    const collection = await loadGatewayBankConfig('config/pooled-gpt-6.2-collection.json', { OPENAI_API_KEY: keys.OPENAI_API_KEY });
+    const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
+    expect(collection.models.map((model) => model.id)).toEqual(['gpt-6.2-astra', 'gpt-6.2-sol']);
     // The pooled fit depends on model order, and this collection is combined last.
-    expect(pooled.models.at(-1)?.id).toBe('gemini-4-hydrogen');
+    expect(pooled.models.slice(-2)).toEqual(collection.models);
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
     expect(collection).not.toHaveProperty('scoring');

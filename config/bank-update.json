@@ -12,9 +12,25 @@
   "validationRuns": 5,
   "timeoutMs": 600000,
   "requestDelayMs": 1000,
-  "maxRequests": 300,
+  "maxRequests": 330,
   "maxProbeRetries": 5,
   "models": [
+    {
+      "id": "gpt-6.2-astra",
+      "family": "gpt",
+      "provider": "openai",
+      "model": "gpt-6.2-astra",
+      "apiFormat": "responses",
+      "maxTokens": 32768
+    },
+    {
+      "id": "gpt-6.2-sol",
+      "family": "gpt",
+      "provider": "openai",
+      "model": "gpt-6.2-sol",
+      "apiFormat": "responses",
+      "maxTokens": 32768
+    },
     {
       "id": "gpt-6.1-sol",
       "family": "gpt",
