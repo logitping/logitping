@@ -364,7 +364,10 @@ describe('Gateway bank configuration', () => {
   it.each(['config/bank-update.json', 'config/pooled-bank-update.json'])('validates checked-in %s, with every GPT model requested directly from OpenAI', async (path) => {
     const parsed = await loadGatewayBankConfig(path, { ...openrouterCredentials, ...googleCredentials, ...openaiCredentials });
     const gpt = parsed.models.filter((model) => model.family === 'gpt');
-    expect(gpt.length).toBeGreaterThan(0);
+    // The pooled configuration lists models in the order their collections are combined, so compare sets.
+    expect(new Set(gpt.map((model) => model.id))).toEqual(new Set([
+      'gpt-6.2-astra', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol',
+    ]));
     for (const model of gpt) expect([model.provider, model.model]).toEqual(['openai', model.id]);
     expect(parsed.models.filter((model) => model.family !== 'gpt').map((model) => model.provider)).not.toContain('openai');
   });
