@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+Enrolls `gpt-6.2-astra` and `gpt-6.2-sol`, which OpenAI released on 2026-11-17, in both banks, which now have 21 models; their earlier references are unchanged.
+
+### Added
+
+- `config/bank-update.json` adds `gpt-6.2-astra` and `gpt-6.2-sol`, requested directly from OpenAI through the Responses API with a 32,768-token output budget: with the other GPT models' 8,192 tokens, `gpt-6.2-sol` ran out before finishing 512 integers, and a cut-off reply stops the collection. A full refresh now needs 315 runs, so the request cap rises from 300 to 330, which keeps room for 15 retries.
+- `config/pooled-gpt-6.2-collection.json` collects only the two GPT-6.2 models for the pooled bank, 80 runs under a 120-request cap with only `OPENAI_API_KEY`, so they can be added without collecting the other 19 again.
+
+### Changed
+
+- `config/pooled-bank-update.json` adds the same two models with the same 32,768-token budget, after the other 19, because the pooled fit depends on model order. A full pooled refresh now needs 840 runs, so the request cap rises from 800 to 880, which keeps room for 40 retries.
+
+### Bundled reference bank
+
+- Enrolls `gpt-6.2-astra` and `gpt-6.2-sol` (family `gpt`), collected directly from OpenAI on **2026-11-18**: 10 training and 5 threshold-calibration runs of 512 English integers each, with a 32,768-token output budget; probe them with `--max-tokens 32768`. Replays of their stored runs are all `INCONCLUSIVE`: `gpt-6.2-astra`'s own reference gets the highest weight on all five of its runs and `gpt-6.2-sol`'s on four, but no lead reaches the naming threshold, and with either model removed none of its runs is named or rejected as `UNKNOWN_MODEL`.
+- Replaying the 95 earlier stored runs gives the same results as on the 19-model bank, except one that is now `INCONCLUSIVE`: a `gpt-5.6-terra` run whose unchanged lead falls just short of the slightly higher threshold for 21 references. With their own model removed, five earlier runs now give the highest weight to a GPT-6.2 model, two each of `claude-opus-5.5` and `claude-fable-5.2` and one of `gpt-6.1-terra`, and none is named. See [bank documentation](docs/bank.md#evaluation-status).
+- The pooled bank adds `gpt-6.2-astra` and `gpt-6.2-sol`, collected on **2026-11-19**: 25 training and 15 held-out runs of 64 English integers, with 32,768 output tokens per request. The 19 earlier models keep their envelopes. Refitting the pooled cutoffs on all 21 changed those of `gpt-6.1-terra` and `claude-fable-5.2` and left every pair statistic between earlier models unchanged.
+- In exploratory leave-group-out tests, the 21-model pooled bank named the right model in 69 of 105 probes. Every first-grouping result of the 19 earlier models is unchanged. Each GPT-6.2 model was named correctly in 4 of its 5 probes, but the fifth `gpt-6.2-astra` probe was named as `gpt-6.1-sol`, the only wrong answer with every model enrolled that is not between `gpt-6.1-sol` and `gpt-6-astra`. In 50 repeated probes, `gpt-6.2-astra` was named correctly in 41 and `gpt-6.2-sol` in 37; removed from the bank, `gpt-6.2-astra` was named as another GPT model in 25 of 50, and `gpt-6.2-sol` in none. The held-out `gpt-6.1-sol`/`gpt-6-astra` results are unchanged. See [bank documentation](docs/bank.md#experimental-pooled-bank).
+
 ## 0.6.0 — 2026-11-14
 
 Enrolls `gemini-4-hydrogen` in both banks, which now have 19 models; their earlier references are unchanged. The bank updater can now collect a single model.
