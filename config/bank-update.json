@@ -12,7 +12,7 @@
   "validationRuns": 5,
   "timeoutMs": 600000,
   "requestDelayMs": 1000,
-  "maxRequests": 330,
+  "maxRequests": 345,
   "maxProbeRetries": 5,
   "models": [
     {
@@ -170,6 +170,13 @@
       "family": "gemini",
       "provider": "google",
       "model": "gemini-4-hydrogen",
+      "maxTokens": 65536
+    },
+    {
+      "id": "gemini-4-neon",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-neon",
       "maxTokens": 65536
     }
   ]

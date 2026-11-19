@@ -14,7 +14,7 @@
   "validationRuns": 15,
   "timeoutMs": 600000,
   "requestDelayMs": 1000,
-  "maxRequests": 880,
+  "maxRequests": 920,
   "maxProbeRetries": 5,
   "models": [
     {
@@ -173,6 +173,13 @@
       "model": "gpt-6.2-sol",
       "apiFormat": "responses",
       "maxTokens": 32768
+    },
+    {
+      "id": "gemini-4-neon",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-neon",
+      "maxTokens": 65536
     }
   ],
   "scoring": "pooled-sets-v1",

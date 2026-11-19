@@ -374,7 +374,7 @@ describe('Gateway bank configuration', () => {
   it.each(['config/bank-update.json', 'config/pooled-bank-update.json'])('validates checked-in %s, with every Gemini model requested directly from Google AI Studio', async (path) => {
     const parsed = await loadGatewayBankConfig(path, { ...openrouterCredentials, ...googleCredentials, ...openaiCredentials });
     const gemini = parsed.models.filter((model) => model.family === 'gemini');
-    expect(gemini.map((model) => model.id)).toEqual(['gemini-3.8-flash', 'gemini-4-argon', 'gemini-4-carbon', 'gemini-4-hydrogen']);
+    expect(gemini.map((model) => model.id)).toEqual(['gemini-3.8-flash', 'gemini-4-argon', 'gemini-4-carbon', 'gemini-4-hydrogen', 'gemini-4-neon']);
     for (const model of gemini) expect([model.provider, model.model]).toEqual(['google', model.id]);
   });
   it('keeps every model the bundled default bank enrolls when the checked-in configuration updates it incrementally', async () => {
