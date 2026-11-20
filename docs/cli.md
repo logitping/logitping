@@ -18,7 +18,7 @@ export LOGITPING_API_KEY='your-key'
 lping --endpoint https://api.example.com/v1 --model claimed-model
 
 # Google's OpenAI-compatible Gemini API has no /v1 path segment: pass its full URL
-lping --endpoint https://generativelanguage.googleapis.com/v1beta/openai/chat/completions --model gemini-3.8-flash --max-tokens 8192
+lping --endpoint https://generativelanguage.googleapis.com/v1beta/openai/chat/completions --model gemini-4-argon --max-tokens 32768
 
 # Anthropic Messages API
 lping --provider anthropic --endpoint https://api.anthropic.com --model claimed-model
