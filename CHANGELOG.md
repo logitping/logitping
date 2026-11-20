@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-11-20
 
 Enrolls `gpt-6.2-astra` and `gpt-6.2-sol`, which OpenAI released on 2026-11-17, and `gemini-4-neon`, which Google released on 2026-11-18, in both banks, and removes the three GPT-5.6 models and `gemini-3.8-flash` from both. The banks now have 18 models, and the references of the other 15 are unchanged.
 
