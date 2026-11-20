@@ -1,7 +1,8 @@
 // Evaluate pooled scoring on stored runs with the production engine. Makes no provider requests.
-// Usage: npm run build && node scripts/research/pooled-eval.mjs <corpus.json>... [--bank <bank.json>]
+// Usage: npm run build && node scripts/research/pooled-eval.mjs <corpus.json>... [--bank <bank.json>] [--exclude <id,...>]
 //
 // Several corpora are combined in the order given; the first one holding a model supplies its runs.
+// --exclude leaves out models the bank no longer enrolls, whose runs remain in the stored corpora.
 // Without --bank (leave-group-out): each group of 8 runs is probed against a bank fitted without those
 // runs (enrolled), and against a bank fitted without that model (unenrolled).
 // With --bank (separate collection): each group is probed against that fixed bank. Models the bank does
@@ -17,8 +18,9 @@ import { createPooledBank, fingerprint } from '../../dist/index.js';
 const K = 8;
 const GROUPINGS = 10;
 
-const { positionals: corpusPaths, values: { bank: bankPath } } = parseArgs({ allowPositionals: true, options: { bank: { type: 'string' } } });
-if (!corpusPaths.length) throw new Error('Usage: pooled-eval.mjs <corpus.json>... [--bank <bank.json>]');
+const { positionals: corpusPaths, values: { bank: bankPath, exclude } } = parseArgs({ allowPositionals: true, options: { bank: { type: 'string' }, exclude: { type: 'string' } } });
+if (!corpusPaths.length) throw new Error('Usage: pooled-eval.mjs <corpus.json>... [--bank <bank.json>] [--exclude <id,...>]');
+const excluded = new Set(exclude?.split(',') ?? []);
 const corpora = corpusPaths.map((path) => JSON.parse(readFileSync(path, 'utf8')));
 const [{ protocol, checkpoints }] = corpora;
 const settings = (corpus) => JSON.stringify([corpus.protocol, corpus.checkpoints]);
@@ -30,9 +32,11 @@ corpora.forEach((corpus, index) => {
   for (const model of corpus.models) {
     if (digestOf.has(model.id)) continue;
     digestOf.set(model.id, digests[index]);
-    allModels.push(model);
+    if (!excluded.has(model.id)) allModels.push(model);
   }
 });
+// A misspelled id would otherwise fit a bank that still enrolls the model.
+for (const id of excluded) if (!digestOf.has(id)) throw new Error(`--exclude: no corpus holds ${id}`);
 const fixed = bankPath ? JSON.parse(readFileSync(bankPath, 'utf8')) : undefined;
 
 const runsOf = (model) => [...model.training, ...model.validation];
@@ -124,6 +128,7 @@ const summary = (scope) => ({ enrolled: total(scope, 'enrolled'), unenrolled: fi
 console.log(JSON.stringify({
   mode: fixed ? 'separate collection' : 'leave-group-out',
   corpora: digests,
+  excluded: [...excluded],
   skipped: allModels.filter((model) => !included.includes(model)).map((model) => model.id),
   firstGrouping: summary('firstGrouping'),
   allGroupings: summary('allGroupings'),

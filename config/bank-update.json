@@ -12,7 +12,7 @@
   "validationRuns": 5,
   "timeoutMs": 600000,
   "requestDelayMs": 1000,
-  "maxRequests": 330,
+  "maxRequests": 285,
   "maxProbeRetries": 5,
   "models": [
     {
@@ -72,30 +72,6 @@
       "maxTokens": 8192
     },
     {
-      "id": "gpt-5.6-luna",
-      "family": "gpt",
-      "provider": "openai",
-      "model": "gpt-5.6-luna",
-      "apiFormat": "responses",
-      "maxTokens": 8192
-    },
-    {
-      "id": "gpt-5.6-terra",
-      "family": "gpt",
-      "provider": "openai",
-      "model": "gpt-5.6-terra",
-      "apiFormat": "responses",
-      "maxTokens": 8192
-    },
-    {
-      "id": "gpt-5.6-sol",
-      "family": "gpt",
-      "provider": "openai",
-      "model": "gpt-5.6-sol",
-      "apiFormat": "responses",
-      "maxTokens": 8192
-    },
-    {
       "id": "claude-sonnet-5.5",
       "family": "claude",
       "model": "anthropic/claude-sonnet-5.5",
@@ -145,13 +121,6 @@
       "maxTokens": 8192
     },
     {
-      "id": "gemini-3.8-flash",
-      "family": "gemini",
-      "provider": "google",
-      "model": "gemini-3.8-flash",
-      "maxTokens": 8192
-    },
-    {
       "id": "gemini-4-argon",
       "family": "gemini",
       "provider": "google",
@@ -170,6 +139,13 @@
       "family": "gemini",
       "provider": "google",
       "model": "gemini-4-hydrogen",
+      "maxTokens": 65536
+    },
+    {
+      "id": "gemini-4-neon",
+      "family": "gemini",
+      "provider": "google",
+      "model": "gemini-4-neon",
       "maxTokens": 65536
     }
   ]

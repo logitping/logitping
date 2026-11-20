@@ -136,13 +136,13 @@ describe('pooled refit from several collections', () => {
 });
 
 describe('checked-in OpenAI collection for the pooled bank', () => {
-  it('requests its eight models exactly as the pooled configuration does, with no other provider\'s key', async () => {
+  it('requests its five models exactly as the pooled configuration does, with no other provider\'s key', async () => {
     // Only an OpenAI key is supplied: a model on any other provider would fail this load.
     const collection = await loadGatewayBankConfig('config/pooled-openai-collection.json', { OPENAI_API_KEY: keys.OPENAI_API_KEY });
     const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
     const ids = collection.models.map((model) => model.id);
     // The GPT-6.2 models have their own collection: a refit refuses a model that two collections enroll.
-    expect(ids).toEqual(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra', 'gpt-5.6-luna', 'gpt-5.6-terra', 'gpt-5.6-sol']);
+    expect(ids).toEqual(['gpt-6.1-sol', 'gpt-6.1-terra', 'gpt-6-sol', 'gpt-6-luna', 'gpt-6-astra']);
     expect(collection.models).toEqual(pooled.models.filter((model) => ids.includes(model.id)));
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
@@ -181,8 +181,21 @@ describe('checked-in collection of the GPT-6.2 models for the pooled bank', () =
     const collection = await loadGatewayBankConfig('config/pooled-gpt-6.2-collection.json', { OPENAI_API_KEY: keys.OPENAI_API_KEY });
     const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
     expect(collection.models.map((model) => model.id)).toEqual(['gpt-6.2-astra', 'gpt-6.2-sol']);
+    expect(collection.models).toEqual(pooled.models.filter((model) => model.id.startsWith('gpt-6.2-')));
+    expect(collection.protocol).toEqual(pooled.protocol);
+    expect(collection.checkpoints).toEqual(pooled.checkpoints);
+    expect(collection).not.toHaveProperty('scoring');
+  });
+});
+
+describe('checked-in collection of gemini-4-neon for the pooled bank', () => {
+  it('requests only that model, exactly as the pooled configuration does, with no other provider\'s key', async () => {
+    // Only a Gemini key is supplied: a model on any other provider would fail this load.
+    const collection = await loadGatewayBankConfig('config/pooled-gemini-neon-collection.json', { GEMINI_API_KEY: keys.GEMINI_API_KEY });
+    const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
+    expect(collection.models.map((model) => model.id)).toEqual(['gemini-4-neon']);
     // The pooled fit depends on model order, and this collection is combined last.
-    expect(pooled.models.slice(-2)).toEqual(collection.models);
+    expect(pooled.models.slice(-1)).toEqual(collection.models);
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
     expect(collection).not.toHaveProperty('scoring');
@@ -194,7 +207,7 @@ describe('checked-in collection of the Fable 5.2 and Gemini models for the poole
     const collection = await loadGatewayBankConfig('config/pooled-fable-gemini-collection.json', keys);
     const pooled = await loadGatewayBankConfig('config/pooled-bank-update.json', keys);
     const ids = collection.models.map((model) => model.id);
-    expect(ids).toEqual(['claude-fable-5.2', 'gemini-3.8-flash', 'gemini-4-argon', 'gemini-4-carbon']);
+    expect(ids).toEqual(['claude-fable-5.2', 'gemini-4-argon', 'gemini-4-carbon']);
     expect(collection.models).toEqual(pooled.models.filter((model) => ids.includes(model.id)));
     expect(collection.protocol).toEqual(pooled.protocol);
     expect(collection.checkpoints).toEqual(pooled.checkpoints);
