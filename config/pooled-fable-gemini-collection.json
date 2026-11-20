@@ -12,7 +12,7 @@
   "validationRuns": 15,
   "timeoutMs": 600000,
   "requestDelayMs": 1000,
-  "maxRequests": 240,
+  "maxRequests": 180,
   "maxProbeRetries": 5,
   "models": [
     {
@@ -20,13 +20,6 @@
       "family": "claude",
       "model": "anthropic/claude-fable-5.2",
       "apiFormat": "messages",
-      "maxTokens": 4096
-    },
-    {
-      "id": "gemini-3.8-flash",
-      "family": "gemini",
-      "provider": "google",
-      "model": "gemini-3.8-flash",
       "maxTokens": 4096
     },
     {

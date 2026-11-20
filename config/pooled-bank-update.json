@@ -14,7 +14,7 @@
   "validationRuns": 15,
   "timeoutMs": 600000,
   "requestDelayMs": 1000,
-  "maxRequests": 920,
+  "maxRequests": 760,
   "maxProbeRetries": 5,
   "models": [
     {
@@ -55,30 +55,6 @@
       "provider": "openai",
       "model": "gpt-6-astra",
       "tokenLimitField": "max_completion_tokens",
-      "maxTokens": 4096
-    },
-    {
-      "id": "gpt-5.6-luna",
-      "family": "gpt",
-      "provider": "openai",
-      "model": "gpt-5.6-luna",
-      "apiFormat": "responses",
-      "maxTokens": 4096
-    },
-    {
-      "id": "gpt-5.6-terra",
-      "family": "gpt",
-      "provider": "openai",
-      "model": "gpt-5.6-terra",
-      "apiFormat": "responses",
-      "maxTokens": 4096
-    },
-    {
-      "id": "gpt-5.6-sol",
-      "family": "gpt",
-      "provider": "openai",
-      "model": "gpt-5.6-sol",
-      "apiFormat": "responses",
       "maxTokens": 4096
     },
     {
@@ -128,13 +104,6 @@
       "family": "claude",
       "model": "anthropic/claude-fable-5.2",
       "apiFormat": "messages",
-      "maxTokens": 4096
-    },
-    {
-      "id": "gemini-3.8-flash",
-      "family": "gemini",
-      "provider": "google",
-      "model": "gemini-3.8-flash",
       "maxTokens": 4096
     },
     {
