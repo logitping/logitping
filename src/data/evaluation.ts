@@ -1,6 +1,7 @@
 import { fingerprint } from '../core/engine.js';
 import type { FingerprintBank, ProbeTransport } from '../core/types.js';
 import { INTEGER_MAX, INTEGER_MIN } from '../math/ordered_block.js';
+import { mulberry32 } from '../math/pooled_sets.js';
 import { isIntegerInRange, isRecord } from '../util/validate.js';
 import { corpusDigest } from './gateway_plan.js';
 
@@ -106,6 +107,80 @@ export async function evaluateDefaultBank(bank: FingerprintBank, corpora: readon
     await add(results.enrolled, corpus.digest, independent, () => bank);
     await add(results.labelRemoved, corpus.digest, independent, removed);
     await add(results.neverEnrolled, corpus.digest, neverEnrolled, () => bank);
+  }
+  return results;
+}
+
+/** Pooled probes of one model: `several` and `none` are prediction sets; `stopped` probes ended on a repeated reply. */
+export interface SetTally { probes: number; correct: number; wrong: Record<string, number>; several: number; none: number; stopped: number }
+
+export interface PooledResults {
+  groupings: number;
+  requestsPerProbe: number;
+  enrolled: CorpusTallies<SetTally>[];
+  neverEnrolled: CorpusTallies<SetTally>[];
+}
+
+/** Groupings of each model's runs, as in scripts/research/pooled-eval.mjs. */
+export const EVALUATION_GROUPINGS = 10;
+/** Shuffle seed of grouping g is GROUPING_SEED + g; grouping 0 keeps the stored order. */
+export const GROUPING_SEED = 20261107;
+
+/**
+ * floor(count / size) groups of `size` run indices. Grouping 0 assigns position p to group
+ * p mod groups; later groupings first shuffle with a seeded generator. Equals pooled-eval.mjs's
+ * partition whenever count is a multiple of size.
+ */
+export function groupRuns(count: number, size: number, grouping: number): number[][] {
+  const groups = Math.floor(count / size);
+  if (!groups) return [];
+  const order = Array.from({ length: count }, (_, i) => i);
+  if (grouping) {
+    const random = mulberry32(GROUPING_SEED + grouping);
+    for (let i = count - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [order[i], order[j]] = [order[j]!, order[i]!];
+    }
+  }
+  return Array.from({ length: groups }, (_, group) => order.filter((_, position) => position % groups === group).slice(0, size));
+}
+
+const emptySets = (): SetTally => ({ probes: 0, correct: 0, wrong: {}, several: 0, none: 0, stopped: 0 });
+
+async function scoreGroups(bank: FingerprintBank, model: CorpusModels[number], size: number, groupings: number): Promise<SetTally> {
+  const runs = runsOf(model);
+  const tally = emptySets();
+  for (let grouping = 0; grouping < groupings; grouping++) {
+    for (const group of groupRuns(runs.length, size, grouping)) {
+      const { candidates } = await fingerprint(replay(group.map((index) => runs[index]!)), { bank, earlyStopping: false });
+      tally.probes++;
+      if (candidates === undefined) tally.stopped++;
+      else if (candidates.length > 1) tally.several++;
+      else if (!candidates.length) tally.none++;
+      else if (candidates[0] === model.id) tally.correct++;
+      else tally.wrong[candidates[0]!] = (tally.wrong[candidates[0]!] ?? 0) + 1;
+    }
+  }
+  return tally;
+}
+
+/** Pooled probes, each of one model's runs from one corpus, against the fixed pooled bank. */
+export async function evaluatePooledBank(bank: FingerprintBank, corpora: readonly DigestedCorpus[], groupings = EVALUATION_GROUPINGS): Promise<PooledResults> {
+  if (bank.schemaVersion !== 2 || bank.protocol.requestsPerProbe === undefined) throw new Error('Pooled evaluation needs a pooled bank (schema version 2)');
+  const size = bank.protocol.requestsPerProbe;
+  const results: PooledResults = { groupings, requestsPerProbe: size, enrolled: [], neverEnrolled: [] };
+  const add = async (list: CorpusTallies<SetTally>[], corpus: string, models: CorpusModels) => {
+    const entry: CorpusTallies<SetTally> = { corpus, models: {} };
+    for (const model of models) {
+      const tally = await scoreGroups(bank, model, size, groupings);
+      if (tally.probes) entry.models[model.id] = tally;
+    }
+    if (Object.keys(entry.models).length) list.push(entry);
+  };
+  for (const corpus of corpora) {
+    const { independent, neverEnrolled } = corpusRoles(bank, corpus);
+    await add(results.enrolled, corpus.digest, independent);
+    await add(results.neverEnrolled, corpus.digest, neverEnrolled);
   }
   return results;
 }
