@@ -82,7 +82,7 @@ Keep these three data roles separate:
 | Threshold calibration (`validation` in enrollment input) | Set distance envelopes using separate runs. These runs are part of fitting the classifier. |
 | Final evaluation | Assess the frozen bank and decision procedure on new runs that were used for neither fitting nor threshold selection. |
 
-The enrollment minimums of three training and two calibration runs per model are structural requirements, not evidence of adequate accuracy. Results on threshold-calibration samples are diagnostics, not independent test accuracy. Report correct matches, incorrect matches, inconclusive results, unknown-model rejections, and protocol failures separately. Include sample counts and uncertainty rather than interpreting nominal `confidence` as a measured probability of identity.
+The enrollment minimums of three training and two calibration runs per model are structural requirements, not evidence of adequate accuracy. Results on threshold-calibration samples are diagnostics, not independent test accuracy. Report correct matches, incorrect matches, inconclusive results, unknown-model rejections, and protocol failures separately. Include sample counts and uncertainty rather than interpreting likelihood gaps as a measured probability of identity.
 
 Generated and incrementally updated banks set `sequentialValidated: false`. Keep it false unless independent evaluation supports the complete stopping rule at every tested prefix, including false matches on unenrolled models and behavior under drift. A good full-length result alone does not validate optional early stopping. Preserve the evidence and evaluation procedure alongside any proposed change to this flag.
 

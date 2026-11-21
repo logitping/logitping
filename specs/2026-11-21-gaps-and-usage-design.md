@@ -73,3 +73,10 @@ Fixed copy.
 - Usage from CLI drivers.
 - Removing `SequentialDecision.weights`.
 - Rewriting the historical weight figures in `docs/bank.md`.
+
+## Errata (final review, 2026-11-21)
+
+- **Parsing:** `message_start` sets only `inputTokens`. Its `output_tokens` is a running placeholder (1 in Anthropic's examples), so a stream that stops before `message_delta` would have reported 1 output token for a whole reply. `message_delta` sets `outputTokens`, and also `inputTokens` when present.
+- **`onUsage`:** called once per SSE event that changes the counts, not after each network chunk.
+- **Pooled probes:** the overall deadline is checked before each request instead of after it, so a deadline during the last request's read-on does not discard complete integers.
+- **Documentation:** `docs/cli.md` and the changelog say that output written during the read-on is billed and can add up to 5 s per request, and that `?` marks a count the provider did not report. `CONTRIBUTING.md`, `docs/library.md` and a code comment lost their remaining `confidence` references, and `docs/library.md` documents `reportsUsage` and `onUsage` for custom transports.

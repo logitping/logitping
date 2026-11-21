@@ -21,7 +21,7 @@ export function diagonalMahalanobis(delta: readonly number[], variance: readonly
 }
 
 /**
- * Gate in feature space before computing any closed-set ranking or confidence.
+ * Gate in feature space before computing any closed-set ranking or likelihood gaps.
  * Pass a projector from createNuisanceProjector() when assessing many observations.
  */
 export function assessOOD(

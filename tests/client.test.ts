@@ -354,7 +354,8 @@ describe('reported token usage', () => {
       + event({ type: 'content_block_delta', delta: { type: 'text_delta', text: '1 2 ' } })
       + event({ type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 12 } })
       + event({ type: 'message_stop' }), { provider: 'anthropic' });
-    expect(calls).toEqual([{ inputTokens: 33, outputTokens: 1 }, { inputTokens: 33, outputTokens: 12 }]);
+    // message_start's output count is a running placeholder, not the reply's: only message_delta sets it.
+    expect(calls).toEqual([{ inputTokens: 33, outputTokens: null }, { inputTokens: 33, outputTokens: 12 }]);
   });
 
   it('ignores malformed usage', async () => {

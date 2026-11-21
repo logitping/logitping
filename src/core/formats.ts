@@ -82,10 +82,10 @@ abstract class SseState implements StreamState {
   constructor(protected readonly requireComplete: boolean) {}
 
   /** Keep the valid counts of a usage object; a later report overwrites the field it sets. */
-  protected record(usage: unknown, inputField: string, outputField: string): void {
+  protected record(usage: unknown, inputField: string, outputField?: string): void {
     const counts = asRecord(usage);
     const inputTokens = tokenCount(counts[inputField]);
-    const outputTokens = tokenCount(counts[outputField]);
+    const outputTokens = outputField === undefined ? null : tokenCount(counts[outputField]);
     if (inputTokens !== null) this.usage = { ...this.usage, inputTokens };
     if (outputTokens !== null) this.usage = { ...this.usage, outputTokens };
   }
@@ -149,7 +149,8 @@ class ResponsesStream extends SseState {
 
 class MessagesStream extends SseState {
   protected onPayload(payload: Record<string, unknown>): string[] {
-    if (payload.type === 'message_start') this.record(asRecord(payload.message).usage, 'input_tokens', 'output_tokens');
+    // message_start's output_tokens is a running placeholder; message_delta carries the cumulative count.
+    if (payload.type === 'message_start') this.record(asRecord(payload.message).usage, 'input_tokens');
     if (payload.type === 'message_delta') this.record(payload.usage, 'input_tokens', 'output_tokens');
     const delta = asRecord(payload.delta);
     if (payload.type === 'message_delta' && delta.stop_reason !== undefined && delta.stop_reason !== null) {
