@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "banks": {
     "default": {
       "file": "src/data/default_bank.json",
@@ -209,28 +209,44 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 15,
+            "empty": 0,
+            "candidateCount": 102,
+            "multiVendor": 13
           },
           "gpt-6-sol": {
             "runs": 15,
             "correct": 1,
             "wrong": {},
             "inconclusive": 14,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 15,
+            "empty": 0,
+            "candidateCount": 73,
+            "multiVendor": 7
           },
           "gpt-6-luna": {
             "runs": 15,
             "correct": 15,
             "wrong": {},
             "inconclusive": 0,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 15,
+            "empty": 0,
+            "candidateCount": 15,
+            "multiVendor": 0
           },
           "gpt-6-astra": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 15,
+            "empty": 0,
+            "candidateCount": 100,
+            "multiVendor": 13
           }
         }
       },
@@ -242,70 +258,110 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 40,
+            "empty": 0,
+            "candidateCount": 271,
+            "multiVendor": 33
           },
           "gpt-6-sol": {
             "runs": 40,
             "correct": 3,
             "wrong": {},
             "inconclusive": 37,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 40,
+            "empty": 0,
+            "candidateCount": 190,
+            "multiVendor": 24
           },
           "gpt-6-luna": {
             "runs": 40,
             "correct": 40,
             "wrong": {},
             "inconclusive": 0,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 40,
+            "empty": 0,
+            "candidateCount": 40,
+            "multiVendor": 0
           },
           "gpt-6-astra": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 40,
+            "empty": 0,
+            "candidateCount": 257,
+            "multiVendor": 30
           },
           "claude-sonnet-5.5": {
             "runs": 40,
             "correct": 33,
             "wrong": {},
             "inconclusive": 7,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 40,
+            "empty": 0,
+            "candidateCount": 61,
+            "multiVendor": 5
           },
           "claude-opus-5.5": {
             "runs": 40,
             "correct": 16,
             "wrong": {},
             "inconclusive": 24,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 40,
+            "empty": 0,
+            "candidateCount": 98,
+            "multiVendor": 17
           },
           "claude-fable-5.1": {
             "runs": 40,
             "correct": 5,
             "wrong": {},
             "inconclusive": 35,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 39,
+            "empty": 1,
+            "candidateCount": 123,
+            "multiVendor": 8
           },
           "claude-opus-5": {
             "runs": 40,
             "correct": 30,
             "wrong": {},
             "inconclusive": 10,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 39,
+            "empty": 0,
+            "candidateCount": 75,
+            "multiVendor": 8
           },
           "claude-sonnet-5": {
             "runs": 40,
             "correct": 8,
             "wrong": {},
             "inconclusive": 27,
-            "unknown": 5
+            "unknown": 5,
+            "listed": 15,
+            "empty": 15,
+            "candidateCount": 39,
+            "multiVendor": 7
           },
           "claude-fable-5": {
             "runs": 40,
             "correct": 1,
             "wrong": {},
             "inconclusive": 39,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 39,
+            "empty": 0,
+            "candidateCount": 221,
+            "multiVendor": 26
           }
         }
       }
@@ -319,28 +375,44 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 94,
+            "multiVendor": 14
           },
           "gpt-6-sol": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 82,
+            "multiVendor": 13
           },
           "gpt-6-luna": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 14,
+            "candidateCount": 3,
+            "multiVendor": 1
           },
           "gpt-6-astra": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 94,
+            "multiVendor": 14
           }
         }
       },
@@ -352,42 +424,66 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 241,
+            "multiVendor": 33
           },
           "gpt-6-sol": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 223,
+            "multiVendor": 38
           },
           "gpt-6-luna": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 36,
+            "candidateCount": 4,
+            "multiVendor": 0
           },
           "gpt-6-astra": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 246,
+            "multiVendor": 33
           },
           "claude-sonnet-5.5": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 1,
+            "candidateCount": 186,
+            "multiVendor": 36
           },
           "claude-opus-5.5": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 352,
+            "multiVendor": 40
           },
           "claude-fable-5.1": {
             "runs": 40,
@@ -396,21 +492,33 @@
               "claude-fable-5": 8
             },
             "inconclusive": 32,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 2,
+            "candidateCount": 267,
+            "multiVendor": 29
           },
           "claude-opus-5": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 191,
+            "multiVendor": 30
           },
           "claude-sonnet-5": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 11,
-            "unknown": 29
+            "unknown": 29,
+            "listed": 0,
+            "empty": 30,
+            "candidateCount": 24,
+            "multiVendor": 7
           },
           "claude-fable-5": {
             "runs": 40,
@@ -419,7 +527,11 @@
               "claude-fable-5.1": 10
             },
             "inconclusive": 30,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 213,
+            "multiVendor": 27
           }
         }
       }
@@ -433,21 +545,33 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 14,
-            "unknown": 1
+            "unknown": 1,
+            "listed": 0,
+            "empty": 1,
+            "candidateCount": 75,
+            "multiVendor": 11
           },
           "gpt-5.6-terra": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 1,
+            "candidateCount": 58,
+            "multiVendor": 9
           },
           "gpt-5.6-sol": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 153,
+            "multiVendor": 15
           }
         }
       },
@@ -459,21 +583,33 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 39,
-            "unknown": 1
+            "unknown": 1,
+            "listed": 0,
+            "empty": 1,
+            "candidateCount": 211,
+            "multiVendor": 31
           },
           "gpt-5.6-terra": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 182,
+            "multiVendor": 35
           },
           "gpt-5.6-sol": {
             "runs": 40,
             "correct": 0,
             "wrong": {},
             "inconclusive": 40,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 382,
+            "multiVendor": 40
           }
         }
       },
@@ -485,7 +621,11 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 109,
+            "multiVendor": 15
           }
         }
       },
@@ -497,21 +637,33 @@
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 80,
+            "multiVendor": 9
           },
           "gpt-5.6-terra": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 55,
+            "multiVendor": 11
           },
           "gpt-5.6-sol": {
             "runs": 15,
             "correct": 0,
             "wrong": {},
             "inconclusive": 15,
-            "unknown": 0
+            "unknown": 0,
+            "listed": 0,
+            "empty": 0,
+            "candidateCount": 150,
+            "multiVendor": 15
           }
         }
       }
@@ -532,7 +684,8 @@
             },
             "several": 15,
             "none": 14,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 19
           },
           "gpt-6-sol": {
             "probes": 50,
@@ -540,7 +693,8 @@
             "wrong": {},
             "several": 0,
             "none": 12,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 38
           },
           "gpt-6-luna": {
             "probes": 50,
@@ -548,7 +702,8 @@
             "wrong": {},
             "several": 0,
             "none": 1,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 49
           },
           "gpt-6-astra": {
             "probes": 50,
@@ -556,7 +711,8 @@
             "wrong": {},
             "several": 40,
             "none": 0,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 50
           }
         }
       },
@@ -571,7 +727,8 @@
             },
             "several": 35,
             "none": 0,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 38
           },
           "gpt-6-astra": {
             "probes": 50,
@@ -581,7 +738,8 @@
             },
             "several": 13,
             "none": 12,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 25
           }
         }
       }
@@ -598,7 +756,8 @@
             },
             "several": 0,
             "none": 49,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           },
           "gpt-5.6-terra": {
             "probes": 50,
@@ -608,7 +767,8 @@
             },
             "several": 0,
             "none": 47,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           },
           "gpt-5.6-sol": {
             "probes": 50,
@@ -619,7 +779,8 @@
             },
             "several": 0,
             "none": 41,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           }
         }
       },
@@ -634,7 +795,8 @@
             },
             "several": 0,
             "none": 36,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           },
           "gpt-5.6-terra": {
             "probes": 50,
@@ -644,7 +806,8 @@
             },
             "several": 0,
             "none": 29,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           },
           "gpt-5.6-sol": {
             "probes": 50,
@@ -655,7 +818,8 @@
             },
             "several": 0,
             "none": 47,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           }
         }
       },
@@ -668,7 +832,8 @@
             "wrong": {},
             "several": 0,
             "none": 50,
-            "stopped": 0
+            "stopped": 0,
+            "listed": 0
           }
         }
       }

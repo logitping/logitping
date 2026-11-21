@@ -17,8 +17,15 @@ export interface StoredCorpus {
 
 export interface DigestedCorpus { digest: string; corpus: StoredCorpus }
 
-/** Single-request probes of one model: `wrong` maps the model named instead to a count. */
-export interface StatusTally { runs: number; correct: number; wrong: Record<string, number>; inconclusive: number; unknown: number }
+/**
+ * Single-request probes of one model: `wrong` maps the model named instead to a count. Of the
+ * candidate lists, `listed` counts those naming the tested model, `empty` those with no model,
+ * `candidateCount` sums their lengths, and `multiVendor` counts those spanning several families.
+ */
+export interface StatusTally {
+  runs: number; correct: number; wrong: Record<string, number>; inconclusive: number; unknown: number;
+  listed: number; empty: number; candidateCount: number; multiVendor: number;
+}
 
 /** Per-model tallies of the runs one corpus contributed; `corpus` is its SHA-256. */
 export interface CorpusTallies<T> { corpus: string; models: Record<string, T> }
@@ -74,18 +81,24 @@ function replay(responses: readonly (readonly number[])[]): ProbeTransport {
 }
 
 const runsOf = (model: CorpusModels[number]) => [...model.training, ...model.validation];
-const emptyStatus = (): StatusTally => ({ runs: 0, correct: 0, wrong: {}, inconclusive: 0, unknown: 0 });
+const emptyStatus = (): StatusTally => ({ runs: 0, correct: 0, wrong: {}, inconclusive: 0, unknown: 0, listed: 0, empty: 0, candidateCount: 0, multiVendor: 0 });
 
 async function scoreRuns(bank: FingerprintBank, model: CorpusModels[number]): Promise<StatusTally> {
   const tally = emptyStatus();
+  // Families come from the bank that scored the run; a removed tested model has none.
+  const family = new Map(bank.models.map((entry) => [entry.id, entry.family]));
   for (const run of runsOf(model)) {
-    const { status, model: named } = await fingerprint(replay([run]), { bank, earlyStopping: false });
+    const { status, model: named, candidates = [] } = await fingerprint(replay([run]), { bank, earlyStopping: false });
     tally.runs++;
     if (status === 'IDENTIFIED' && named === model.id) tally.correct++;
     else if (status === 'IDENTIFIED' && named) tally.wrong[named] = (tally.wrong[named] ?? 0) + 1;
     else if (status === 'INCONCLUSIVE') tally.inconclusive++;
     else if (status === 'UNKNOWN_MODEL') tally.unknown++;
     else throw new Error(`Unexpected ${status} for ${model.id}`);
+    if (candidates.includes(model.id)) tally.listed++;
+    if (!candidates.length) tally.empty++;
+    tally.candidateCount += candidates.length;
+    if (new Set(candidates.map((id) => family.get(id))).size > 1) tally.multiVendor++;
   }
   return tally;
 }
@@ -114,7 +127,7 @@ export async function evaluateDefaultBank(bank: FingerprintBank, corpora: readon
 }
 
 /** Pooled probes of one model: `several` and `none` are prediction sets; `stopped` probes ended on a repeated reply. */
-export interface SetTally { probes: number; correct: number; wrong: Record<string, number>; several: number; none: number; stopped: number }
+export interface SetTally { probes: number; correct: number; wrong: Record<string, number>; several: number; none: number; stopped: number; listed: number }
 
 export interface PooledResults {
   groupings: number;
@@ -147,7 +160,7 @@ export function groupRuns(count: number, size: number, grouping: number): number
   return Array.from({ length: groups }, (_, group) => order.filter((_, position) => position % groups === group).slice(0, size));
 }
 
-const emptySets = (): SetTally => ({ probes: 0, correct: 0, wrong: {}, several: 0, none: 0, stopped: 0 });
+const emptySets = (): SetTally => ({ probes: 0, correct: 0, wrong: {}, several: 0, none: 0, stopped: 0, listed: 0 });
 
 async function scoreGroups(bank: FingerprintBank, model: CorpusModels[number], size: number, groupings: number): Promise<SetTally> {
   const runs = runsOf(model);
@@ -156,6 +169,7 @@ async function scoreGroups(bank: FingerprintBank, model: CorpusModels[number], s
     for (const group of groupRuns(runs.length, size, grouping)) {
       const { candidates } = await fingerprint(replay(group.map((index) => runs[index]!)), { bank, earlyStopping: false });
       tally.probes++;
+      if (candidates?.includes(model.id)) tally.listed++;
       if (candidates === undefined) tally.stopped++;
       else if (candidates.length > 1) tally.several++;
       else if (!candidates.length) tally.none++;
@@ -192,7 +206,7 @@ export interface CorpusSummary { sha256: string; collectedAt: string; targetSamp
 
 /** The committed independent evaluation of both bundled banks (docs/evaluation.json). */
 export interface EvaluationReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   banks: { default: BankSummary; pooled: BankSummary };
   /** Sorted by collectedAt, then sha256. */
   corpora: CorpusSummary[];
@@ -232,7 +246,7 @@ export async function evaluateBanks(input: EvaluationInput): Promise<EvaluationR
   corpora.sort((a, b) => a.corpus.collectedAt.localeCompare(b.corpus.collectedAt) || a.digest.localeCompare(b.digest));
   const summary = (file: string, text: string, bank: FingerprintBank): BankSummary => ({ file, sha256: sha256(text), models: bank.models.length });
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     banks: { default: summary(input.default.file, input.default.text, defaultBank), pooled: summary(input.pooled.file, input.pooled.text, pooledBank) },
     corpora: corpora.map(({ digest, corpus }) => ({ sha256: digest, collectedAt: corpus.collectedAt, targetSamples: corpus.protocol.targetSamples, models: corpus.models.map((model) => model.id) })),
     default: await evaluateDefaultBank(defaultBank, corpora.filter(({ corpus }) => sameProtocol(defaultBank, corpus))),
@@ -263,14 +277,19 @@ const mergeWrong = (tallies: { wrong: Record<string, number> }[]) => {
   for (const tally of tallies) for (const [id, count] of Object.entries(tally.wrong)) wrong[id] = (wrong[id] ?? 0) + count;
   return wrong;
 };
+const total = <T>(tallies: T[], field: { [K in keyof T]: T[K] extends number ? K : never }[keyof T]) =>
+  tallies.reduce((sum, tally) => sum + (tally[field] as number), 0);
 const sumStatus = (tallies: StatusTally[]): StatusTally => ({
-  runs: tallies.reduce((s, t) => s + t.runs, 0), correct: tallies.reduce((s, t) => s + t.correct, 0), wrong: mergeWrong(tallies),
-  inconclusive: tallies.reduce((s, t) => s + t.inconclusive, 0), unknown: tallies.reduce((s, t) => s + t.unknown, 0),
+  runs: total(tallies, 'runs'), correct: total(tallies, 'correct'), wrong: mergeWrong(tallies),
+  inconclusive: total(tallies, 'inconclusive'), unknown: total(tallies, 'unknown'), listed: total(tallies, 'listed'),
+  empty: total(tallies, 'empty'), candidateCount: total(tallies, 'candidateCount'), multiVendor: total(tallies, 'multiVendor'),
 });
 const sumSets = (tallies: SetTally[]): SetTally => ({
-  probes: tallies.reduce((s, t) => s + t.probes, 0), correct: tallies.reduce((s, t) => s + t.correct, 0), wrong: mergeWrong(tallies),
-  several: tallies.reduce((s, t) => s + t.several, 0), none: tallies.reduce((s, t) => s + t.none, 0), stopped: tallies.reduce((s, t) => s + t.stopped, 0),
+  probes: total(tallies, 'probes'), correct: total(tallies, 'correct'), wrong: mergeWrong(tallies),
+  several: total(tallies, 'several'), none: total(tallies, 'none'), stopped: total(tallies, 'stopped'), listed: total(tallies, 'listed'),
 });
+/** Mean candidate-list length, one decimal. */
+const meanCandidates = (tally: StatusTally) => (tally.candidateCount / tally.runs).toFixed(1);
 
 /** docs/evaluation.md, derived only from the report so the test can compare it with the committed file. */
 export function renderEvaluationReport(report: EvaluationReport): string {
@@ -282,21 +301,21 @@ export function renderEvaluationReport(report: EvaluationReport): string {
     '# Independent evaluation',
     '<!-- Generated by `npm run bank:evaluate` from evaluation.json. Do not edit; rerun the command. -->',
     '[Back to README](../README.md) · [Bank status](bank.md#evaluation-status) · [Bank maintenance](bank-maintenance.md#evaluate-the-bundled-banks)',
-    'Each bundled bank is scored on every stored run it was not built from, with the production engine and no provider requests. Corpora are named by the first 12 characters of their SHA-256.',
+    'Each bundled bank is scored on every stored run it was not built from, with the production engine and no provider requests. Corpora are named by the first 12 characters of their SHA-256. Candidates are the enrolled models the engine cannot rule out; "Listed" counts runs or probes whose candidates include the tested model, and "Several vendors" those whose candidates span more than one model family.',
     [row(['Bank', 'File', 'SHA-256', 'Models']), row(['---', '---', '---', '---']),
       ...([['Default', report.banks.default], ['Pooled', report.banks.pooled]] as const).map(([name, bank]) => row([name, `\`${bank.file}\``, `\`${bank.sha256}\``, bank.models]))].join('\n'),
     section('## Corpora', [row(['Corpus', 'Collected', 'Integers per run', 'Models']), row(['---', '---', '---', '---']),
       ...report.corpora.map((corpus) => row([shortDigest(corpus.sha256), corpus.collectedAt.slice(0, 10), corpus.targetSamples, corpus.models.join(', ')]))].join('\n')),
     '## Default bank',
-    section('### Enrolled models, runs from other collections', table([...status, 'Correct', 'Wrong', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.enrolled,
-      (t: StatusTally) => [t.runs, t.correct, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
-    section('### Same runs, tested model removed', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.labelRemoved,
-      (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
-    section('### Models the bank does not enroll', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.neverEnrolled,
-      (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
+    section('### Enrolled models, runs from other collections', table([...status, 'Correct', 'Wrong', 'INCONCLUSIVE', 'UNKNOWN_MODEL', 'Listed', 'Mean candidates', 'Several vendors'], defaults.enrolled,
+      (t: StatusTally) => [t.runs, t.correct, named(t.wrong), t.inconclusive, t.unknown, t.listed, meanCandidates(t), t.multiVendor], sumStatus)),
+    section('### Same runs, tested model removed', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL', 'No candidate', 'Mean candidates', 'Several vendors'], defaults.labelRemoved,
+      (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown, t.empty, meanCandidates(t), t.multiVendor], sumStatus)),
+    section('### Models the bank does not enroll', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL', 'No candidate', 'Mean candidates', 'Several vendors'], defaults.neverEnrolled,
+      (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown, t.empty, meanCandidates(t), t.multiVendor], sumStatus)),
     `## Pooled bank: ${pooled.requestsPerProbe} requests per probe, ${pooled.groupings} groupings`,
-    section('### Enrolled models, runs from other collections', table([...sets, 'Correct', 'Wrong', 'Several', 'None', 'Stopped'], pooled.enrolled,
-      (t: SetTally) => [t.probes, t.correct, named(t.wrong), t.several, t.none, t.stopped], sumSets)),
+    section('### Enrolled models, runs from other collections', table([...sets, 'Correct', 'Wrong', 'Several', 'None', 'Stopped', 'Listed'], pooled.enrolled,
+      (t: SetTally) => [t.probes, t.correct, named(t.wrong), t.several, t.none, t.stopped, t.listed], sumSets)),
     section('### Models the bank does not enroll', table([...sets, 'Named', 'Several', 'None', 'Stopped'], pooled.neverEnrolled,
       (t: SetTally) => [t.probes, named(t.wrong), t.several, t.none, t.stopped], sumSets)),
   ];

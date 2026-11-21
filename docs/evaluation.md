@@ -4,7 +4,7 @@
 
 [Back to README](../README.md) · [Bank status](bank.md#evaluation-status) · [Bank maintenance](bank-maintenance.md#evaluate-the-bundled-banks)
 
-Each bundled bank is scored on every stored run it was not built from, with the production engine and no provider requests. Corpora are named by the first 12 characters of their SHA-256.
+Each bundled bank is scored on every stored run it was not built from, with the production engine and no provider requests. Corpora are named by the first 12 characters of their SHA-256. Candidates are the enrolled models the engine cannot rule out; "Listed" counts runs or probes whose candidates include the tested model, and "Several vendors" those whose candidates span more than one model family.
 
 | Bank | File | SHA-256 | Models |
 | --- | --- | --- | --- |
@@ -36,73 +36,73 @@ Each bundled bank is scored on every stored run it was not built from, with the 
 
 ### Enrolled models, runs from other collections
 
-| Corpus | Model | Runs | Correct | Wrong | INCONCLUSIVE | UNKNOWN_MODEL |
-| --- | --- | --- | --- | --- | --- | --- |
-| `163709a6a446` | gpt-6.1-sol | 15 | 0 | 0 | 15 | 0 |
-| `163709a6a446` | gpt-6-sol | 15 | 1 | 0 | 14 | 0 |
-| `163709a6a446` | gpt-6-luna | 15 | 15 | 0 | 0 | 0 |
-| `163709a6a446` | gpt-6-astra | 15 | 0 | 0 | 15 | 0 |
-| `73559ea673d1` | gpt-6.1-sol | 40 | 0 | 0 | 40 | 0 |
-| `73559ea673d1` | gpt-6-sol | 40 | 3 | 0 | 37 | 0 |
-| `73559ea673d1` | gpt-6-luna | 40 | 40 | 0 | 0 | 0 |
-| `73559ea673d1` | gpt-6-astra | 40 | 0 | 0 | 40 | 0 |
-| `73559ea673d1` | claude-sonnet-5.5 | 40 | 33 | 0 | 7 | 0 |
-| `73559ea673d1` | claude-opus-5.5 | 40 | 16 | 0 | 24 | 0 |
-| `73559ea673d1` | claude-fable-5.1 | 40 | 5 | 0 | 35 | 0 |
-| `73559ea673d1` | claude-opus-5 | 40 | 30 | 0 | 10 | 0 |
-| `73559ea673d1` | claude-sonnet-5 | 40 | 8 | 0 | 27 | 5 |
-| `73559ea673d1` | claude-fable-5 | 40 | 1 | 0 | 39 | 0 |
-| **Total** | | 460 | 152 | 0 | 303 | 5 |
+| Corpus | Model | Runs | Correct | Wrong | INCONCLUSIVE | UNKNOWN_MODEL | Listed | Mean candidates | Several vendors |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `163709a6a446` | gpt-6.1-sol | 15 | 0 | 0 | 15 | 0 | 15 | 6.8 | 13 |
+| `163709a6a446` | gpt-6-sol | 15 | 1 | 0 | 14 | 0 | 15 | 4.9 | 7 |
+| `163709a6a446` | gpt-6-luna | 15 | 15 | 0 | 0 | 0 | 15 | 1.0 | 0 |
+| `163709a6a446` | gpt-6-astra | 15 | 0 | 0 | 15 | 0 | 15 | 6.7 | 13 |
+| `73559ea673d1` | gpt-6.1-sol | 40 | 0 | 0 | 40 | 0 | 40 | 6.8 | 33 |
+| `73559ea673d1` | gpt-6-sol | 40 | 3 | 0 | 37 | 0 | 40 | 4.8 | 24 |
+| `73559ea673d1` | gpt-6-luna | 40 | 40 | 0 | 0 | 0 | 40 | 1.0 | 0 |
+| `73559ea673d1` | gpt-6-astra | 40 | 0 | 0 | 40 | 0 | 40 | 6.4 | 30 |
+| `73559ea673d1` | claude-sonnet-5.5 | 40 | 33 | 0 | 7 | 0 | 40 | 1.5 | 5 |
+| `73559ea673d1` | claude-opus-5.5 | 40 | 16 | 0 | 24 | 0 | 40 | 2.5 | 17 |
+| `73559ea673d1` | claude-fable-5.1 | 40 | 5 | 0 | 35 | 0 | 39 | 3.1 | 8 |
+| `73559ea673d1` | claude-opus-5 | 40 | 30 | 0 | 10 | 0 | 39 | 1.9 | 8 |
+| `73559ea673d1` | claude-sonnet-5 | 40 | 8 | 0 | 27 | 5 | 15 | 1.0 | 7 |
+| `73559ea673d1` | claude-fable-5 | 40 | 1 | 0 | 39 | 0 | 39 | 5.5 | 26 |
+| **Total** | | 460 | 152 | 0 | 303 | 5 | 432 | 3.6 | 191 |
 
 ### Same runs, tested model removed
 
-| Corpus | Model | Runs | Named | INCONCLUSIVE | UNKNOWN_MODEL |
-| --- | --- | --- | --- | --- | --- |
-| `163709a6a446` | gpt-6.1-sol | 15 | 0 | 15 | 0 |
-| `163709a6a446` | gpt-6-sol | 15 | 0 | 15 | 0 |
-| `163709a6a446` | gpt-6-luna | 15 | 0 | 15 | 0 |
-| `163709a6a446` | gpt-6-astra | 15 | 0 | 15 | 0 |
-| `73559ea673d1` | gpt-6.1-sol | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | gpt-6-sol | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | gpt-6-luna | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | gpt-6-astra | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | claude-sonnet-5.5 | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | claude-opus-5.5 | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | claude-fable-5.1 | 40 | 8 (claude-fable-5 8) | 32 | 0 |
-| `73559ea673d1` | claude-opus-5 | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | claude-sonnet-5 | 40 | 0 | 11 | 29 |
-| `73559ea673d1` | claude-fable-5 | 40 | 10 (claude-fable-5.1 10) | 30 | 0 |
-| **Total** | | 460 | 18 (claude-fable-5.1 10, claude-fable-5 8) | 413 | 29 |
+| Corpus | Model | Runs | Named | INCONCLUSIVE | UNKNOWN_MODEL | No candidate | Mean candidates | Several vendors |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `163709a6a446` | gpt-6.1-sol | 15 | 0 | 15 | 0 | 0 | 6.3 | 14 |
+| `163709a6a446` | gpt-6-sol | 15 | 0 | 15 | 0 | 0 | 5.5 | 13 |
+| `163709a6a446` | gpt-6-luna | 15 | 0 | 15 | 0 | 14 | 0.2 | 1 |
+| `163709a6a446` | gpt-6-astra | 15 | 0 | 15 | 0 | 0 | 6.3 | 14 |
+| `73559ea673d1` | gpt-6.1-sol | 40 | 0 | 40 | 0 | 0 | 6.0 | 33 |
+| `73559ea673d1` | gpt-6-sol | 40 | 0 | 40 | 0 | 0 | 5.6 | 38 |
+| `73559ea673d1` | gpt-6-luna | 40 | 0 | 40 | 0 | 36 | 0.1 | 0 |
+| `73559ea673d1` | gpt-6-astra | 40 | 0 | 40 | 0 | 0 | 6.2 | 33 |
+| `73559ea673d1` | claude-sonnet-5.5 | 40 | 0 | 40 | 0 | 1 | 4.7 | 36 |
+| `73559ea673d1` | claude-opus-5.5 | 40 | 0 | 40 | 0 | 0 | 8.8 | 40 |
+| `73559ea673d1` | claude-fable-5.1 | 40 | 8 (claude-fable-5 8) | 32 | 0 | 2 | 6.7 | 29 |
+| `73559ea673d1` | claude-opus-5 | 40 | 0 | 40 | 0 | 0 | 4.8 | 30 |
+| `73559ea673d1` | claude-sonnet-5 | 40 | 0 | 11 | 29 | 30 | 0.6 | 7 |
+| `73559ea673d1` | claude-fable-5 | 40 | 10 (claude-fable-5.1 10) | 30 | 0 | 0 | 5.3 | 27 |
+| **Total** | | 460 | 18 (claude-fable-5.1 10, claude-fable-5 8) | 413 | 29 | 83 | 4.8 | 315 |
 
 ### Models the bank does not enroll
 
-| Corpus | Model | Runs | Named | INCONCLUSIVE | UNKNOWN_MODEL |
-| --- | --- | --- | --- | --- | --- |
-| `163709a6a446` | gpt-5.6-luna | 15 | 0 | 14 | 1 |
-| `163709a6a446` | gpt-5.6-terra | 15 | 0 | 15 | 0 |
-| `163709a6a446` | gpt-5.6-sol | 15 | 0 | 15 | 0 |
-| `73559ea673d1` | gpt-5.6-luna | 40 | 0 | 39 | 1 |
-| `73559ea673d1` | gpt-5.6-terra | 40 | 0 | 40 | 0 |
-| `73559ea673d1` | gpt-5.6-sol | 40 | 0 | 40 | 0 |
-| `ccf4eb239557` | gemini-3.8-flash | 15 | 0 | 15 | 0 |
-| `74df5aa4c36a` | gpt-5.6-luna | 15 | 0 | 15 | 0 |
-| `74df5aa4c36a` | gpt-5.6-terra | 15 | 0 | 15 | 0 |
-| `74df5aa4c36a` | gpt-5.6-sol | 15 | 0 | 15 | 0 |
-| **Total** | | 225 | 0 | 223 | 2 |
+| Corpus | Model | Runs | Named | INCONCLUSIVE | UNKNOWN_MODEL | No candidate | Mean candidates | Several vendors |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `163709a6a446` | gpt-5.6-luna | 15 | 0 | 14 | 1 | 1 | 5.0 | 11 |
+| `163709a6a446` | gpt-5.6-terra | 15 | 0 | 15 | 0 | 1 | 3.9 | 9 |
+| `163709a6a446` | gpt-5.6-sol | 15 | 0 | 15 | 0 | 0 | 10.2 | 15 |
+| `73559ea673d1` | gpt-5.6-luna | 40 | 0 | 39 | 1 | 1 | 5.3 | 31 |
+| `73559ea673d1` | gpt-5.6-terra | 40 | 0 | 40 | 0 | 0 | 4.5 | 35 |
+| `73559ea673d1` | gpt-5.6-sol | 40 | 0 | 40 | 0 | 0 | 9.6 | 40 |
+| `ccf4eb239557` | gemini-3.8-flash | 15 | 0 | 15 | 0 | 0 | 7.3 | 15 |
+| `74df5aa4c36a` | gpt-5.6-luna | 15 | 0 | 15 | 0 | 0 | 5.3 | 9 |
+| `74df5aa4c36a` | gpt-5.6-terra | 15 | 0 | 15 | 0 | 0 | 3.7 | 11 |
+| `74df5aa4c36a` | gpt-5.6-sol | 15 | 0 | 15 | 0 | 0 | 10.0 | 15 |
+| **Total** | | 225 | 0 | 223 | 2 | 3 | 6.5 | 191 |
 
 ## Pooled bank: 8 requests per probe, 10 groupings
 
 ### Enrolled models, runs from other collections
 
-| Corpus | Model | Probes | Correct | Wrong | Several | None | Stopped |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `4d34afe7497e` | gpt-6.1-sol | 50 | 4 | 17 (gpt-6-astra 17) | 15 | 14 | 0 |
-| `4d34afe7497e` | gpt-6-sol | 50 | 38 | 0 | 0 | 12 | 0 |
-| `4d34afe7497e` | gpt-6-luna | 50 | 49 | 0 | 0 | 1 | 0 |
-| `4d34afe7497e` | gpt-6-astra | 50 | 10 | 0 | 40 | 0 | 0 |
-| `bbd00932f1a8` | gpt-6.1-sol | 50 | 3 | 12 (gpt-6-astra 12) | 35 | 0 | 0 |
-| `bbd00932f1a8` | gpt-6-astra | 50 | 12 | 13 (gpt-6.1-sol 13) | 13 | 12 | 0 |
-| **Total** | | 300 | 116 | 42 (gpt-6-astra 29, gpt-6.1-sol 13) | 103 | 39 | 0 |
+| Corpus | Model | Probes | Correct | Wrong | Several | None | Stopped | Listed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `4d34afe7497e` | gpt-6.1-sol | 50 | 4 | 17 (gpt-6-astra 17) | 15 | 14 | 0 | 19 |
+| `4d34afe7497e` | gpt-6-sol | 50 | 38 | 0 | 0 | 12 | 0 | 38 |
+| `4d34afe7497e` | gpt-6-luna | 50 | 49 | 0 | 0 | 1 | 0 | 49 |
+| `4d34afe7497e` | gpt-6-astra | 50 | 10 | 0 | 40 | 0 | 0 | 50 |
+| `bbd00932f1a8` | gpt-6.1-sol | 50 | 3 | 12 (gpt-6-astra 12) | 35 | 0 | 0 | 38 |
+| `bbd00932f1a8` | gpt-6-astra | 50 | 12 | 13 (gpt-6.1-sol 13) | 13 | 12 | 0 | 25 |
+| **Total** | | 300 | 116 | 42 (gpt-6-astra 29, gpt-6.1-sol 13) | 103 | 39 | 0 | 219 |
 
 ### Models the bank does not enroll
 
