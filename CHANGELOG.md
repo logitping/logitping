@@ -10,6 +10,7 @@
 
 - **CLI drivers no longer inherit your whole environment.** Claude, Codex and `agy` receive common system, locale, proxy and certificate variables, `DO_NOT_TRACK`, and their own vendor's variables (`CLAUDE_*`/`ANTHROPIC_*` with Claude Code's `DISABLE_TELEMETRY`, `DISABLE_ERROR_REPORTING` and `DISABLE_AUTOUPDATER` opt-outs, `CODEX_*`/`OPENAI_*`, `AGY_*`/`ANTIGRAVITY_*`/`GEMINI_*`/`GOOGLE_*`), so the CLI is no longer handed other vendors' keys or AWS and Azure credentials. This narrows, but does not close, what a tool that starts before the probe stops it can read: it can still read files your account can read, and on Linux usually the environment of your other processes, including lping's own. A login that needs other variables, such as Claude Code through Amazon Bedrock, needs `--pass-env 'AWS_*'` (library: `passEnv`). `LOGITPING_API_KEY` is still never passed.
 - **Breaking for custom drivers:** a `CliDriver` subclass now receives only the shared variables unless it overrides `environmentPrefixes()` or is given `passEnv`.
+- When `lping` runs inside a Claude Code session, the Claude driver no longer passes that session's own markers to the probe's Claude: its ID, messaging socket and token, child-session state, entry point and effort (`CLAUDECODE`, `CLAUDE_PID`, `CLAUDE_EFFORT`, `CLAUDE_CODE_ENTRYPOINT`, `CLAUDE_CODE_EXECPATH`, `CLAUDE_CODE_SESSION_*`, `CLAUDE_CODE_MESSAGING_*`, `CLAUDE_CODE_CHILD_*`). An exact `--pass-env` name still passes one.
 
 ### Documentation
 

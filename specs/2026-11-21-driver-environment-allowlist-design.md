@@ -84,6 +84,15 @@ Fixed copy, replacing the named sentences.
 - Shell-exported opt-outs were dropped, so probes could send telemetry or error reports a user had turned off. `DO_NOT_TRACK` joined the shared variables, and Claude's prefixes gained Claude Code's unprefixed `DISABLE_TELEMETRY`, `DISABLE_ERROR_REPORTING` and `DISABLE_AUTOUPDATER`, found in the 2.1.329 binary.
 - The copy now states that `GOOGLE_*` passes Google Cloud credentials to Antigravity, and that a plain `CliDriver` subclass receives only the shared variables.
 
+## Addendum (2026-11-21, after the live check)
+
+The live check ran inside a Claude Code session. That session gives its subprocesses 12 `CLAUDE*` variables that the user's shell profile does not set. Eleven are session markers rather than configuration: its identity, PID and effort, its entry point and executable path, its messaging socket and token, and its child-session state. Claude Code 2.1.329 also reads `CLAUDE_CODE_SESSION_ACCESS_TOKEN` and `CLAUDE_CODE_SESSION_KIND` from the same family. Through the `CLAUDE_` prefix they would reach the probe's own Claude.
+
+- **`CliDriver` gains `protected environmentExclusions(): readonly string[]`** (default `[]`). It uses the `passEnv` syntax, names or `NAME_*` prefixes, and drops names that the shared variables or prefixes would pass. Only an exact `passEnv` name brings one back. A `passEnv` prefix does not, because naming a variable is a deliberate choice and a broad prefix is not.
+- **Claude excludes** `CLAUDECODE`, `CLAUDE_PID`, `CLAUDE_EFFORT`, `CLAUDE_CODE_ENTRYPOINT`, `CLAUDE_CODE_EXECPATH`, `CLAUDE_CODE_SESSION_*`, `CLAUDE_CODE_MESSAGING_*` and `CLAUDE_CODE_CHILD_*`.
+- **`CLAUDE_CODE_USE_VERTEX` keeps passing.** The session sets it too, but it is provider configuration.
+- **Codex and `agy` are not covered.** They set markers of their own for their subprocesses (for example `CODEX_THREAD_ID`, `ANTIGRAVITY_CONVERSATION_ID`). Excluding those is a separate decision.
+
 ## Out of scope
 
 - An OS-level sandbox for the CLI drivers.

@@ -292,6 +292,21 @@ else {
     expect(pick(new Agy().environmentOf())).toEqual({ GEMINI_API_KEY: 'g', GOOGLE_CLOUD_PROJECT: 'p', AGY_X: '1', ANTIGRAVITY_Y: '2' });
     expect(pick(new Generic('env').environmentOf())).toEqual({});
   });
+  it("withholds a parent Claude Code session's own variables from the Claude CLI", () => {
+    // Set by the Claude Code session lping runs in, if any; never user configuration, and one is a messaging token.
+    const session = {
+      CLAUDECODE: '1', CLAUDE_PID: '4242', CLAUDE_EFFORT: 'high', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_CODE_EXECPATH: '/opt/claude',
+      CLAUDE_CODE_SESSION_ID: 'session', CLAUDE_CODE_SESSION_ATTENDED: '1', CLAUDE_CODE_SESSION_ACCESS_TOKEN: 'access', CLAUDE_CODE_SESSION_KIND: 'bg',
+      CLAUDE_CODE_MESSAGING_SOCKET: '/tmp/socket', CLAUDE_CODE_MESSAGING_TOKEN: 'token', CLAUDE_CODE_CHILD_SESSION: '1', CLAUDE_CODE_CHILD_NOTES_DIR: '/tmp/notes',
+    };
+    const configuration = { CLAUDE_CODE_USE_VERTEX: '1', CLAUDE_CONFIG_DIR: '/cc' };
+    for (const [name, value] of Object.entries({ ...session, ...configuration })) vi.stubEnv(name, value);
+    class Claude extends ClaudeDriver { environmentOf() { return this.environment(); } }
+    const names = [...Object.keys(session), ...Object.keys(configuration)];
+    const pick = (env: Readonly<Record<string, string | undefined>>) => Object.fromEntries(names.filter((name) => name in env).map((name) => [name, env[name]]));
+    expect(pick(new Claude().environmentOf())).toEqual(configuration);
+    expect(pick(new Claude({ passEnv: ['CLAUDE_CODE_SESSION_ID'] }).environmentOf())).toEqual({ ...configuration, CLAUDE_CODE_SESSION_ID: 'session' });
+  });
   it('rejects passEnv with env, and invalid passEnv, before starting a process', () => {
     expect(() => new ClaudeDriver({ env: {}, passEnv: ['AWS_*'] })).toThrow(TypeError);
     expect(() => new ClaudeDriver({ env: {}, passEnv: ['AWS_*'] })).toThrow(/env is the complete environment/);

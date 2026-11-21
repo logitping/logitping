@@ -71,9 +71,18 @@ export abstract class CliDriver implements ProbeTransport {
     return [];
   }
 
+  /**
+   * Names, or `NAME_*` prefixes, that the default environment drops although `environmentPrefixes()`
+   * would pass them, such as the markers a parent session of the same CLI sets for its subprocesses.
+   * Only an exact `passEnv` name brings one back.
+   */
+  protected environmentExclusions(): readonly string[] {
+    return [];
+  }
+
   /** The environment of one launch: `env` when given, otherwise the allowlist of this process's environment. */
   protected environment(): Readonly<Record<string, string | undefined>> {
-    return this.options.env ?? driverEnvironment(process.env, this.environmentPrefixes(), this.options.passEnv);
+    return this.options.env ?? driverEnvironment(process.env, this.environmentPrefixes(), this.options.passEnv, this.environmentExclusions());
   }
 
   /** The default executable, which messages also name. */
