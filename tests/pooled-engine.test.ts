@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { ProbeRequest, ProbeTransport } from '../src/core/types.js';
 import { fingerprint, planProbe } from '../src/core/engine.js';
 import { integerPrompt } from '../src/probes/templates.js';
 import { tokenizerPrompt } from '../src/probes/tokenizer.js';
@@ -135,5 +136,32 @@ describe('pooled probes', () => {
     await fingerprint(new SequenceTransport(lowReplies()), { bank: syntheticPooledBank(), onProgress: (count) => counts.push(count) });
     expect(counts[64]).toBe(65);
     expect(counts.at(-1)).toBe(256);
+  });
+});
+
+/** Answers like `replies`, then reports usage with outputTokens 100 + the request's index. */
+function usageReporting(replies: string[][]): ProbeTransport {
+  const inner = new SequenceTransport(replies);
+  return {
+    name: 'openai', granularity: 'token', reportsUsage: true,
+    async *stream(request: ProbeRequest) {
+      const index = inner.requests.length;
+      yield* inner.stream(request);
+      request.onUsage?.({ inputTokens: 52, outputTokens: 100 + index });
+    },
+  };
+}
+
+describe('pooled usage', () => {
+  it('reports one usage entry per pooled request', async () => {
+    const result = await fingerprint(usageReporting(lowReplies()), { bank: forceCutoffs(openEnvelopes(syntheticPooledBank(4)), [true, false, false]) });
+    expect(result.usage).toEqual([100, 101, 102, 103].map((outputTokens) => ({ inputTokens: 52, outputTokens })));
+  });
+
+  it('includes the usage of a repeated reply', async () => {
+    const [first] = lowReplies(1);
+    const result = await fingerprint(usageReporting([first!, first!]), { bank: openEnvelopes(syntheticPooledBank()) });
+    expect(result).toMatchObject({ status: 'INCONCLUSIVE', requests: 2 });
+    expect(result.usage?.map((usage) => usage.outputTokens)).toEqual([100, 101]);
   });
 });

@@ -222,6 +222,10 @@ function display(result: ProbeResult): void {
     process.stdout.write(`  ${score.id}: ${nats(score.logLikelihoodGap)} · H=${score.hellinger.toFixed(4)} · M=${score.mahalanobis.toFixed(2)} · OOD ${score.accepted ? 'pass' : 'reject'}${sets}\n`);
   }
   process.stdout.write(`${result.samples.length}/${result.requestedSamples} integers${result.requests ? ` in ${result.requests} requests` : ''} · ${result.elapsedMs} ms\n`);
+  if (result.usage) {
+    const count = (value: number | null) => value === null ? '?' : String(value);
+    process.stdout.write(`Reported tokens (input/output): ${result.usage.map((usage) => `${count(usage.inputTokens)}/${count(usage.outputTokens)}`).join(', ')}\n`);
+  }
   process.stdout.write(result.earlyStopped
     ? `Stopped early: ${(result.sampleBudgetSaved * 100).toFixed(1)}% of the requested integer budget skipped (not measured token or latency savings).\n`
     : 'Early stop: no\n');

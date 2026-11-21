@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { fingerprint, planProbe } from '../src/core/engine.js';
-import type { FingerprintBank, ProbeTransport } from '../src/core/types.js';
+import type { FingerprintBank, ProbeRequest, ProbeTransport, TokenUsage } from '../src/core/types.js';
 import { defaultBank, loadBank, validateBank } from '../src/data/bank_loader.js';
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import * as bankLoader from '../src/data/bank_loader.js';
@@ -455,5 +455,88 @@ describe('probe planning', () => {
     bank.protocol.transport = 'antigravity';
     bank.protocol.temperature = 0.7;
     expect(() => planProbe({ name: 'antigravity', granularity: 'token' }, bank, true)).toThrow('CLI drivers do not expose a sampling temperature');
+  });
+});
+
+/** Yields its chunks, reports `usage`, then ends, stalls until aborted, or throws. */
+class UsageTransport implements ProbeTransport {
+  readonly name = 'openai';
+  readonly granularity = 'token' as const;
+  readonly reportsUsage = true;
+  aborted = false;
+  constructor(private readonly chunks: string[], private readonly usage: TokenUsage | null, private readonly tail: 'end' | 'stall' | 'error') {}
+
+  async *stream(request: ProbeRequest): AsyncGenerator<string> {
+    try {
+      for (const chunk of this.chunks) yield chunk;
+      if (this.usage) request.onUsage?.(this.usage);
+      if (this.tail === 'stall') {
+        await new Promise<void>((resolve) => {
+          if (request.signal?.aborted) resolve();
+          else request.signal?.addEventListener('abort', () => resolve(), { once: true });
+        });
+      }
+      if (this.tail === 'error') throw new Error('late stream error');
+    } finally {
+      this.aborted = request.signal?.aborted ?? false;
+    }
+  }
+}
+
+describe('reported token usage', () => {
+  const full = { bank: syntheticBank(), tokenizerProbe: false, earlyStopping: false } as const;
+
+  it('reads to the end of the stream for usage after the last needed integer', async () => {
+    const transport = new UsageTransport(['17 '.repeat(128)], { inputTokens: 52, outputTokens: 700 }, 'end');
+    const result = await fingerprint(transport, full);
+    expect(result).toMatchObject({ status: 'IDENTIFIED', usage: [{ inputTokens: 52, outputTokens: 700 }] });
+    expect(transport.aborted).toBe(false);
+  });
+
+  it('stops reading 5 s after the last needed integer', async () => {
+    vi.useFakeTimers();
+    try {
+      const transport = new UsageTransport(['17 '.repeat(128)], null, 'stall');
+      let settled = false;
+      const promise = fingerprint(transport, full).finally(() => { settled = true; });
+      await vi.advanceTimersByTimeAsync(4_900);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(200);
+      expect(settled).toBe(true);
+      expect(await promise).toMatchObject({ status: 'IDENTIFIED', usage: [{ inputTokens: null, outputTokens: null }] });
+      expect(transport.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores an error after the last needed integer', async () => {
+    const transport = new UsageTransport(['17 '.repeat(128)], { inputTokens: 52, outputTokens: 700 }, 'error');
+    const result = await fingerprint(transport, full);
+    expect(result).toMatchObject({ status: 'IDENTIFIED', usage: [{ inputTokens: 52, outputTokens: 700 }] });
+  });
+
+  it('still cancels on the caller\'s signal after the last needed integer', async () => {
+    const controller = new AbortController();
+    const transport = new UsageTransport(['17 '.repeat(128)], null, 'stall');
+    const promise = fingerprint(transport, { ...full, signal: controller.signal, onProgress: (count) => { if (count === 128) setTimeout(() => controller.abort(), 10); } });
+    await expect(promise).rejects.toThrow();
+    expect(transport.aborted).toBe(true);
+  });
+
+  it('still aborts at once on an early stop', async () => {
+    const transport = new UsageTransport(Array<string>(128).fill('17 '), null, 'stall');
+    const result = await fingerprint(transport, { bank: syntheticBank(), tokenizerProbe: false });
+    expect(result).toMatchObject({ status: 'IDENTIFIED', earlyStopped: true });
+    expect(result.elapsedMs).toBeLessThan(1_000);
+    expect(transport.aborted).toBe(true);
+  });
+
+  it('reports no usage for a transport that does not declare it, and aborts it at the count', async () => {
+    const transport = new MemoryTransport(Array<string>(130).fill('17 '));
+    const result = await fingerprint(transport, full);
+    expect(result.status).toBe('IDENTIFIED');
+    expect(result).not.toHaveProperty('usage');
+    expect(transport.closed && transport.aborted).toBe(true);
   });
 });

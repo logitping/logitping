@@ -412,6 +412,19 @@ describe('CLI bank selection', () => {
     expect(stdout).not.toContain('Nominal model-relative confidence');
   });
 
+  it('prints the reported token counts', async () => {
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    const event = (payload: unknown) => `data: ${JSON.stringify(payload)}\n\n`;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response(
+      event({ choices: [{ index: 0, delta: { content: '17 '.repeat(128) } }] })
+        + event({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 52, completion_tokens: 7 } })
+        + 'data: [DONE]\n\n',
+      { headers: { 'content-type': 'text/event-stream' } },
+    ));
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--no-tokenizer', '--no-interactive']);
+    expect(stdout).toContain('Reported tokens (input/output): 52/7');
+  });
+
   describe('recorded collection settings', () => {
     const bodies: Record<string, unknown>[] = [];
     const probe = async (bank: () => FingerprintBank, ...args: string[]) => {

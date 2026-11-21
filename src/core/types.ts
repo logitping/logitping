@@ -146,6 +146,12 @@ export interface ProbeResult {
   candidates?: string[];
   /** Pooled banks only: requests sent for this probe. */
   requests?: number;
+  /**
+   * Token counts the provider reported for each integer request sent, in order; the tokenizer request
+   * is excluded. Present only for a transport that reports usage. Recorded only: identification does
+   * not use it.
+   */
+  usage?: TokenUsage[];
 }
 
 export interface EngineOptions {

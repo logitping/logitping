@@ -9,7 +9,7 @@ import { tokenizerPrompt } from '../probes/tokenizer.js';
 import { abortScope, childScope, DEFAULT_TIMEOUT_MS } from './abort.js';
 import { LogitpingError } from './errors.js';
 import { classifyPooled } from './pooled.js';
-import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport } from './types.js';
+import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport, TokenUsage } from './types.js';
 
 type Classification = Pick<ProbeResult, 'status' | 'model' | 'reason' | 'scores' | 'evaluatedSamples' | 'candidates'>;
 type RequestOptions = Pick<ProbeRequest, 'timeoutMs' | 'temperature'> & { signal: AbortSignal };
@@ -187,8 +187,16 @@ async function runTokenizerProbe(transport: ProbeTransport, plan: ProbePlan, req
   return response;
 }
 
+/**
+ * After the last needed integer, how long a transport that reports usage is read on: some providers
+ * report token counts only in a stream's last event.
+ */
+export const USAGE_GRACE_MS = 5_000;
+
 interface Collection {
   samples: number[];
+  /** The latest token counts the transport reported; null where it reported none. */
+  usage: TokenUsage;
   /** Set when a calibrated checkpoint identified the model before the full budget. */
   early?: Classification;
   test?: SequentialTest;
@@ -207,7 +215,12 @@ async function collectIntegers(
   const test = plan.calibrated.length >= 2
     ? new SequentialTest(plan.calibrated.map((model) => ({ id: model.id, probabilities: model.integerProbabilities })))
     : undefined;
-  const collection: Collection = { samples: [], project, ...(test ? { test } : {}) };
+  const usage: TokenUsage = { inputTokens: null, outputTokens: null };
+  const onUsage = (reported: TokenUsage) => {
+    if (reported.inputTokens !== null) usage.inputTokens = reported.inputTokens;
+    if (reported.outputTokens !== null) usage.outputTokens = reported.outputTokens;
+  };
+  const collection: Collection = { samples: [], project, usage, ...(test ? { test } : {}) };
   const { samples } = collection;
   const parser = new IntegerStreamParser();
   const accept = (value: number): boolean => {
@@ -223,16 +236,38 @@ async function collectIntegers(
         return true;
       }
     }
-    if (samples.length >= plan.count) { scope.controller.abort(); return true; }
-    return false;
+    return samples.length >= plan.count;
   };
-  const source = transport.stream({ ...request, prompt: plan.prompt, maxTokens: plan.maxTokens });
-  stream: for await (const text of abortable(source, scope.signal)) {
-    scope.signal.throwIfAborted();
-    options.onText?.(text, 'integers');
-    for (const sample of parser.push(text)) if (accept(sample)) break stream;
+  const source = transport.stream({
+    ...request, prompt: plan.prompt, maxTokens: plan.maxTokens, ...(transport.reportsUsage ? { onUsage } : {}),
+  });
+  // Set once the last needed integer arrived from a transport that reports usage: the stream is then
+  // read on, unparsed, until it ends or the grace period passes.
+  let draining = false;
+  let grace: ReturnType<typeof setTimeout> | undefined;
+  try {
+    stream: for await (const text of abortable(source, scope.signal)) {
+      if (draining) continue;
+      scope.signal.throwIfAborted();
+      options.onText?.(text, 'integers');
+      for (const sample of parser.push(text)) {
+        if (!accept(sample)) continue;
+        if (collection.early) break stream;
+        if (!transport.reportsUsage) { scope.controller.abort(); break stream; }
+        draining = true;
+        grace = setTimeout(() => scope.controller.abort(), USAGE_GRACE_MS);
+        grace.unref();
+        break;
+      }
+    }
+  } catch (error) {
+    // The integers are complete: an error or abort while reading on for usage does not discard them.
+    // A caller's cancellation is still reported, by the caller's own signal check.
+    if (!draining) throw error;
+  } finally {
+    clearTimeout(grace);
   }
-  if (!scope.signal.aborted) {
+  if (!draining && !scope.signal.aborted) {
     for (const sample of parser.finish()) if (accept(sample)) break;
   }
   return collection;
@@ -245,6 +280,8 @@ interface PooledCollection {
   short?: number[];
   /** A complete reply identical to an earlier one (`of` is that request's number); no request follows it. */
   repeated?: { samples: number[]; of: number };
+  /** Reported token counts of each request sent, in order. */
+  usage: TokenUsage[];
 }
 
 /** Send a pooled bank's requests one after another under the probe's overall deadline. */
@@ -257,22 +294,26 @@ async function collectPooled(
   options: EngineOptions,
 ): Promise<PooledCollection> {
   const responses: number[][] = [];
+  const usage: TokenUsage[] = [];
   for (let index = 0; index < plan.requests; index++) {
+    // Checked before each request: the deadline passing while the previous request was read on for
+    // usage does not discard that request's complete integers, but no further request is sent.
+    scope.signal.throwIfAborted();
     // Reaching the count aborts only this request's scope; the overall deadline still ends every request.
     const child = childScope(scope.signal);
     try {
       const offset = index * plan.count;
-      const { samples } = await collectIntegers(transport, bank, plan, child, { ...request, signal: child.signal },
+      const { samples, usage: reported } = await collectIntegers(transport, bank, plan, child, { ...request, signal: child.signal },
         { ...options, onText: (text, stage) => options.onText?.(text, stage, index + 1), onProgress: (count) => options.onProgress?.(offset + count) });
-      scope.signal.throwIfAborted();
-      if (samples.length < plan.count) return { responses, short: samples };
+      usage.push(reported);
+      if (samples.length < plan.count) return { responses, usage, short: samples };
       // Independent replies practically never coincide; a repeat means caching, replay, or deterministic sampling.
       const earlier = responses.findIndex((response) => response.every((value, position) => value === samples[position]));
-      if (earlier >= 0) return { responses, repeated: { samples, of: earlier + 1 } };
+      if (earlier >= 0) return { responses, usage, repeated: { samples, of: earlier + 1 } };
       responses.push(samples);
     } finally { child.dispose(); }
   }
-  return { responses };
+  return { responses, usage };
 }
 
 /** One candidate is a heuristic match, more are inconclusive, none is an unknown model. */
@@ -326,7 +367,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       warnings.push('Tokenizer segmentation is model-reported diagnostic text, not a verified observation of BPE internals.');
     }
     if (plan.requests > 1) {
-      const { responses, short, repeated } = await collectPooled(transport, bank, plan, scope, request, options);
+      const { responses, short, repeated, usage } = await collectPooled(transport, bank, plan, scope, request, options);
       options.signal?.throwIfAborted();
       const stopped = short ?? repeated?.samples;
       const sent = responses.length + (stopped ? 1 : 0);
@@ -344,11 +385,12 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
         earlyStopped: false, sampleBudgetSaved: 0,
         elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
         tokenizer, warnings, requests: sent,
+        ...(transport.reportsUsage ? { usage } : {}),
         ...(pooled ? { candidates: pooled.candidates } : {}),
         ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
       };
     }
-    const { samples, early, test, project } = await collectIntegers(transport, bank, plan, scope, request, options);
+    const { samples, early, test, project, usage } = await collectIntegers(transport, bank, plan, scope, request, options);
     options.signal?.throwIfAborted();
     // Distinguish intentional budget/early-stop cancellation from timeout cancellation.
     if (scope.signal.aborted && !early && samples.length < plan.count) scope.signal.throwIfAborted();
@@ -369,6 +411,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       sampleBudgetSaved: early ? 1 - samples.length / plan.count : 0,
       elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
       tokenizer, warnings,
+      ...(transport.reportsUsage ? { usage: [usage] } : {}),
       ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
     };
   } finally { scope.dispose(); }
