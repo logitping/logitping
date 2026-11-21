@@ -3,8 +3,9 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { main, resolveApiKey } from '../src/cli.js';
-import type { FingerprintBank, ProbeRequest } from '../src/core/types.js';
+import { claimLines, main, resolveApiKey } from '../src/cli.js';
+import { wilsonInterval } from '../src/core/claim.js';
+import type { ClaimCheck, ClaimRates, FingerprintBank, ProbeRequest } from '../src/core/types.js';
 import * as bankLoader from '../src/data/bank_loader.js';
 import { collectionBank, forceCutoffs, openEnvelopes, overlappingBank, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
 
@@ -425,6 +426,51 @@ describe('CLI bank selection', () => {
     expect(stdout).toContain('Reported tokens (input/output): 52/7');
   });
 
+  describe('claims', () => {
+    const probe = async (reply: string, ...args: string[]) => {
+      vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => sse(reply));
+      await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--no-tokenizer', '--no-interactive', ...args]);
+    };
+
+    it('reports the claim from --model without changing the exit code', async () => {
+      await probe('17 '.repeat(128), '--model', 'synthetic-287', '--json');
+      expect(JSON.parse(stdout)).toMatchObject({ status: 'IDENTIFIED', claim: { requested: 'synthetic-287', verdict: 'INCONSISTENT' } });
+      expect(process.exitCode).toBe(0);
+    });
+
+    it.each([
+      ['an inconsistent claim', '17 '.repeat(128), 'synthetic-287', 3],
+      ['a consistent claim', '17 '.repeat(128), 'synthetic-17', 0],
+      ['a claim the bank does not enroll', '17 '.repeat(128), 'gpt-7', 2],
+      ['a claim a short reply cannot check', '17 '.repeat(50), 'synthetic-17', 2],
+    ])('sets the exit code from %s under --claim', async (_name, reply, claim, code) => {
+      await probe(reply, '--model', 'alias', '--claim', claim, '--json');
+      expect(JSON.parse(stdout).claim).toMatchObject({ requested: claim });
+      expect(process.exitCode).toBe(code);
+    });
+
+    it('rejects an empty --claim', async () => {
+      await probe('17 '.repeat(128), '--model', 'alias', '--claim', '', '--json');
+      expect(JSON.parse(stdout)).toMatchObject({ status: 'ERROR', error: expect.stringContaining('Expected a model name') });
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('prints the claim block before the notes', async () => {
+      await probe('17 '.repeat(128), '--model', 'alias', '--claim', 'synthetic-287');
+      const block = 'Claim synthetic-287: inconsistent\n  The probe identified synthetic-17 instead.\n  No acceptance rates were measured for this bank and probe.\n';
+      expect(stdout).toContain(block);
+      expect(stdout.indexOf(block)).toBeGreaterThan(stdout.indexOf('Early stop'));
+      expect(stdout.indexOf(block)).toBeLessThan(stdout.indexOf('Note:'));
+    });
+
+    it('does not check a claim through a CLI driver with the bundled API bank', async () => {
+      await main(['node', 'lping', '--driver', 'codex', '--claim', 'synthetic-17', '--json']);
+      expect(JSON.parse(stdout)).toMatchObject({ status: 'UNCALIBRATED', claim: { verdict: 'NOT_CHECKED' } });
+      expect(process.exitCode).toBe(2);
+    });
+  });
+
   describe('recorded collection settings', () => {
     const bodies: Record<string, unknown>[] = [];
     const probe = async (bank: () => FingerprintBank, ...args: string[]) => {
@@ -462,6 +508,11 @@ describe('CLI bank selection', () => {
       // The budget still applies; the token-limit field does not, because the probe uses Chat Completions.
       expect(bodies[0]).toMatchObject({ max_tokens: 2048 });
       expect(stderr).toContain("the bank collected synthetic-287 through Anthropic Messages; add --provider anthropic to match it, if the endpoint accepts Anthropic's x-api-key authentication.");
+    });
+
+    it('applies the settings of the --claim model rather than the --model alias', async () => {
+      await probe(collectionBank, '--model', 'alias', '--claim', 'vendor/synthetic-17');
+      expect(bodies[0]).toMatchObject({ max_completion_tokens: 4096 });
     });
 
     it('leaves a model without collection settings at the default budget', async () => {
@@ -672,5 +723,58 @@ describe('API key scoping', () => {
     [{ provider: 'openai', endpoint: 'https://proxy.example/v1', key: 'flag-key' }, { ...vendor, LOGITPING_API_KEY: 'tool-key' }, 'flag-key'],
   ])('resolves %j', (options, env, expected) => {
     expect(resolveApiKey(options, env)).toBe(expected);
+  });
+});
+
+describe('claim block', () => {
+  const rate = (accepted: number, runs: number) => ({ accepted, runs, ...wilsonInterval(accepted, runs) });
+  const rates = (own: ClaimRates['own'], mostAccepted: ClaimRates['mostAccepted'] = []): ClaimRates => ({
+    own, enrolled: rate(233, 545), outside: rate(612, 770), mostAccepted,
+  });
+  const check = (verdict: ClaimCheck['verdict'], fields: Partial<ClaimCheck> = {}): ClaimCheck => ({
+    requested: 'gpt-6.2-sol', model: 'gpt-6.2-sol', verdict, reason: 'gpt-6.2-sol is not among the candidates: gpt-6-luna.', rates: null, ...fields,
+  });
+  const accepted = (model: string, enrolled: boolean, count: number, runs: number) => ({ model, enrolled, accepted: count, runs });
+
+  it("prints a consistent claim's own, enrolled and outside rates, and the models most often accepted", () => {
+    const most = [accepted('gpt-5.6-sol', false, 70, 70), accepted('gpt-6.1-sol', true, 58, 60), accepted('gpt-6-astra', true, 52, 60), accepted('a', true, 4, 5), accepted('b', true, 3, 5)];
+    expect(claimLines(check('CONSISTENT', { rates: rates({ source: 'tuning', ...rate(5, 5) }, most) }))).toEqual([
+      'Claim gpt-6.2-sol: consistent',
+      '  Accepted for 5 of 5 of its own runs (tuning runs; likely 57–100%).',
+      "  Also accepted for 43% of other enrolled models' runs (233 of 545) and 79% of runs from models outside the bank (612 of 770).",
+      '  Most often accepted for: gpt-5.6-sol (not enrolled) 70/70, gpt-6.1-sol 58/60, gpt-6-astra 52/60 (+2 more).',
+    ]);
+  });
+
+  it('names independent own runs and omits an empty most-accepted list', () => {
+    expect(claimLines(check('CONSISTENT', { rates: rates({ source: 'independent', ...rate(60, 60) }) }))).toEqual([
+      'Claim gpt-6.2-sol: consistent',
+      '  Accepted for 60 of 60 of its own runs (runs from other collections; likely 94–100%).',
+      "  Also accepted for 43% of other enrolled models' runs (233 of 545) and 79% of runs from models outside the bank (612 of 770).",
+    ]);
+  });
+
+  it("weighs an inconsistent claim by its own runs' acceptance", () => {
+    expect(claimLines(check('INCONSISTENT', { rates: rates({ source: 'independent', ...rate(15, 40) }) })).slice(1)).toEqual([
+      '  gpt-6.2-sol is not among the candidates: gpt-6-luna.',
+      '  Its own runs are accepted only 15 of 40 times (38%; likely 24–53%), so this is weak evidence against the claim.',
+    ]);
+    expect(claimLines(check('INCONSISTENT', { rates: rates({ source: 'independent', ...rate(60, 60) }) })).at(-1))
+      .toBe('  Its own runs are accepted 60 of 60 times (100%; likely 94–100%).');
+    expect(claimLines(check('INCONSISTENT', { rates: rates({ source: 'tuning', ...rate(5, 5) }) })).at(-1))
+      .toBe('  Its own tuning runs are accepted 5 of 5 times (100%; likely 57–100%).');
+  });
+
+  it('says when no rates were measured', () => {
+    expect(claimLines(check('CONSISTENT'))).toEqual(['Claim gpt-6.2-sol: consistent', '  No acceptance rates were measured for this bank and probe.']);
+    expect(claimLines(check('INCONSISTENT'))).toEqual([
+      'Claim gpt-6.2-sol: inconsistent', '  gpt-6.2-sol is not among the candidates: gpt-6-luna.', '  No acceptance rates were measured for this bank and probe.',
+    ]);
+  });
+
+  it('prints one line for a claim the bank does not enroll, and nothing for an unchecked one', () => {
+    expect(claimLines(check('NOT_ENROLLED', { requested: 'gpt-7', model: null }))).toEqual(['Claim gpt-7: not checked; the bank enrolls no model named gpt-7.']);
+    expect(claimLines(check('NOT_CHECKED'))).toEqual([]);
+    expect(claimLines(undefined)).toEqual([]);
   });
 });

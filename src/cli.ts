@@ -8,7 +8,7 @@ import ora from 'ora';
 import { HttpClient, type ApiFormat, type TokenLimitField } from './core/client.js';
 import { fingerprint } from './core/engine.js';
 import { LogitpingError } from './core/errors.js';
-import type { CollectionSettings, FingerprintBank, Language, ProbeResult, ProbeTransport, Provider } from './core/types.js';
+import type { AcceptanceRate, ClaimCheck, ClaimVerdict, CollectionSettings, FingerprintBank, Language, ProbeResult, ProbeTransport, Provider } from './core/types.js';
 import { defaultBank, loadBank, pooledBank } from './data/bank_loader.js';
 import { collectionSettingsFor } from './data/collection_settings.js';
 import { createFingerprintBank, type EnrollmentInput } from './data/enrollment.js';
@@ -28,6 +28,8 @@ interface Options {
   key?: string;
   keyFile?: string;
   model?: string;
+  /** The model the endpoint claims to serve, when --model is an alias; sets the exit code. */
+  claim?: string;
   bank?: string;
   pooled?: boolean;
   samples?: number;
@@ -51,6 +53,11 @@ function positiveInteger(raw: string): number {
   const number = Number(raw);
   if (!/^\d+$/.test(raw) || !Number.isSafeInteger(number) || number < 1) throw new InvalidArgumentError('Expected a positive integer');
   return number;
+}
+
+function modelName(raw: string): string {
+  if (!raw.trim()) throw new InvalidArgumentError('Expected a model name');
+  return raw;
 }
 
 function temperatureValue(raw: string): number {
@@ -115,12 +122,13 @@ const FORMAT_HINTS: Readonly<Record<CollectionSettings['apiFormat'], string>> = 
 };
 
 /**
- * For a --model the bank enrolls with recorded collection settings, fill an unset --max-tokens, and an
+ * For a claimed model (--claim, otherwise --model) the bank enrolls with recorded collection settings, fill an unset --max-tokens, and an
  * unset --token-limit-field when the probe uses the recorded API format. --provider and --api-format
  * never change: endpoints differ in what they support and how they authenticate. Returns the notes.
  */
-export function applyCollectionSettings(options: Pick<Options, 'model' | 'provider' | 'apiFormat' | 'tokenLimitField' | 'maxTokens'>, bank: FingerprintBank): string[] {
-  const match = options.model ? collectionSettingsFor(bank, options.model) : undefined;
+export function applyCollectionSettings(options: Pick<Options, 'model' | 'claim' | 'provider' | 'apiFormat' | 'tokenLimitField' | 'maxTokens'>, bank: FingerprintBank): string[] {
+  const claimed = options.claim ?? options.model;
+  const match = claimed ? collectionSettingsFor(bank, claimed) : undefined;
   if (!match) return [];
   const { id, collection } = match;
   const applied: string[] = [];
@@ -210,6 +218,42 @@ function nats(gap: number | null): string {
   return rounded === '0.0' ? '0.0 nats' : `\u2212${rounded} nats`;
 }
 
+const share = ({ accepted, runs }: AcceptanceRate) => `${runs ? Math.round((100 * accepted) / runs) : 0}%`;
+const likely = ({ low, high }: AcceptanceRate) => `likely ${Math.round(low * 100)}–${Math.round(high * 100)}%`;
+/** Below this upper bound on its own runs' acceptance, an inconsistent claim is weak evidence against it. */
+const WEAK_OWN_RATE = 0.9;
+const NO_RATES = '  No acceptance rates were measured for this bank and probe.';
+
+/** The readable claim block; nothing for a claim the probe could not check, whose status says why. */
+export function claimLines(claim: ClaimCheck | undefined): string[] {
+  if (!claim || claim.verdict === 'NOT_CHECKED') return [];
+  const name = safeText(claim.requested);
+  if (claim.verdict === 'NOT_ENROLLED') return [`Claim ${name}: not checked; the bank enrolls no model named ${name}.`];
+  const { rates } = claim;
+  if (claim.verdict === 'INCONSISTENT') {
+    const lines = [`Claim ${name}: inconsistent`, `  ${safeText(claim.reason)}`];
+    if (!rates) return [...lines, NO_RATES];
+    const { own } = rates;
+    const weak = own.high < WEAK_OWN_RATE;
+    return [...lines, `  Its own ${own.source === 'tuning' ? 'tuning ' : ''}runs are accepted ${weak ? 'only ' : ''}${own.accepted} of ${own.runs} times (${share(own)}; ${likely(own)})${weak ? ', so this is weak evidence against the claim' : ''}.`];
+  }
+  if (!rates) return [`Claim ${name}: consistent`, NO_RATES];
+  const { own, enrolled, outside, mostAccepted } = rates;
+  const lines = [
+    `Claim ${name}: consistent`,
+    `  Accepted for ${own.accepted} of ${own.runs} of its own runs (${own.source === 'tuning' ? 'tuning runs' : 'runs from other collections'}; ${likely(own)}).`,
+    `  Also accepted for ${share(enrolled)} of other enrolled models' runs (${enrolled.accepted} of ${enrolled.runs}) and ${share(outside)} of runs from models outside the bank (${outside.accepted} of ${outside.runs}).`,
+  ];
+  if (mostAccepted.length) {
+    const shown = mostAccepted.slice(0, 3).map((entry) => `${entry.model}${entry.enrolled ? '' : ' (not enrolled)'} ${entry.accepted}/${entry.runs}`);
+    lines.push(`  Most often accepted for: ${shown.join(', ')}${mostAccepted.length > 3 ? ` (+${mostAccepted.length - 3} more)` : ''}.`);
+  }
+  return lines;
+}
+
+/** Exit codes under --claim; without it, the status decides. */
+const CLAIM_EXIT_CODES: Readonly<Record<ClaimVerdict, number>> = { CONSISTENT: 0, INCONSISTENT: 3, NOT_CHECKED: 2, NOT_ENROLLED: 2 };
+
 function display(result: ProbeResult): void {
   const label = result.status === 'HEURISTIC_MATCH' ? `Heuristic match: ${result.model}`
     : result.candidates && result.candidates.length > 1 ? `Inconclusive, consistent with: ${result.candidates.join(', ')}`
@@ -229,6 +273,7 @@ function display(result: ProbeResult): void {
   process.stdout.write(result.earlyStopped
     ? `Stopped early: ${(result.sampleBudgetSaved * 100).toFixed(1)}% of the requested integer budget skipped (not measured token or latency savings).\n`
     : 'Early stop: no\n');
+  for (const line of claimLines(result.claim)) process.stdout.write(`${line}\n`);
   for (const warning of result.warnings) process.stdout.write(`${pc.yellow('Note:')} ${warning}\n`);
 }
 
@@ -250,6 +295,7 @@ export async function main(argv = process.argv): Promise<void> {
     .option('--key <key>', 'API key; visible in process listings and shell history (prefer --key-file or LOGITPING_API_KEY)')
     .option('--key-file <path>', 'read the API key from a file or pipe, e.g. <(pass show key) (API only)')
     .option('--model <id>', 'claimed API model or optional CLI model override')
+    .option('--claim <model>', 'model the endpoint claims to serve, when --model is an alias; sets the exit code: 0 consistent, 3 inconsistent, 2 not checked', modelName)
     .option('--api-format <format>', 'OpenAI wire format: chat-completions (default) or responses')
     .option('--token-limit-field <name>', 'API budget field: max_tokens, max_completion_tokens, or max_output_tokens (default depends on the API format)')
     .option('--max-tokens <count>', 'output token budget per integer request (default: the budget the bank recorded for --model, otherwise samples × 5 + 64); reasoning models need more', positiveInteger)
@@ -328,6 +374,7 @@ export async function main(argv = process.argv): Promise<void> {
         allowInsecureHttp: options.allowInsecureHttp, ...(key ? { apiKey: key } : {}),
       });
     }
+    const claim = options.claim ?? options.model;
     const controller = new AbortController();
     // Persistent listeners, not once(): signal-exit, which execa's subprocess cleanup and ora load,
     // re-raises a signal when no other listener remains, ending the process before the probe
@@ -345,7 +392,7 @@ export async function main(argv = process.argv): Promise<void> {
     let streamed: string | undefined;
     try {
       const result = await fingerprint(transport, {
-        ...(bank ? { bank } : {}), signal: controller.signal, timeoutMs: options.timeout,
+        ...(bank ? { bank } : {}), ...(claim ? { claim } : {}), signal: controller.signal, timeoutMs: options.timeout,
         tokenizerProbe: options.tokenizer === true, earlyStopping: options.earlyStop,
         allowTransportMismatch: options.allowTransportMismatch,
         ...(options.samples !== undefined ? { samples: options.samples } : {}),
@@ -365,7 +412,7 @@ export async function main(argv = process.argv): Promise<void> {
       if (options.stream) process.stderr.write('\n');
       if (options.json) process.stdout.write(`${safeJson(result)}\n`);
       else display(result);
-      process.exitCode = result.status === 'IDENTIFIED' ? 0 : 2;
+      process.exitCode = options.claim !== undefined && result.claim ? CLAIM_EXIT_CODES[result.claim.verdict] : result.status === 'IDENTIFIED' ? 0 : 2;
     } finally {
       spinner.stop();
       process.removeListener('SIGINT', abort);
