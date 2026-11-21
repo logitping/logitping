@@ -464,6 +464,11 @@ describe('CLI bank selection', () => {
       expect(stdout.indexOf(block)).toBeLessThan(stdout.indexOf('Note:'));
     });
 
+    it('names the claimed model in the --max-tokens help', async () => {
+      await main(['node', 'lping', '--help']);
+      expect(stdout.replace(/\s+/g, ' ')).toContain('the budget the bank recorded for the --claim or --model model');
+    });
+
     it('does not check a claim through a CLI driver with the bundled API bank', async () => {
       await main(['node', 'lping', '--driver', 'codex', '--claim', 'synthetic-17', '--json']);
       expect(JSON.parse(stdout)).toMatchObject({ status: 'UNCALIBRATED', claim: { verdict: 'NOT_CHECKED' } });
@@ -770,6 +775,14 @@ describe('claim block', () => {
     expect(claimLines(check('INCONSISTENT'))).toEqual([
       'Claim gpt-6.2-sol: inconsistent', '  gpt-6.2-sol is not among the candidates: gpt-6-luna.', '  No acceptance rates were measured for this bank and probe.',
     ]);
+  });
+
+  it('explains an unchecked claim when the status does not', () => {
+    const uncalibrated = check('NOT_CHECKED', { reason: 'gpt-6.2-sol is enrolled without calibration, so it is never a candidate.' });
+    expect(claimLines(uncalibrated, { candidates: ['gpt-6-luna'] })).toEqual([
+      'Claim gpt-6.2-sol: not checked; gpt-6.2-sol is enrolled without calibration, so it is never a candidate.',
+    ]);
+    expect(claimLines(check('NOT_CHECKED'), {})).toEqual([]);
   });
 
   it('prints one line for a claim the bank does not enroll, and nothing for an unchecked one', () => {

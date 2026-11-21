@@ -2,12 +2,14 @@ import { compareIds, type ClaimCounts, type ClaimPopulation } from '../data/clai
 import type { AcceptanceRate, ClaimCheck, ClaimRates, FingerprintBank, ModelFingerprint, ProbeResult } from './types.js';
 
 /**
- * The bank model a requested model identifier names: its last `/` segment, ignoring case, equals the
- * model's id, so `openai/gpt-6.1-sol` names `gpt-6.1-sol`. Ids that differ only by case resolve in bank order.
+ * The bank model a requested model identifier names, ignoring case: the model whose id is the whole
+ * name, otherwise the one whose id is its last `/` segment, so `openai/gpt-6.1-sol` names `gpt-6.1-sol`
+ * and `meta/llama-x` names a bank id `meta/llama-x`. Ids that differ only by case resolve in bank order.
  */
 export function claimedModel(bank: FingerprintBank, name: string): ModelFingerprint | undefined {
+  const named = (id: string) => bank.models.find((model) => model.id.toLowerCase() === id);
   const segment = name.split('/').at(-1)!.toLowerCase();
-  return segment ? bank.models.find((model) => model.id.toLowerCase() === segment) : undefined;
+  return named(name.toLowerCase()) ?? (segment ? named(segment) : undefined);
 }
 
 /**

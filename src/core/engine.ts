@@ -396,15 +396,16 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
           ? `Request ${sent} of ${plan.requests} ended after ${short.length} of ${plan.count} integers; a pooled probe needs every request complete. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.`
           : `Request ${sent} repeated request ${repeated!.of} exactly; the endpoint may be caching or replaying replies, or sampling deterministically. A pooled probe needs independent responses.`,
       };
+      const labelled = relabel(classification, plan, transport, bank);
       return {
-        ...relabel(classification, plan, transport, bank),
+        ...labelled,
         samples: [...responses.flat(), ...(stopped ?? [])], requestedSamples: plan.count * plan.requests,
         earlyStopped: false, sampleBudgetSaved: 0,
         elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
         tokenizer, warnings, requests: sent,
         ...(transport.reportsUsage ? { usage } : {}),
         ...(pooled ? { candidates: pooled.candidates } : {}),
-        ...claimField(options, bank, plan, { ...classification, ...(pooled ? { candidates: pooled.candidates } : {}) }),
+        ...claimField(options, bank, plan, { ...labelled, ...(pooled ? { candidates: pooled.candidates } : {}) }),
         ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
       };
     }
@@ -423,14 +424,16 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       : early ?? classify(samples, plan.calibrated, project, test);
     if (samples.length < plan.count && !early) warnings.push(`The response ended after ${samples.length} of ${plan.count} requested integers (output limit: ${plan.maxTokens} tokens).`);
     if (classification.status === 'INCONCLUSIVE' && classification.candidates?.length) warnings.push(CANDIDATES_WARNING);
+    // A cross-transport match is relabelled a heuristic match, so the claim reason does not call it an identification.
+    const labelled = relabel(classification, plan, transport, bank);
     return {
-      ...relabel(classification, plan, transport, bank),
+      ...labelled,
       samples, requestedSamples: plan.count, earlyStopped: early !== undefined,
       sampleBudgetSaved: early ? 1 - samples.length / plan.count : 0,
       elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
       tokenizer, warnings,
       ...(transport.reportsUsage ? { usage: [usage] } : {}),
-      ...claimField(options, bank, plan, classification),
+      ...claimField(options, bank, plan, labelled),
       ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
     };
   } finally { scope.dispose(); }

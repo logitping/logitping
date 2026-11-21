@@ -224,10 +224,14 @@ const likely = ({ low, high }: AcceptanceRate) => `likely ${Math.round(low * 100
 const WEAK_OWN_RATE = 0.9;
 const NO_RATES = '  No acceptance rates were measured for this bank and probe.';
 
-/** The readable claim block; nothing for a claim the probe could not check, whose status says why. */
-export function claimLines(claim: ClaimCheck | undefined): string[] {
-  if (!claim || claim.verdict === 'NOT_CHECKED') return [];
+/**
+ * The readable claim block. A claim the probe could not check for want of candidates prints nothing,
+ * because the status says why; with candidates computed (an uncalibrated claimed model), it prints the reason.
+ */
+export function claimLines(claim: ClaimCheck | undefined, result: Pick<ProbeResult, 'candidates'> = {}): string[] {
+  if (!claim) return [];
   const name = safeText(claim.requested);
+  if (claim.verdict === 'NOT_CHECKED') return result.candidates ? [`Claim ${name}: not checked; ${safeText(claim.reason)}`] : [];
   if (claim.verdict === 'NOT_ENROLLED') return [`Claim ${name}: not checked; the bank enrolls no model named ${name}.`];
   const { rates } = claim;
   if (claim.verdict === 'INCONSISTENT') {
@@ -273,7 +277,7 @@ function display(result: ProbeResult): void {
   process.stdout.write(result.earlyStopped
     ? `Stopped early: ${(result.sampleBudgetSaved * 100).toFixed(1)}% of the requested integer budget skipped (not measured token or latency savings).\n`
     : 'Early stop: no\n');
-  for (const line of claimLines(result.claim)) process.stdout.write(`${line}\n`);
+  for (const line of claimLines(result.claim, result)) process.stdout.write(`${line}\n`);
   for (const warning of result.warnings) process.stdout.write(`${pc.yellow('Note:')} ${warning}\n`);
 }
 
@@ -298,7 +302,7 @@ export async function main(argv = process.argv): Promise<void> {
     .option('--claim <model>', 'model the endpoint claims to serve, when --model is an alias; sets the exit code: 0 consistent, 3 inconsistent, 2 not checked', modelName)
     .option('--api-format <format>', 'OpenAI wire format: chat-completions (default) or responses')
     .option('--token-limit-field <name>', 'API budget field: max_tokens, max_completion_tokens, or max_output_tokens (default depends on the API format)')
-    .option('--max-tokens <count>', 'output token budget per integer request (default: the budget the bank recorded for --model, otherwise samples × 5 + 64); reasoning models need more', positiveInteger)
+    .option('--max-tokens <count>', 'output token budget per integer request (default: the budget the bank recorded for the --claim or --model model, otherwise samples × 5 + 64); reasoning models need more', positiveInteger)
     .option('--bank <path>', 'measured bank matching this transport (default: compatible bundled bank, otherwise collection only)')
     .option('--pooled', 'use the bundled experimental pooled bank: 8 requests of 64 integers; heuristic matches only')
     .option('--allow-transport-mismatch', 'experimentally compare against another transport\'s bank; no validated identity or early stopping', false)

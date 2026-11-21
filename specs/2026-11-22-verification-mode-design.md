@@ -258,3 +258,11 @@ The exact copy is written in the plan.
 - Static or lazy import of the rates file. It is small, so static is fine.
 - The own-rate threshold for the "weak evidence" clause, 0.9 unless a better one turns up.
 - How many models the CLI lists in "Most often accepted": 3 plus a count, as in the sketch.
+
+## Errata
+
+Changes the final review prompted, on 2026-11-22:
+
+- **Matching:** a claim first names the bank model whose whole id equals it, ignoring case, and only then the one whose id is its last `/` segment. Bank ids may contain `/`, and the last-segment rule alone reported such a model as not enrolled. Collection settings share the helper, so they gain the same fix.
+- **`NOT_CHECKED` output:** the CLI prints `Claim <name>: not checked; <reason>` when the claimed model is enrolled without calibration, because the status line does not explain that case. When no candidates were computed it still prints nothing.
+- **Cross-transport reasons:** the claim reason is built from the relabelled result, so a `HEURISTIC_MATCH` across transports is never called an identification.

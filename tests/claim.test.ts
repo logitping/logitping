@@ -70,6 +70,22 @@ describe('claim verdicts', () => {
     expect(result.claim).toMatchObject({ verdict: 'CONSISTENT', reason: 'synthetic-1-120 is the only candidate.', rates: null });
   });
 
+  it('matches a bank id that contains a slash by its whole name', async () => {
+    const bank = syntheticBank();
+    bank.models[0]!.id = 'meta/synthetic-17';
+    expect(await probe(bank, reply(17), 'META/Synthetic-17')).toMatchObject({ model: 'meta/synthetic-17', verdict: 'CONSISTENT' });
+    expect(await probe(bank, reply(17), 'synthetic-17')).toMatchObject({ verdict: 'NOT_ENROLLED' });
+  });
+
+  it('does not call a cross-transport match an identification', async () => {
+    const transport = () => new MemoryTransport([`${Array<number>(128).fill(17).join(' ')} `], 'token', 'claude');
+    const options = { bank: syntheticBank(), allowTransportMismatch: true };
+    expect((await fingerprint(transport(), { ...options, claim: 'synthetic-17' })).claim).toMatchObject({ verdict: 'CONSISTENT', reason: 'synthetic-17 is the only candidate.' });
+    expect((await fingerprint(transport(), { ...options, claim: 'synthetic-287' })).claim).toMatchObject({
+      verdict: 'INCONSISTENT', reason: 'synthetic-287 is not among the candidates: synthetic-17.',
+    });
+  });
+
   it('reports no claim without one', async () => {
     expect(await fingerprint(reply(17), { bank: syntheticBank() })).not.toHaveProperty('claim');
     expect(await fingerprint(reply(17), { bank: syntheticBank(), claim: '' })).not.toHaveProperty('claim');
@@ -80,6 +96,9 @@ describe('collection settings matching', () => {
   it('shares the claim matching rule', () => {
     expect(collectionSettingsFor(collectionBank(), 'VENDOR/Synthetic-17')).toMatchObject({ id: 'synthetic-17', collection: { maxTokens: 4096 } });
     expect(collectionSettingsFor(collectionBank(), 'synthetic-287')).toBeUndefined();
+    const slashed = collectionBank();
+    slashed.models[0]!.id = 'meta/synthetic-17';
+    expect(collectionSettingsFor(slashed, 'meta/synthetic-17')).toMatchObject({ id: 'meta/synthetic-17' });
   });
 });
 
@@ -109,6 +128,11 @@ describe('claim rates', () => {
     expect((await fingerprint(reply(17), { claim: 'synthetic-287' })).claim).toMatchObject({
       verdict: 'INCONSISTENT', rates: deriveClaimRates(file().claims['synthetic-287']!),
     });
+  });
+
+  it('attaches none to a file copy of the real bundled bank', async () => {
+    const bank = await bankLoader.loadBank('src/data/default_bank.json');
+    expect((await fingerprint(reply(17, 512), { bank, claim: 'claude-sonnet-5.5' })).claim).toMatchObject({ verdict: 'INCONSISTENT', rates: null });
   });
 
   it('attaches none to a bank passed in, even one identical to the bundled bank', async () => {
