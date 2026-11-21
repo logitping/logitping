@@ -101,7 +101,7 @@ On 460 stored runs of 10 enrolled models from collections the bundled bank was n
 
 API compatibility permits a comparison; it does not establish accuracy across hosts, API formats, or streaming modes. The bundled bank requires English, 512 samples, and omitted temperature (`null` in the bank). Other settings require a matching bank. The [CLI reference](docs/cli.md) covers custom banks, token budgets, streaming, JSON errors, and credential handling.
 
-Local CLI probes reuse your login and may incur provider usage or charges. Run them only with trusted binaries and backends. Codex and Antigravity may start a tool before the driver detects and terminates it; their temporary working directory and restricted settings are not a complete isolation boundary. Read the [transport limitations](docs/transports.md) first.
+Local CLI probes reuse your login and may incur provider usage or charges. They receive only part of your environment; add what a login needs with `--pass-env`, such as `--pass-env 'AWS_*'` for Claude Code through Amazon Bedrock. Run them only with trusted binaries and backends. Codex and Antigravity may start a tool before the driver detects and terminates it; their temporary working directory and restricted settings are not a complete isolation boundary. Read the [transport limitations](docs/transports.md) first.
 
 ```sh
 # Collection only with the bundled API bank; normally exits with code 2.
