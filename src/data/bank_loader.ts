@@ -30,6 +30,22 @@ function vector(value: unknown, size: number, field: string): asserts value is n
   check(Array.isArray(value) && value.length === size && value.every((x) => typeof x === 'number' && Number.isFinite(x)), field);
 }
 
+/** The token-limit fields each API format accepts. */
+const COLLECTION_FIELDS: ReadonlyMap<unknown, readonly unknown[]> = new Map([
+  ['chat-completions', ['max_tokens', 'max_completion_tokens']], ['responses', ['max_output_tokens']], ['messages', ['max_tokens']],
+]);
+const COLLECTION_PROVIDERS: readonly unknown[] = ['openai', 'openrouter', 'google', 'cloudflare'];
+
+function validateCollection(value: unknown, targetSamples: number): void {
+  const settings = isRecord(value) ? value : {};
+  check(COLLECTION_PROVIDERS.includes(settings.provider)
+    && typeof settings.route === 'string' && settings.route.length > 0 && settings.route.length <= 256
+    && (COLLECTION_FIELDS.get(settings.apiFormat) ?? []).includes(settings.tokenLimitField)
+    && integer(settings.maxTokens, targetSamples, 262_144)
+    && typeof settings.collectedAt === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(settings.collectedAt)
+    && typeof settings.corpusSha256 === 'string' && /^[0-9a-f]{64}$/.test(settings.corpusSha256), 'collection settings');
+}
+
 function validatePooled(bank: Record<string, unknown>, protocol: Record<string, unknown>, models: Record<string, unknown>[]): void {
   check(protocol.scoring === POOLED_SCORING, `protocol.scoring must be ${POOLED_SCORING}`);
   check(integer(protocol.requestsPerProbe, 2, 64), 'requestsPerProbe must be an integer from 2 to 64');
@@ -88,6 +104,7 @@ export function validateBank(input: unknown): FingerprintBank {
     ids.add(model.id);
     check(typeof model.family === 'string' && model.family.length > 0 && model.family.length <= 128, 'model family');
     check(typeof model.provenance === 'string' && model.provenance.trim().length > 0 && model.provenance.length <= 4096, 'model provenance');
+    if (model.collection !== undefined) validateCollection(model.collection, protocol.targetSamples as number);
     check(model.status === 'uncalibrated' || model.status === 'calibrated', 'model status');
     vector(model.integerProbabilities, INTEGER_MAX, 'integerProbabilities');
     distribution(model.integerProbabilities, 'integerProbabilities');

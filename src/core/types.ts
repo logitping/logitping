@@ -25,6 +25,20 @@ export interface FingerprintProfile extends DistanceProfile {
   sampleCount: number;
 }
 
+/** How a model's reference runs were requested; the same settings are also recorded in its provenance. */
+export interface CollectionSettings {
+  /** The service the bank updater requested the runs from. */
+  provider: 'openai' | 'openrouter' | 'google' | 'cloudflare';
+  /** The requested model identifier, such as `anthropic/claude-sonnet-5.5`. */
+  route: string;
+  apiFormat: 'chat-completions' | 'responses' | 'messages';
+  tokenLimitField: 'max_tokens' | 'max_completion_tokens' | 'max_output_tokens';
+  /** Output-token budget of each request, reasoning included. */
+  maxTokens: number;
+  collectedAt: string;
+  corpusSha256: string;
+}
+
 export interface ModelFingerprint {
   id: string;
   family: string;
@@ -32,6 +46,8 @@ export interface ModelFingerprint {
   integerProbabilities: number[];
   profiles: FingerprintProfile[];
   provenance: string;
+  /** Present for models the bank updater collected; older and hand-made banks may lack it. */
+  collection?: CollectionSettings;
 }
 
 /** Prediction-set calibration of a pooled bank (schema version 2); see docs/methodology.md. */
