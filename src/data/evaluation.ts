@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
+import { deriveClaimRates } from '../core/claim.js';
 import { fingerprint } from '../core/engine.js';
-import type { FingerprintBank, ProbeTransport } from '../core/types.js';
+import type { AcceptanceRate, FingerprintBank, ProbeResult, ProbeTransport } from '../core/types.js';
 import { INTEGER_MAX, INTEGER_MIN } from '../math/ordered_block.js';
 import { mulberry32 } from '../math/pooled_sets.js';
 import { isIntegerInRange, isRecord } from '../util/validate.js';
 import { validateBank } from './bank_loader.js';
+import { CLAIM_POPULATIONS, compareIds, type ClaimCounts, type ClaimPopulation, type ClaimRatesFile, type ClaimRow } from './claim_rates.js';
 import { corpusDigest, sameProtocol } from './gateway_plan.js';
 
 /** The fields of a corpus the bank updater archives; its digest names it in model provenance. */
@@ -83,47 +85,133 @@ function replay(responses: readonly (readonly number[])[]): ProbeTransport {
 const runsOf = (model: CorpusModels[number]) => [...model.training, ...model.validation];
 const emptyStatus = (): StatusTally => ({ runs: 0, correct: 0, wrong: {}, inconclusive: 0, unknown: 0, listed: 0, empty: 0, candidateCount: 0, multiVendor: 0 });
 
-async function scoreRuns(bank: FingerprintBank, model: CorpusModels[number]): Promise<StatusTally> {
-  const tally = emptyStatus();
-  // Families come from the bank that scored the run; a removed tested model has none.
-  const family = new Map(bank.models.map((entry) => [entry.id, entry.family]));
-  for (const run of runsOf(model)) {
-    const { status, model: named, candidates = [] } = await fingerprint(replay([run]), { bank, earlyStopping: false });
-    tally.runs++;
-    if (status === 'IDENTIFIED' && named === model.id) tally.correct++;
-    else if (status === 'IDENTIFIED' && named) tally.wrong[named] = (tally.wrong[named] ?? 0) + 1;
-    else if (status === 'INCONCLUSIVE') tally.inconclusive++;
-    else if (status === 'UNKNOWN_MODEL') tally.unknown++;
-    else throw new Error(`Unexpected ${status} for ${model.id}`);
-    if (candidates.includes(model.id)) tally.listed++;
-    if (!candidates.length) tally.empty++;
-    tally.candidateCount += candidates.length;
-    if (new Set(candidates.map((id) => family.get(id))).size > 1) tally.multiVendor++;
-  }
-  return tally;
+/** One probe of a stored run with the production engine, as the report scores it. */
+const probeRun = (bank: FingerprintBank, run: readonly number[]) => fingerprint(replay([run]), { bank, earlyStopping: false });
+
+/** Add one probe of a run of `id` to its tally; `family` maps bank ids to model families. */
+function tallyRun(tally: StatusTally, { status, model: named, candidates = [] }: ProbeResult, id: string, family: ReadonlyMap<string, string>): void {
+  tally.runs++;
+  if (status === 'IDENTIFIED' && named === id) tally.correct++;
+  else if (status === 'IDENTIFIED' && named) tally.wrong[named] = (tally.wrong[named] ?? 0) + 1;
+  else if (status === 'INCONCLUSIVE') tally.inconclusive++;
+  else if (status === 'UNKNOWN_MODEL') tally.unknown++;
+  else throw new Error(`Unexpected ${status} for ${id}`);
+  if (candidates.includes(id)) tally.listed++;
+  if (!candidates.length) tally.empty++;
+  tally.candidateCount += candidates.length;
+  if (new Set(candidates.map((candidate) => family.get(candidate))).size > 1) tally.multiVendor++;
 }
 
-/** One probe per stored run that `bank` was not fitted from, with the production engine. */
-export async function evaluateDefaultBank(bank: FingerprintBank, corpora: readonly DigestedCorpus[]): Promise<DefaultResults> {
+/**
+ * The candidates of one scored run, for the claim counts: with the full bank, and, for an enrolled
+ * model's run, with the bank without that model. Tuning runs are an enrolled model's validation runs
+ * from the corpus it was enrolled from.
+ */
+interface ScoredRun { model: string; kind: 'independent' | 'tuning' | 'unenrolled'; full: readonly string[]; removed: readonly string[] }
+
+/** One pass over the runs `bank` was not fitted from, for the report's tallies and the claim counts. */
+async function scoreDefaultBank(bank: FingerprintBank, corpora: readonly DigestedCorpus[]): Promise<{ results: DefaultResults; scored: ScoredRun[] }> {
   const results: DefaultResults = { enrolled: [], labelRemoved: [], neverEnrolled: [] };
+  const scored: ScoredRun[] = [];
+  // A removed tested model is never a candidate, so the full bank's families serve both banks.
+  const family = new Map(bank.models.map((entry) => [entry.id, entry.family]));
   const withoutModel = new Map<string, FingerprintBank>();
-  const add = async (list: CorpusTallies<StatusTally>[], corpus: string, models: CorpusModels, bankFor: (id: string) => FingerprintBank) => {
-    if (!models.length) return;
-    const entry: CorpusTallies<StatusTally> = { corpus, models: {} };
-    for (const model of models) entry.models[model.id] = await scoreRuns(bankFor(model.id), model);
-    list.push(entry);
-  };
   const removed = (id: string) => {
     if (!withoutModel.has(id)) withoutModel.set(id, { ...bank, models: bank.models.filter((model) => model.id !== id) });
     return withoutModel.get(id)!;
   };
+  /** Both probes of an enrolled model's run. */
+  const scoreBoth = async (id: string, run: readonly number[], kind: ScoredRun['kind']) => {
+    const [full, without] = [await probeRun(bank, run), await probeRun(removed(id), run)];
+    scored.push({ model: id, kind, full: full.candidates ?? [], removed: without.candidates ?? [] });
+    return [full, without] as const;
+  };
   for (const corpus of corpora) {
     const { independent, neverEnrolled } = corpusRoles(bank, corpus);
-    await add(results.enrolled, corpus.digest, independent, () => bank);
-    await add(results.labelRemoved, corpus.digest, independent, removed);
-    await add(results.neverEnrolled, corpus.digest, neverEnrolled, () => bank);
+    if (independent.length) {
+      const enrolled: CorpusTallies<StatusTally> = { corpus: corpus.digest, models: {} };
+      const labelRemoved: CorpusTallies<StatusTally> = { corpus: corpus.digest, models: {} };
+      for (const model of independent) {
+        const [full, without] = [emptyStatus(), emptyStatus()];
+        for (const run of runsOf(model)) {
+          const [withAll, withoutOwn] = await scoreBoth(model.id, run, 'independent');
+          tallyRun(full, withAll, model.id, family);
+          tallyRun(without, withoutOwn, model.id, family);
+        }
+        enrolled.models[model.id] = full;
+        labelRemoved.models[model.id] = without;
+      }
+      results.enrolled.push(enrolled);
+      results.labelRemoved.push(labelRemoved);
+    }
+    if (neverEnrolled.length) {
+      const entry: CorpusTallies<StatusTally> = { corpus: corpus.digest, models: {} };
+      for (const model of neverEnrolled) {
+        const tally = emptyStatus();
+        for (const run of runsOf(model)) {
+          const result = await probeRun(bank, run);
+          tallyRun(tally, result, model.id, family);
+          scored.push({ model: model.id, kind: 'unenrolled', full: result.candidates ?? [], removed: [] });
+        }
+        entry.models[model.id] = tally;
+      }
+      results.neverEnrolled.push(entry);
+    }
   }
-  return results;
+  for (const model of bank.models.filter((entry) => entry.status === 'calibrated')) {
+    for (const { digest, corpus } of corpora) {
+      if (!model.provenance.includes(`corpus sha256:${digest};`)) continue;
+      for (const run of corpus.models.find((entry) => entry.id === model.id)?.validation ?? []) await scoreBoth(model.id, run, 'tuning');
+    }
+  }
+  return { results, scored };
+}
+
+/** One probe per stored run that `bank` was not fitted from, with the production engine. */
+export async function evaluateDefaultBank(bank: FingerprintBank, corpora: readonly DigestedCorpus[]): Promise<DefaultResults> {
+  return (await scoreDefaultBank(bank, corpora)).results;
+}
+
+/**
+ * Per calibrated model, as a claim: how many runs it is a candidate for. Its own are its independent
+ * runs, or, without any, its tuning runs; other enrolled models' independent and tuning runs count
+ * with the full bank (`enrolled`) and without their own model (`removed`); unenrolled models' runs
+ * with the full bank. Enrolled models' training runs are never used.
+ */
+function claimCounts(bank: FingerprintBank, scored: readonly ScoredRun[]): Record<string, ClaimCounts> {
+  const claims: Record<string, ClaimCounts> = {};
+  const order = (row: ClaimRow) => CLAIM_POPULATIONS.indexOf(row.population);
+  for (const { id } of bank.models.filter((entry) => entry.status === 'calibrated')) {
+    const independent = scored.filter((run) => run.model === id && run.kind === 'independent');
+    const own = independent.length ? independent : scored.filter((run) => run.model === id && run.kind === 'tuning');
+    if (!own.length) throw new Error(`No stored runs of ${id} measure its own claim`);
+    const rows = new Map<string, ClaimRow>();
+    const add = (population: ClaimPopulation, model: string, accepted: boolean) => {
+      const key = `${population}\n${model}`;
+      const row = rows.get(key) ?? { model, population, accepted: 0, runs: 0 };
+      row.runs++;
+      if (accepted) row.accepted++;
+      rows.set(key, row);
+    };
+    for (const run of scored) {
+      if (run.model === id) continue;
+      if (run.kind === 'unenrolled') add('unenrolled', run.model, run.full.includes(id));
+      else {
+        add('enrolled', run.model, run.full.includes(id));
+        add('removed', run.model, run.removed.includes(id));
+      }
+    }
+    claims[id] = {
+      own: { source: independent.length ? 'independent' : 'tuning', accepted: own.filter((run) => run.full.includes(id)).length, runs: own.length },
+      runs: [...rows.values()].sort((a, b) => order(a) - order(b) || compareIds(a.model, b.model)),
+    };
+  }
+  return claims;
+}
+
+/** The claim counts of `bank` on the runs it was not fitted from, and its tuning runs. */
+export async function evaluateClaimCounts(bank: FingerprintBank, corpora: readonly DigestedCorpus[]): Promise<Record<string, ClaimCounts>> {
+  return claimCounts(bank, (await scoreDefaultBank(bank, corpora)).scored);
 }
 
 /** Pooled probes of one model: `several` and `none` are prediction sets; `stopped` probes ended on a repeated reply. */
@@ -226,8 +314,11 @@ export function sha256(text: string): string {
   return createHash('sha256').update(text).digest('hex');
 }
 
+/** The report, and the claim file of the default bank (src/data/claim_rates.json). */
+export interface EvaluationOutput { report: EvaluationReport; claims: ClaimRatesFile }
+
 /** Score both bundled banks on every stored run they were not built from. */
-export async function evaluateBanks(input: EvaluationInput): Promise<EvaluationReport> {
+export async function evaluateBanks(input: EvaluationInput): Promise<EvaluationOutput> {
   const defaultBank = validateBank(JSON.parse(input.default.text));
   const pooledBank = validateBank(JSON.parse(input.pooled.text));
   if (pooledBank.schemaVersion !== 2) throw new Error('Pooled evaluation needs a pooled bank (schema version 2)');
@@ -245,13 +336,21 @@ export async function evaluateBanks(input: EvaluationInput): Promise<EvaluationR
   }
   corpora.sort((a, b) => a.corpus.collectedAt.localeCompare(b.corpus.collectedAt) || a.digest.localeCompare(b.digest));
   const summary = (file: string, text: string, bank: FingerprintBank): BankSummary => ({ file, sha256: sha256(text), models: bank.models.length });
-  return {
+  const defaultCorpora = corpora.filter(({ corpus }) => sameProtocol(defaultBank, corpus));
+  const { results, scored } = await scoreDefaultBank(defaultBank, defaultCorpora);
+  const report: EvaluationReport = {
     schemaVersion: 2,
     banks: { default: summary(input.default.file, input.default.text, defaultBank), pooled: summary(input.pooled.file, input.pooled.text, pooledBank) },
     corpora: corpora.map(({ digest, corpus }) => ({ sha256: digest, collectedAt: corpus.collectedAt, targetSamples: corpus.protocol.targetSamples, models: corpus.models.map((model) => model.id) })),
-    default: await evaluateDefaultBank(defaultBank, corpora.filter(({ corpus }) => sameProtocol(defaultBank, corpus))),
+    default: results,
     pooled: await evaluatePooledBank(pooledBank, corpora.filter(({ corpus }) => sameProtocol(pooledBank, corpus))),
   };
+  const claims: ClaimRatesFile = {
+    schemaVersion: 1, bank: { file: input.default.file, sha256: report.banks.default.sha256 },
+    corpora: defaultCorpora.map(({ digest }) => digest).sort(compareIds), rule: 'claimed model in candidates',
+    claims: claimCounts(defaultBank, scored),
+  };
+  return { report, claims };
 }
 
 /** `0`, or the total and each named model, by count descending, then id. */
@@ -291,15 +390,31 @@ const sumSets = (tallies: SetTally[]): SetTally => ({
 /** Mean candidate-list length, one decimal. */
 const meanCandidates = (tally: StatusTally) => (tally.candidateCount / tally.runs).toFixed(1);
 
-/** docs/evaluation.md, derived only from the report so the test can compare it with the committed file. */
-export function renderEvaluationReport(report: EvaluationReport): string {
+const percent = (accepted: number, runs: number) => `${Math.round((100 * accepted) / runs)}%`;
+const counted = ({ accepted, runs }: AcceptanceRate) => runs ? `${accepted}/${runs} (${percent(accepted, runs)})` : 'No runs';
+
+/** The report's Claims table, one row per claimed model, from the claim file's counts. */
+function claimTable(claims: ClaimRatesFile): string {
+  const rows = Object.entries(claims.claims).map(([id, counts]) => {
+    const { own, enrolled, outside, mostAccepted } = deriveClaimRates(counts);
+    const range = `${Math.round(own.low * 100)}–${Math.round(own.high * 100)}%`;
+    const accepted = mostAccepted.map((entry) => `${entry.model}${entry.enrolled ? '' : ' (not enrolled)'} ${entry.accepted}/${entry.runs}`).join(', ');
+    return row([id, `${own.accepted}/${own.runs} (${own.source === 'tuning' ? 'tuning; ' : ''}${range})`, counted(enrolled), counted(outside), accepted || 'None']);
+  });
+  return [row(['Claim', 'Own runs', "Other enrolled models' runs", 'Models outside the bank', 'Most often accepted']), row(['---', '---', '---', '---', '---']), ...rows].join('\n');
+}
+
+const CLAIMS_TEXT = 'How often the default bank accepts a claimed model, meaning the claimed model is among a run\'s candidates, from `src/data/claim_rates.json`. The CLI and the library attach these figures to a claim checked with the bundled default bank. Own runs are the claimed model\'s runs from other collections; a model without any is measured on its tuning runs, which set its distance envelope, so that figure is optimistic. Other enrolled models\' runs include their tuning runs, never their training runs, and are scored with the full bank. Models outside the bank are the models it does not enroll, and enrolled models scored with their own reference removed. "Most often accepted" lists other models whose runs pass as the claim in at least half of them. Ranges are 95% Wilson score intervals. These are acceptance rates on stored runs, not probabilities that an endpoint serves the claimed model; a model whose runs pass as a claim produces similar integers, and nothing more is implied.';
+
+/** docs/evaluation.md, derived only from the report and the claim file so the test can compare it with the committed file. */
+export function renderEvaluationReport(report: EvaluationReport, claims: ClaimRatesFile): string {
   const section = (heading: string, body: string) => `${heading}\n\n${body}`;
   const status = ['Corpus', 'Model', 'Runs'];
   const sets = ['Corpus', 'Model', 'Probes'];
   const { default: defaults, pooled } = report;
   const parts = [
     '# Independent evaluation',
-    '<!-- Generated by `npm run bank:evaluate` from evaluation.json. Do not edit; rerun the command. -->',
+    '<!-- Generated by `npm run bank:evaluate` from evaluation.json and src/data/claim_rates.json. Do not edit; rerun the command. -->',
     '[Back to README](../README.md) · [Bank status](bank.md#evaluation-status) · [Bank maintenance](bank-maintenance.md#evaluate-the-bundled-banks)',
     'Each bundled bank is scored on every stored run it was not built from, with the production engine and no provider requests. Corpora are named by the first 12 characters of their SHA-256. Candidates are the enrolled models the engine cannot rule out; "Listed" counts runs or probes whose candidates include the tested model, and "Several vendors" those whose candidates span more than one model family.',
     [row(['Bank', 'File', 'SHA-256', 'Models']), row(['---', '---', '---', '---']),
@@ -313,6 +428,7 @@ export function renderEvaluationReport(report: EvaluationReport): string {
       (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown, t.empty, meanCandidates(t), t.multiVendor], sumStatus)),
     section('### Models the bank does not enroll', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL', 'No candidate', 'Mean candidates', 'Several vendors'], defaults.neverEnrolled,
       (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown, t.empty, meanCandidates(t), t.multiVendor], sumStatus)),
+    section('## Claims', `${CLAIMS_TEXT}\n\n${claimTable(claims)}`),
     `## Pooled bank: ${pooled.requestsPerProbe} requests per probe, ${pooled.groupings} groupings`,
     section('### Enrolled models, runs from other collections', table([...sets, 'Correct', 'Wrong', 'Several', 'None', 'Stopped', 'Listed'], pooled.enrolled,
       (t: SetTally) => [t.probes, t.correct, named(t.wrong), t.several, t.none, t.stopped, t.listed], sumSets)),

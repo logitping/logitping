@@ -4,7 +4,4284 @@
     "file": "src/data/default_bank.json",
     "sha256": "49769c39d5ce57a654bd825baf86c20ffb0333d42a8bdd660b6a1b2325b8f890"
   },
-  "corpora": [],
+  "corpora": [
+    "0a49c2ace8e2ac9e94bef896019d85c4b55fd013f5db3e4da755962ebeae5b3f",
+    "163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225",
+    "71d2cd1615a8dd4473696752e8eb0b8ba35e0df226154b2cd6a9028e1c22f7fc",
+    "73559ea673d1446262092af58319fbec617e32df3292a4bbd6587fc4e5cf0878",
+    "74df5aa4c36a4ea42eba4ab3822d5dba8e988d4b24533832736591d9df070381",
+    "a1dcbf342056bf36db7dfa24d1b3b3a2844d51b486cf001c1c098b90e600e0e3",
+    "cb4da985e4067620f7e984eed4e3e0fa783776f6f96bc4b190ea0d8b1773685f",
+    "ccf4eb2395577f019a6fc45cc8295ba647e7babd269ed52ed6c51945069c2d06",
+    "dff2abd244a6b7ed281930ca8e4da8c17897e0732ae85d15978e8d7d20ed3a94"
+  ],
   "rule": "claimed model in candidates",
-  "claims": {}
+  "claims": {
+    "gpt-6.2-astra": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 20,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 11,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 47,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 23,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 51,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 21,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 27,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 31,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 44,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 16,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 50,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 36,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 51,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 7,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 38,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 69,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 19,
+          "runs": 70
+        }
+      ]
+    },
+    "gpt-6.2-sol": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 18,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 13,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 36,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 23,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 23,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 25,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 45,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 38,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 56,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 12,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 58,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 70,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 59,
+          "runs": 70
+        }
+      ]
+    },
+    "gpt-6.1-sol": {
+      "own": {
+        "source": "independent",
+        "accepted": 55,
+        "runs": 55
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 13,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 17,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 15,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 15,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 38,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 17,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 6,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 2,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 70,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 3,
+          "runs": 70
+        }
+      ]
+    },
+    "gpt-6.1-terra": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 33,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 40,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 35,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 12,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 15,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 43,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 10,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 41,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 49,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 37,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 2,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 52,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 69,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 30,
+          "runs": 70
+        }
+      ]
+    },
+    "gpt-6-sol": {
+      "own": {
+        "source": "independent",
+        "accepted": 55,
+        "runs": 55
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 8,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 10,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 12,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 13,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 68,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 61,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 61,
+          "runs": 70
+        }
+      ]
+    },
+    "gpt-6-luna": {
+      "own": {
+        "source": "independent",
+        "accepted": 55,
+        "runs": 55
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 29,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 4,
+          "runs": 70
+        }
+      ]
+    },
+    "gpt-6-astra": {
+      "own": {
+        "source": "independent",
+        "accepted": 55,
+        "runs": 55
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 17,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 9,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 30,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 20,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 25,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 45,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 12,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 30,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 60,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 12,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 23,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 70,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 8,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-sonnet-5.5": {
+      "own": {
+        "source": "independent",
+        "accepted": 40,
+        "runs": 40
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-opus-5.5": {
+      "own": {
+        "source": "independent",
+        "accepted": 40,
+        "runs": 40
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 15,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 9,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 13,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 15,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 23,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 8,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 14,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 18,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 2,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 58,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 1,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-fable-5.1": {
+      "own": {
+        "source": "independent",
+        "accepted": 39,
+        "runs": 40
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 44,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 45,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 40,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 9,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 1,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 1,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-fable-5.2": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 22,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 11,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 19,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 41,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 43,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 24,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 28,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 44,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 47,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 6,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 47,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 11,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 62,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 2,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-opus-5": {
+      "own": {
+        "source": "independent",
+        "accepted": 39,
+        "runs": 40
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 1,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-sonnet-5": {
+      "own": {
+        "source": "independent",
+        "accepted": 15,
+        "runs": 40
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        }
+      ]
+    },
+    "claude-fable-5": {
+      "own": {
+        "source": "independent",
+        "accepted": 39,
+        "runs": 40
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 32,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 39,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 30,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        }
+      ]
+    },
+    "gemini-4-argon": {
+      "own": {
+        "source": "tuning",
+        "accepted": 4,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 14,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 23,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 22,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 23,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 19,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 24,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 15,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 40,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 44,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 27,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 48,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 28,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 15,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 46,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 56,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 53,
+          "runs": 70
+        }
+      ]
+    },
+    "gemini-4-carbon": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 22,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 19,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 32,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 16,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 25,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 25,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 9,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 34,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 42,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 25,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 57,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 18,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 14,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 42,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 53,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 42,
+          "runs": 70
+        }
+      ]
+    },
+    "gemini-4-hydrogen": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 13,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "enrolled",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 26,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 15,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 28,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 16,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 23,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 12,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 41,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 25,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-neon",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 33,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 26,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 31,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 14,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 8,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 43,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 13,
+          "runs": 70
+        }
+      ]
+    },
+    "gemini-4-neon": {
+      "own": {
+        "source": "tuning",
+        "accepted": 5,
+        "runs": 5
+      },
+      "runs": [
+        {
+          "model": "claude-fable-5",
+          "population": "enrolled",
+          "accepted": 6,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "enrolled",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "enrolled",
+          "accepted": 3,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "enrolled",
+          "accepted": 1,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "enrolled",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "enrolled",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "claude-fable-5",
+          "population": "removed",
+          "accepted": 7,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.1",
+          "population": "removed",
+          "accepted": 10,
+          "runs": 45
+        },
+        {
+          "model": "claude-fable-5.2",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 5
+        },
+        {
+          "model": "claude-opus-5",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 45
+        },
+        {
+          "model": "claude-opus-5.5",
+          "population": "removed",
+          "accepted": 5,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 45
+        },
+        {
+          "model": "claude-sonnet-5.5",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 45
+        },
+        {
+          "model": "gemini-4-argon",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-carbon",
+          "population": "removed",
+          "accepted": 3,
+          "runs": 5
+        },
+        {
+          "model": "gemini-4-hydrogen",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6-astra",
+          "population": "removed",
+          "accepted": 4,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-luna",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6-sol",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "population": "removed",
+          "accepted": 1,
+          "runs": 60
+        },
+        {
+          "model": "gpt-6.1-terra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-astra",
+          "population": "removed",
+          "accepted": 0,
+          "runs": 5
+        },
+        {
+          "model": "gpt-6.2-sol",
+          "population": "removed",
+          "accepted": 2,
+          "runs": 5
+        },
+        {
+          "model": "gemini-3.8-flash",
+          "population": "unenrolled",
+          "accepted": 12,
+          "runs": 15
+        },
+        {
+          "model": "gpt-5.6-luna",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-sol",
+          "population": "unenrolled",
+          "accepted": 3,
+          "runs": 70
+        },
+        {
+          "model": "gpt-5.6-terra",
+          "population": "unenrolled",
+          "accepted": 0,
+          "runs": 70
+        }
+      ]
+    }
+  }
 }

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import {
-  evaluateBanks, evaluateDefaultBank, evaluatePooledBank, groupRuns, parseStoredCorpus, renderEvaluationReport, sha256,
+  evaluateBanks, evaluateClaimCounts, evaluateDefaultBank, evaluatePooledBank, groupRuns, parseStoredCorpus, renderEvaluationReport, sha256,
   type EvaluationReport, type SetTally, type StatusTally, type StoredCorpus,
 } from '../src/data/evaluation.js';
+import type { ClaimRatesFile } from '../src/data/claim_rates.js';
 import { corpusDigest } from '../src/data/gateway_plan.js';
 import { createPooledBank } from '../src/data/pooled_enrollment.js';
 import { forceCutoffs, openEnvelopes, overlappingBank, syntheticEnrollment, syntheticRun } from './fixtures.js';
@@ -152,9 +153,52 @@ const input = (corpora: unknown[]) => ({
   corpora,
 });
 
+describe('claim counts', () => {
+  const counts = () => evaluateClaimCounts(bank, [{ digest: ownDigest, corpus: own }, { digest: otherDigest, corpus: other }]);
+
+  it('has one claim per enrolled model, in bank order', async () => {
+    expect(Object.keys(await counts())).toEqual(['synthetic-17', 'synthetic-150', 'synthetic-287']);
+  });
+
+  it("measures a claim on the model's independent runs, or else its tuning runs", async () => {
+    const claims = await counts();
+    expect(claims['synthetic-17']!.own).toEqual({ source: 'independent', accepted: 2, runs: 2 });
+    // synthetic-150's independent runs are mislabeled 17s.
+    expect(claims['synthetic-150']!.own).toEqual({ source: 'independent', accepted: 0, runs: 2 });
+    expect(claims['synthetic-287']!.own).toEqual({ source: 'tuning', accepted: 2, runs: 2 });
+  });
+
+  it("counts other enrolled models' independent and tuning runs, with and without their reference", async () => {
+    const rows = (await counts())['synthetic-17']!.runs;
+    expect(rows).toEqual([
+      { model: 'synthetic-150', population: 'enrolled', accepted: 2, runs: 4 },
+      { model: 'synthetic-287', population: 'enrolled', accepted: 0, runs: 2 },
+      { model: 'synthetic-150', population: 'removed', accepted: 2, runs: 4 },
+      { model: 'synthetic-287', population: 'removed', accepted: 0, runs: 2 },
+      { model: 'synthetic-200', population: 'unenrolled', accepted: 0, runs: 7 },
+    ]);
+  });
+
+  it('counts every run of unenrolled models and no row for the claim itself', async () => {
+    for (const [id, claim] of Object.entries(await counts())) {
+      expect(claim.runs.find((row) => row.population === 'unenrolled')).toEqual({ model: 'synthetic-200', population: 'unenrolled', accepted: 0, runs: 7 });
+      expect(claim.runs.some((row) => row.model === id)).toBe(false);
+    }
+  });
+});
+
 describe('evaluation report', () => {
+  it('writes the claim file for the default bank and the corpora it scored', async () => {
+    const { claims } = await evaluateBanks(input([other, own, fresh]));
+    expect(claims).toMatchObject({
+      schemaVersion: 1, bank: { file: 'src/data/default_bank.json', sha256: sha256(JSON.stringify(bank)) },
+      corpora: [ownDigest, otherDigest].sort(), rule: 'claimed model in candidates',
+    });
+    expect(Object.keys(claims.claims)).toEqual(['synthetic-17', 'synthetic-150', 'synthetic-287']);
+  });
+
   it('records both banks by file and SHA-256, and corpora in collection order', async () => {
-    const report = await evaluateBanks(input([other, own, fresh]));
+    const { report } = await evaluateBanks(input([other, own, fresh]));
     expect(report.schemaVersion).toBe(2);
     expect(report.banks.default).toEqual({ file: 'src/data/default_bank.json', sha256: sha256(JSON.stringify(bank)), models: 3 });
     expect(report.corpora.map((entry) => entry.sha256)).toEqual([ownDigest, otherDigest, freshDigest]);
@@ -167,11 +211,15 @@ describe('evaluation report', () => {
   });
 
   it('reads a copied corpus once', async () => {
-    expect(await evaluateBanks(input([other, structuredClone(other)]))).toEqual(await evaluateBanks(input([other])));
+    expect(await evaluateBanks(input([own, other, structuredClone(other)]))).toEqual(await evaluateBanks(input([own, other])));
   });
 
   it('refuses a corpus that matches neither bank', async () => {
     await expect(evaluateBanks(input([{ ...other, protocol: { ...other.protocol, language: 'zh' } }]))).rejects.toThrow(/matches neither bank/);
+  });
+
+  it("refuses claim counts for a model without any stored run of its own", async () => {
+    await expect(evaluateBanks(input([other]))).rejects.toThrow('No stored runs of synthetic-287 measure its own claim');
   });
 
   it('refuses to run without corpora', async () => {
@@ -199,7 +247,17 @@ describe('rendered report', () => {
       neverEnrolled: [{ corpus: C, models: { m9: { probes: 50, correct: 0, wrong: { m1: 3 }, several: 0, none: 47, stopped: 0, listed: 0 } } }],
     },
   };
-  const markdown = renderEvaluationReport(report);
+  const claims: ClaimRatesFile = {
+    schemaVersion: 1, bank: { file: 'src/data/default_bank.json', sha256: 'a'.repeat(64) }, corpora: [C], rule: 'claimed model in candidates',
+    claims: {
+      m1: { own: { source: 'independent', accepted: 3, runs: 3 }, runs: [
+        { model: 'm2', population: 'enrolled', accepted: 2, runs: 4 }, { model: 'm2', population: 'removed', accepted: 3, runs: 4 },
+        { model: 'm9', population: 'unenrolled', accepted: 5, runs: 5 },
+      ] },
+      m2: { own: { source: 'tuning', accepted: 2, runs: 2 }, runs: [{ model: 'm1', population: 'enrolled', accepted: 0, runs: 3 }] },
+    },
+  };
+  const markdown = renderEvaluationReport(report, claims);
 
   it('starts with its title and ends with one newline', () => {
     expect(markdown.startsWith('# Independent evaluation\n')).toBe(true);
@@ -217,6 +275,14 @@ describe('rendered report', () => {
       '| `cccccccccccc` | m1 | 3 | 2 (m2 2) | 0 | 1 | 1 | 1.3 | 0 |',
       '| `cccccccccccc` | m9 | 50 | 3 (m1 3) | 0 | 47 | 0 |',
     ]) expect(lines).toContain(line);
+  });
+
+  it('writes one claim row per claimed model, after the default bank', () => {
+    const lines = markdown.split('\n');
+    expect(lines).toContain('| m1 | 3/3 (44–100%) | 2/4 (50%) | 8/9 (89%) | m9 (not enrolled) 5/5, m2 2/4 |');
+    expect(lines).toContain('| m2 | 2/2 (tuning; 34–100%) | 0/3 (0%) | No runs | None |');
+    expect(markdown.indexOf('## Claims')).toBeGreaterThan(markdown.indexOf('## Default bank'));
+    expect(markdown.indexOf('## Claims')).toBeLessThan(markdown.indexOf('## Pooled bank'));
   });
 
   it('prints No runs. for an empty section', () => {

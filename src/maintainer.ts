@@ -4,7 +4,7 @@
  */
 export { loadGatewayBankConfig, parseGatewayBankConfig, type GatewayBankConfig, type GatewayProvider, type GatewayTarget } from './data/gateway_config.js';
 export { corpusDigest, planGatewayBankUpdate, providerLabel, readIncrementalBase, type BankUpdatePlan } from './data/gateway_plan.js';
-export { evaluateBanks, renderEvaluationReport, sha256, type EvaluationReport } from './data/evaluation.js';
+export { evaluateBanks, renderEvaluationReport, sha256, type EvaluationOutput, type EvaluationReport } from './data/evaluation.js';
 export { updateGatewayBank, type BankUpdateOptions, type BankUpdateProgress, type BankUpdateResult, type BankUpdateResume, type BankUpdateRetry } from './data/gateway_update.js';
 export { loadBank } from './data/bank_loader.js';
 export { parseCollectionSettings, withCollectionSettings } from './data/collection_settings.js';

@@ -1,5 +1,6 @@
 // Score both bundled banks on every stored run they were not built from, without provider requests,
-// and rewrite docs/evaluation.json and docs/evaluation.md. Needs the git-ignored maintainer corpora.
+// and rewrite docs/evaluation.json, docs/evaluation.md and the default bank's claim counts in
+// src/data/claim_rates.json. Needs the git-ignored maintainer corpora.
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
@@ -26,9 +27,10 @@ const sum = (entries, field) => entries.flatMap((entry) => Object.values(entry.m
 try {
   const corpora = await readCorpora();
   const text = async (path) => ({ file: path, text: await readFile(join(root, path), 'utf8') });
-  const report = await evaluateBanks({ default: await text(BANKS.default), pooled: await text(BANKS.pooled), corpora });
+  const { report, claims } = await evaluateBanks({ default: await text(BANKS.default), pooled: await text(BANKS.pooled), corpora });
   await writeFile(join(root, 'docs/evaluation.json'), `${JSON.stringify(report, null, 2)}\n`);
-  await writeFile(join(root, 'docs/evaluation.md'), renderEvaluationReport(report));
+  await writeFile(join(root, 'src/data/claim_rates.json'), `${JSON.stringify(claims, null, 2)}\n`);
+  await writeFile(join(root, 'docs/evaluation.md'), renderEvaluationReport(report, claims));
   const { default: defaults, pooled } = report;
   const status = (entries) => `${sum(entries, 'inconclusive')} INCONCLUSIVE, ${sum(entries, 'unknown')} UNKNOWN_MODEL`;
   const sets = (entries) => `${sum(entries, 'several')} several, ${sum(entries, 'none')} none, ${sum(entries, 'stopped')} stopped`;
@@ -38,7 +40,9 @@ try {
   console.log(`Default bank, not enrolled: ${sum(defaults.neverEnrolled, 'runs')} runs, ${sum(defaults.neverEnrolled, 'wrong')} named, ${status(defaults.neverEnrolled)}`);
   console.log(`Pooled bank, enrolled: ${sum(pooled.enrolled, 'probes')} probes, ${sum(pooled.enrolled, 'correct')} correct, ${sum(pooled.enrolled, 'wrong')} wrong, ${sets(pooled.enrolled)}`);
   console.log(`Pooled bank, not enrolled: ${sum(pooled.neverEnrolled, 'probes')} probes, ${sum(pooled.neverEnrolled, 'wrong')} named, ${sets(pooled.neverEnrolled)}`);
-  console.log('Wrote docs/evaluation.json and docs/evaluation.md.');
+  const tuning = Object.values(claims.claims).filter((claim) => claim.own.source === 'tuning').length;
+  console.log(`Claims: ${Object.keys(claims.claims).length} claimed models, ${tuning} measured on their tuning runs.`);
+  console.log('Wrote docs/evaluation.json, docs/evaluation.md and src/data/claim_rates.json.');
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Bank evaluation failed');
   process.exitCode = 1;
