@@ -7,18 +7,31 @@ export type Provider = 'openai' | 'anthropic';
 export type Language = 'en' | 'zh';
 export type StreamGranularity = 'token' | 'message';
 
+/** Token counts a provider reported for one request; null where it reported none. */
+export interface TokenUsage {
+  inputTokens: number | null;
+  outputTokens: number | null;
+}
+
 export interface ProbeRequest {
   prompt: string;
   maxTokens: number;
   temperature?: number;
   timeoutMs?: number;
   signal?: AbortSignal;
+  /** Called whenever the provider reports token counts for this request; transports may ignore it. */
+  onUsage?: (usage: TokenUsage) => void;
 }
 
 export interface ProbeTransport {
   readonly name: string;
   readonly granularity: StreamGranularity;
   stream(request: ProbeRequest): AsyncIterable<string>;
+  /**
+   * The transport calls `request.onUsage` with reported token counts. The engine then keeps reading a
+   * response briefly after its last needed integer, because some providers report usage last.
+   */
+  readonly reportsUsage?: boolean;
 }
 
 export interface FingerprintProfile extends DistanceProfile {

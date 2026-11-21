@@ -71,6 +71,7 @@ export function completionURL(baseURL: string, provider: Provider, allowInsecure
 export class HttpClient implements ProbeTransport {
   readonly name: Provider;
   readonly granularity = 'token' as const;
+  readonly reportsUsage = true;
   // ES private fields, not TypeScript `private`: JSON.stringify() and util.inspect() must never
   // reach the key or gateway headers, for example when a caller logs the transport.
   readonly #options: Omit<HttpClientOptions, 'apiKey'>;
@@ -184,9 +185,17 @@ export class HttpClient implements ProbeTransport {
       }
       const state = this.#format.streamState(this.#options.requireCompleteResponse === true);
       const queue: string[] = [];
+      // Report each change of the reported token counts once, as the event carrying it arrives.
+      let reported = 'null/null';
+      const reportUsage = () => {
+        const key = `${state.usage.inputTokens}/${state.usage.outputTokens}`;
+        if (key === reported) return;
+        reported = key;
+        request.onUsage?.({ ...state.usage });
+      };
       const parser = createParser({
         maxBufferSize: 1_048_576,
-        onEvent: (message) => { queue.push(...state.onEvent(message)); },
+        onEvent: (message) => { queue.push(...state.onEvent(message)); reportUsage(); },
         onError: (error) => {
           // Per the SSE specification, unknown fields and invalid retry values are ignored.
           if (error.type === 'unknown-field' || error.type === 'invalid-retry') return;

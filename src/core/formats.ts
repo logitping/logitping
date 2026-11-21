@@ -1,7 +1,7 @@
 import type { EventSourceMessage } from 'eventsource-parser';
 import { asRecord } from '../util/validate.js';
 import { LogitpingError } from './errors.js';
-import type { ProbeRequest, Provider } from './types.js';
+import type { ProbeRequest, Provider, TokenUsage } from './types.js';
 
 export type ApiFormat = 'chat-completions' | 'responses';
 export type TokenLimitField = 'max_tokens' | 'max_completion_tokens' | 'max_output_tokens';
@@ -15,6 +15,8 @@ export interface StreamState {
   readonly done: boolean;
   /** The provider reported a stop reason. */
   readonly finished: boolean;
+  /** Token counts the provider reported so far. */
+  readonly usage: TokenUsage;
 }
 
 /** Everything that differs between API wire formats. Transport concerns stay in HttpClient. */
@@ -70,10 +72,23 @@ function firstChoice(payload: Record<string, unknown>): Record<string, unknown> 
 const userMessage = (request: ProbeRequest) => [{ role: 'user', content: request.prompt }];
 const temperature = (request: ProbeRequest) => request.temperature !== undefined ? { temperature: request.temperature } : {};
 
+/** A reported token count, or null for anything but a nonnegative safe integer. */
+const tokenCount = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
+
 abstract class SseState implements StreamState {
   done = false;
   finished = false;
+  usage: TokenUsage = { inputTokens: null, outputTokens: null };
   constructor(protected readonly requireComplete: boolean) {}
+
+  /** Keep the valid counts of a usage object; a later report overwrites the field it sets. */
+  protected record(usage: unknown, inputField: string, outputField: string): void {
+    const counts = asRecord(usage);
+    const inputTokens = tokenCount(counts[inputField]);
+    const outputTokens = tokenCount(counts[outputField]);
+    if (inputTokens !== null) this.usage = { ...this.usage, inputTokens };
+    if (outputTokens !== null) this.usage = { ...this.usage, outputTokens };
+  }
 
   onEvent({ data, event }: EventSourceMessage): string[] {
     if (this.done) return [];
@@ -95,6 +110,7 @@ abstract class SseState implements StreamState {
 
 class ChatStream extends SseState {
   protected onPayload(payload: Record<string, unknown>): string[] {
+    if (payload.usage !== undefined) this.record(payload.usage, 'prompt_tokens', 'completion_tokens');
     const choice = firstChoice(payload);
     const delta = asRecord(choice.delta);
     if (choice.finish_reason !== undefined && choice.finish_reason !== null) {
@@ -113,6 +129,9 @@ class ResponsesStream extends SseState {
   protected onPayload(payload: Record<string, unknown>): string[] {
     if (payload.type === 'response.failed') throw providerError('Provider returned a stream error');
     if (payload.type === 'response.refusal.delta') throw providerError('Provider refused the probe');
+    if (payload.type === 'response.incomplete' || payload.type === 'response.completed') {
+      this.record(asRecord(payload.response).usage, 'input_tokens', 'output_tokens');
+    }
     if (payload.type === 'response.incomplete') {
       const { reason } = asRecord(asRecord(payload.response).incomplete_details);
       if (this.requireComplete) throw (reason === 'max_output_tokens' ? truncatedError : providerError)(budgetHint);
@@ -130,6 +149,8 @@ class ResponsesStream extends SseState {
 
 class MessagesStream extends SseState {
   protected onPayload(payload: Record<string, unknown>): string[] {
+    if (payload.type === 'message_start') this.record(asRecord(payload.message).usage, 'input_tokens', 'output_tokens');
+    if (payload.type === 'message_delta') this.record(payload.usage, 'input_tokens', 'output_tokens');
     const delta = asRecord(payload.delta);
     if (payload.type === 'message_delta' && delta.stop_reason !== undefined && delta.stop_reason !== null) {
       this.finished = true;

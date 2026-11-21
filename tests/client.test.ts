@@ -328,3 +328,41 @@ describe('bounded HTTP error diagnostics', () => {
     expect(cancel).toHaveBeenCalledOnce();
   });
 });
+
+describe('reported token usage', () => {
+  async function usageOf(body: string, options: Partial<HttpClientOptions> = {}) {
+    const mock = mockFetch(body);
+    const client = new HttpClient({ provider: 'openai', baseURL: 'https://example.com/v1', model: 'test', fetch: mock.fetch, ...options });
+    const calls: unknown[] = [];
+    await collect(client.stream({ ...request, onUsage: (usage) => calls.push(usage) }));
+    return calls;
+  }
+
+  it('reports Chat Completions usage from its final chunk', async () => {
+    const calls = await usageOf(delta('1 2 3 ') + event({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: 52, completion_tokens: 7 } }) + 'data: [DONE]\n\n');
+    expect(calls.at(-1)).toEqual({ inputTokens: 52, outputTokens: 7 });
+  });
+
+  it('reports Responses usage from response.completed', async () => {
+    const calls = await usageOf(event({ type: 'response.output_text.delta', delta: '1 2 ' })
+      + event({ type: 'response.completed', response: { status: 'completed', usage: { input_tokens: 41, output_tokens: 9 } } }), { apiFormat: 'responses' });
+    expect(calls.at(-1)).toEqual({ inputTokens: 41, outputTokens: 9 });
+  });
+
+  it('reports Anthropic usage from message_start, then message_delta', async () => {
+    const calls = await usageOf(event({ type: 'message_start', message: { usage: { input_tokens: 33, output_tokens: 1 } } })
+      + event({ type: 'content_block_delta', delta: { type: 'text_delta', text: '1 2 ' } })
+      + event({ type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage: { output_tokens: 12 } })
+      + event({ type: 'message_stop' }), { provider: 'anthropic' });
+    expect(calls).toEqual([{ inputTokens: 33, outputTokens: 1 }, { inputTokens: 33, outputTokens: 12 }]);
+  });
+
+  it('ignores malformed usage', async () => {
+    const calls = await usageOf(delta('1 2 3 ') + event({ choices: [{ index: 0, delta: {}, finish_reason: 'stop' }], usage: { prompt_tokens: -1, completion_tokens: '7' } }) + 'data: [DONE]\n\n');
+    expect(calls).toEqual([]);
+  });
+
+  it('declares that it reports usage', () => {
+    expect(new HttpClient({ provider: 'openai', baseURL: 'https://api.example/v1', model: 'm' }).reportsUsage).toBe(true);
+  });
+});
