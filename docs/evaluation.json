@@ -1,0 +1,677 @@
+{
+  "schemaVersion": 1,
+  "banks": {
+    "default": {
+      "file": "src/data/default_bank.json",
+      "sha256": "dac733967ed98d0aae275e2ac13ad06d30ee78654132c04107c8413c89283da9",
+      "models": 18
+    },
+    "pooled": {
+      "file": "src/data/pooled_bank.json",
+      "sha256": "080801f3f2a8162ab4bf91e97d8e2163d3a9eeebe6f9622a631c00e5f44e8f3b",
+      "models": 18
+    }
+  },
+  "corpora": [
+    {
+      "sha256": "163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225",
+      "collectedAt": "2026-10-03T10:19:52.961Z",
+      "targetSamples": 512,
+      "models": [
+        "gpt-6.1-sol",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-6-astra",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
+        "claude-sonnet-5.5",
+        "claude-opus-5.5",
+        "claude-fable-5.1",
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-fable-5"
+      ]
+    },
+    {
+      "sha256": "73559ea673d1446262092af58319fbec617e32df3292a4bbd6587fc4e5cf0878",
+      "collectedAt": "2026-10-11T02:51:23.401Z",
+      "targetSamples": 512,
+      "models": [
+        "gpt-6.1-sol",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-6-astra",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
+        "claude-sonnet-5.5",
+        "claude-opus-5.5",
+        "claude-fable-5.1",
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-fable-5"
+      ]
+    },
+    {
+      "sha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf",
+      "collectedAt": "2026-10-11T02:51:23.858Z",
+      "targetSamples": 64,
+      "models": [
+        "gpt-6.1-sol",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-6-astra",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol",
+        "claude-sonnet-5.5",
+        "claude-opus-5.5",
+        "claude-fable-5.1",
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-fable-5"
+      ]
+    },
+    {
+      "sha256": "ccf4eb2395577f019a6fc45cc8295ba647e7babd269ed52ed6c51945069c2d06",
+      "collectedAt": "2026-10-21T12:49:38.534Z",
+      "targetSamples": 512,
+      "models": [
+        "gemini-3.8-flash"
+      ]
+    },
+    {
+      "sha256": "a1dcbf342056bf36db7dfa24d1b3b3a2844d51b486cf001c1c098b90e600e0e3",
+      "collectedAt": "2026-10-21T23:38:01.740Z",
+      "targetSamples": 512,
+      "models": [
+        "gemini-4-argon"
+      ]
+    },
+    {
+      "sha256": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b",
+      "collectedAt": "2026-11-06T15:11:35.516Z",
+      "targetSamples": 64,
+      "models": [
+        "gpt-6.1-sol",
+        "gpt-6.1-terra",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-6-astra",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol"
+      ]
+    },
+    {
+      "sha256": "74df5aa4c36a4ea42eba4ab3822d5dba8e988d4b24533832736591d9df070381",
+      "collectedAt": "2026-11-06T22:22:10.199Z",
+      "targetSamples": 512,
+      "models": [
+        "gpt-6.1-sol",
+        "gpt-6.1-terra",
+        "gpt-6-sol",
+        "gpt-6-luna",
+        "gpt-6-astra",
+        "gpt-5.6-luna",
+        "gpt-5.6-terra",
+        "gpt-5.6-sol"
+      ]
+    },
+    {
+      "sha256": "bbd00932f1a8523eb4809e1bef903553cf56cc19a9075f22f1926230574c9943",
+      "collectedAt": "2026-11-07T15:48:18.156Z",
+      "targetSamples": 64,
+      "models": [
+        "gpt-6.1-sol",
+        "gpt-6-astra"
+      ]
+    },
+    {
+      "sha256": "cb4da985e4067620f7e984eed4e3e0fa783776f6f96bc4b190ea0d8b1773685f",
+      "collectedAt": "2026-11-11T13:08:34.175Z",
+      "targetSamples": 512,
+      "models": [
+        "claude-fable-5.2",
+        "gemini-4-carbon"
+      ]
+    },
+    {
+      "sha256": "be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84",
+      "collectedAt": "2026-11-11T23:16:14.630Z",
+      "targetSamples": 64,
+      "models": [
+        "claude-fable-5.2",
+        "gemini-3.8-flash",
+        "gemini-4-argon",
+        "gemini-4-carbon"
+      ]
+    },
+    {
+      "sha256": "71d2cd1615a8dd4473696752e8eb0b8ba35e0df226154b2cd6a9028e1c22f7fc",
+      "collectedAt": "2026-11-13T22:24:18.555Z",
+      "targetSamples": 512,
+      "models": [
+        "gemini-4-hydrogen"
+      ]
+    },
+    {
+      "sha256": "6a284c99d6ac48b86c8f87be0c3afe4a8c60265345de70693a5f4d406a448a3a",
+      "collectedAt": "2026-11-13T22:42:07.056Z",
+      "targetSamples": 64,
+      "models": [
+        "gemini-4-hydrogen"
+      ]
+    },
+    {
+      "sha256": "0a49c2ace8e2ac9e94bef896019d85c4b55fd013f5db3e4da755962ebeae5b3f",
+      "collectedAt": "2026-11-18T23:33:59.984Z",
+      "targetSamples": 512,
+      "models": [
+        "gpt-6.2-astra",
+        "gpt-6.2-sol"
+      ]
+    },
+    {
+      "sha256": "bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b",
+      "collectedAt": "2026-11-19T01:02:46.297Z",
+      "targetSamples": 64,
+      "models": [
+        "gpt-6.2-astra",
+        "gpt-6.2-sol"
+      ]
+    },
+    {
+      "sha256": "dff2abd244a6b7ed281930ca8e4da8c17897e0732ae85d15978e8d7d20ed3a94",
+      "collectedAt": "2026-11-19T22:49:17.038Z",
+      "targetSamples": 512,
+      "models": [
+        "gemini-4-neon"
+      ]
+    },
+    {
+      "sha256": "40eb0a8bb730da70fb2d43adbbbd320de9d11842abd024d6ebf695ed27478e99",
+      "collectedAt": "2026-11-19T23:07:21.671Z",
+      "targetSamples": 64,
+      "models": [
+        "gemini-4-neon"
+      ]
+    }
+  ],
+  "default": {
+    "enrolled": [
+      {
+        "corpus": "163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225",
+        "models": {
+          "gpt-6.1-sol": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-6-sol": {
+            "runs": 15,
+            "correct": 1,
+            "wrong": {},
+            "inconclusive": 14,
+            "unknown": 0
+          },
+          "gpt-6-luna": {
+            "runs": 15,
+            "correct": 15,
+            "wrong": {},
+            "inconclusive": 0,
+            "unknown": 0
+          },
+          "gpt-6-astra": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          }
+        }
+      },
+      {
+        "corpus": "73559ea673d1446262092af58319fbec617e32df3292a4bbd6587fc4e5cf0878",
+        "models": {
+          "gpt-6.1-sol": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "gpt-6-sol": {
+            "runs": 40,
+            "correct": 3,
+            "wrong": {},
+            "inconclusive": 37,
+            "unknown": 0
+          },
+          "gpt-6-luna": {
+            "runs": 40,
+            "correct": 40,
+            "wrong": {},
+            "inconclusive": 0,
+            "unknown": 0
+          },
+          "gpt-6-astra": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "claude-sonnet-5.5": {
+            "runs": 40,
+            "correct": 33,
+            "wrong": {},
+            "inconclusive": 7,
+            "unknown": 0
+          },
+          "claude-opus-5.5": {
+            "runs": 40,
+            "correct": 16,
+            "wrong": {},
+            "inconclusive": 24,
+            "unknown": 0
+          },
+          "claude-fable-5.1": {
+            "runs": 40,
+            "correct": 5,
+            "wrong": {},
+            "inconclusive": 35,
+            "unknown": 0
+          },
+          "claude-opus-5": {
+            "runs": 40,
+            "correct": 30,
+            "wrong": {},
+            "inconclusive": 10,
+            "unknown": 0
+          },
+          "claude-sonnet-5": {
+            "runs": 40,
+            "correct": 8,
+            "wrong": {},
+            "inconclusive": 27,
+            "unknown": 5
+          },
+          "claude-fable-5": {
+            "runs": 40,
+            "correct": 1,
+            "wrong": {},
+            "inconclusive": 39,
+            "unknown": 0
+          }
+        }
+      }
+    ],
+    "labelRemoved": [
+      {
+        "corpus": "163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225",
+        "models": {
+          "gpt-6.1-sol": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-6-sol": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-6-luna": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-6-astra": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          }
+        }
+      },
+      {
+        "corpus": "73559ea673d1446262092af58319fbec617e32df3292a4bbd6587fc4e5cf0878",
+        "models": {
+          "gpt-6.1-sol": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "gpt-6-sol": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "gpt-6-luna": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "gpt-6-astra": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "claude-sonnet-5.5": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "claude-opus-5.5": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "claude-fable-5.1": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {
+              "claude-fable-5": 8
+            },
+            "inconclusive": 32,
+            "unknown": 0
+          },
+          "claude-opus-5": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "claude-sonnet-5": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 11,
+            "unknown": 29
+          },
+          "claude-fable-5": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {
+              "claude-fable-5.1": 10
+            },
+            "inconclusive": 30,
+            "unknown": 0
+          }
+        }
+      }
+    ],
+    "neverEnrolled": [
+      {
+        "corpus": "163709a6a44653bd0d9e12ab6114687305487845428dfcb163e57f0ab17fe225",
+        "models": {
+          "gpt-5.6-luna": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 14,
+            "unknown": 1
+          },
+          "gpt-5.6-terra": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-5.6-sol": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          }
+        }
+      },
+      {
+        "corpus": "73559ea673d1446262092af58319fbec617e32df3292a4bbd6587fc4e5cf0878",
+        "models": {
+          "gpt-5.6-luna": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 39,
+            "unknown": 1
+          },
+          "gpt-5.6-terra": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          },
+          "gpt-5.6-sol": {
+            "runs": 40,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 40,
+            "unknown": 0
+          }
+        }
+      },
+      {
+        "corpus": "ccf4eb2395577f019a6fc45cc8295ba647e7babd269ed52ed6c51945069c2d06",
+        "models": {
+          "gemini-3.8-flash": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          }
+        }
+      },
+      {
+        "corpus": "74df5aa4c36a4ea42eba4ab3822d5dba8e988d4b24533832736591d9df070381",
+        "models": {
+          "gpt-5.6-luna": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-5.6-terra": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          },
+          "gpt-5.6-sol": {
+            "runs": 15,
+            "correct": 0,
+            "wrong": {},
+            "inconclusive": 15,
+            "unknown": 0
+          }
+        }
+      }
+    ]
+  },
+  "pooled": {
+    "groupings": 10,
+    "requestsPerProbe": 8,
+    "enrolled": [
+      {
+        "corpus": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf",
+        "models": {
+          "gpt-6.1-sol": {
+            "probes": 50,
+            "correct": 4,
+            "wrong": {
+              "gpt-6-astra": 17
+            },
+            "several": 15,
+            "none": 14,
+            "stopped": 0
+          },
+          "gpt-6-sol": {
+            "probes": 50,
+            "correct": 38,
+            "wrong": {},
+            "several": 0,
+            "none": 12,
+            "stopped": 0
+          },
+          "gpt-6-luna": {
+            "probes": 50,
+            "correct": 49,
+            "wrong": {},
+            "several": 0,
+            "none": 1,
+            "stopped": 0
+          },
+          "gpt-6-astra": {
+            "probes": 50,
+            "correct": 10,
+            "wrong": {},
+            "several": 40,
+            "none": 0,
+            "stopped": 0
+          }
+        }
+      },
+      {
+        "corpus": "bbd00932f1a8523eb4809e1bef903553cf56cc19a9075f22f1926230574c9943",
+        "models": {
+          "gpt-6.1-sol": {
+            "probes": 50,
+            "correct": 3,
+            "wrong": {
+              "gpt-6-astra": 12
+            },
+            "several": 35,
+            "none": 0,
+            "stopped": 0
+          },
+          "gpt-6-astra": {
+            "probes": 50,
+            "correct": 12,
+            "wrong": {
+              "gpt-6.1-sol": 13
+            },
+            "several": 13,
+            "none": 12,
+            "stopped": 0
+          }
+        }
+      }
+    ],
+    "neverEnrolled": [
+      {
+        "corpus": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf",
+        "models": {
+          "gpt-5.6-luna": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {
+              "gpt-6-sol": 1
+            },
+            "several": 0,
+            "none": 49,
+            "stopped": 0
+          },
+          "gpt-5.6-terra": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {
+              "gpt-6-sol": 3
+            },
+            "several": 0,
+            "none": 47,
+            "stopped": 0
+          },
+          "gpt-5.6-sol": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {
+              "gpt-6.1-terra": 8,
+              "gpt-6-sol": 1
+            },
+            "several": 0,
+            "none": 41,
+            "stopped": 0
+          }
+        }
+      },
+      {
+        "corpus": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b",
+        "models": {
+          "gpt-5.6-luna": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {
+              "gpt-6-sol": 14
+            },
+            "several": 0,
+            "none": 36,
+            "stopped": 0
+          },
+          "gpt-5.6-terra": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {
+              "gpt-6-sol": 21
+            },
+            "several": 0,
+            "none": 29,
+            "stopped": 0
+          },
+          "gpt-5.6-sol": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {
+              "gpt-6.1-terra": 2,
+              "gpt-6-sol": 1
+            },
+            "several": 0,
+            "none": 47,
+            "stopped": 0
+          }
+        }
+      },
+      {
+        "corpus": "be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84",
+        "models": {
+          "gemini-3.8-flash": {
+            "probes": 50,
+            "correct": 0,
+            "wrong": {},
+            "several": 0,
+            "none": 50,
+            "stopped": 0
+          }
+        }
+      }
+    ]
+  }
+}
