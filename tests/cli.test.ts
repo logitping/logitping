@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main, resolveApiKey } from '../src/cli.js';
 import type { ProbeRequest } from '../src/core/types.js';
 import * as bankLoader from '../src/data/bank_loader.js';
-import { forceCutoffs, openEnvelopes, overlappingBank, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
+import { collectionBank, forceCutoffs, openEnvelopes, overlappingBank, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
 
 const fake = vi.hoisted(() => ({
   requests: [] as ProbeRequest[],
@@ -404,6 +404,42 @@ describe('CLI bank selection', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => sse('10 '.repeat(128)));
     await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--bank', path, '--no-tokenizer', '--no-interactive']);
     expect(stdout).toContain('Inconclusive, consistent with: model-a, model-b');
+  });
+
+  describe('recorded collection settings', () => {
+    const bodies: Record<string, unknown>[] = [];
+    const probe = async (...args: string[]) => {
+      vi.spyOn(bankLoader, 'defaultBank').mockImplementation(collectionBank);
+      vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+      bodies.length = 0;
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+        bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return sse('17 '.repeat(128));
+      });
+      await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', ...args, '--no-tokenizer', '--json']);
+    };
+
+    it("applies a matching model's recorded budget and token-limit field", async () => {
+      await probe('--model', 'vendor/synthetic-17');
+      expect(bodies[0]).toMatchObject({ max_completion_tokens: 4096 });
+      expect(bodies[0]).not.toHaveProperty('max_tokens');
+      expect(stderr).toContain("using synthetic-17's collection settings from the bank: --max-tokens 4096, --token-limit-field max_completion_tokens.");
+    });
+
+    it('keeps explicit options and only notes a different API format', async () => {
+      await probe('--model', 'synthetic-17', '--api-format', 'responses', '--max-tokens', '1000');
+      expect(bodies[0]).toMatchObject({ max_output_tokens: 1000 });
+      expect(stderr).toContain('the bank collected synthetic-17 through Chat Completions; add --provider openai --api-format chat-completions to match it.');
+      expect(stderr).not.toContain('collection settings from the bank');
+    });
+
+    it('leaves a model without collection settings at the default budget', async () => {
+      await probe('--model', 'synthetic-287');
+      // 128 × 5 + 64.
+      expect(bodies[0]).toMatchObject({ max_tokens: 704 });
+      expect(stderr).not.toContain('collection settings from the bank');
+      expect(stderr).not.toContain('the bank collected');
+    });
   });
 
   it('strips bidirectional controls from streamed model text', async () => {

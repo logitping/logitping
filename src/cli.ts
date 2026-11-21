@@ -8,8 +8,9 @@ import ora from 'ora';
 import { HttpClient, type ApiFormat, type TokenLimitField } from './core/client.js';
 import { fingerprint } from './core/engine.js';
 import { LogitpingError } from './core/errors.js';
-import type { Language, ProbeResult, ProbeTransport, Provider } from './core/types.js';
-import { loadBank, pooledBank } from './data/bank_loader.js';
+import type { CollectionSettings, FingerprintBank, Language, ProbeResult, ProbeTransport, Provider } from './core/types.js';
+import { defaultBank, loadBank, pooledBank } from './data/bank_loader.js';
+import { collectionSettingsFor } from './data/collection_settings.js';
 import { createFingerprintBank, type EnrollmentInput } from './data/enrollment.js';
 import { createPooledBank, type PooledEnrollmentInput } from './data/pooled_enrollment.js';
 import { AntigravityDriver } from './drivers/antigravity_driver.js';
@@ -102,6 +103,39 @@ const VENDOR_KEYS = {
   openai: { variable: 'OPENAI_API_KEY', host: 'api.openai.com' },
   anthropic: { variable: 'ANTHROPIC_API_KEY', host: 'api.anthropic.com' },
 } as const satisfies Record<Provider, { variable: string; host: string }>;
+
+const FORMAT_NAMES: Readonly<Record<CollectionSettings['apiFormat'], string>> = {
+  'chat-completions': 'Chat Completions', responses: 'Responses', messages: 'Anthropic Messages',
+};
+const FORMAT_FLAGS: Readonly<Record<CollectionSettings['apiFormat'], string>> = {
+  'chat-completions': '--provider openai --api-format chat-completions', responses: '--provider openai --api-format responses', messages: '--provider anthropic',
+};
+
+/**
+ * For a --model the bank enrolls with recorded collection settings, fill an unset --max-tokens, and an
+ * unset --token-limit-field when the probe uses the recorded API format. --provider and --api-format
+ * never change: endpoints differ in what they support and how they authenticate. Returns the notes.
+ */
+export function applyCollectionSettings(options: Pick<Options, 'model' | 'provider' | 'apiFormat' | 'tokenLimitField' | 'maxTokens'>, bank: FingerprintBank): string[] {
+  const match = options.model ? collectionSettingsFor(bank, options.model) : undefined;
+  if (!match) return [];
+  const { id, collection } = match;
+  const applied: string[] = [];
+  const notes: string[] = [];
+  if (options.maxTokens === undefined) {
+    options.maxTokens = collection.maxTokens;
+    applied.push(`--max-tokens ${collection.maxTokens}`);
+  }
+  const format = options.provider === 'anthropic' ? 'messages' : options.apiFormat === 'responses' ? 'responses' : 'chat-completions';
+  if (format !== collection.apiFormat) {
+    notes.push(`the bank collected ${id} through ${FORMAT_NAMES[collection.apiFormat]}; add ${FORMAT_FLAGS[collection.apiFormat]} to match it.`);
+  } else if (options.tokenLimitField === undefined) {
+    options.tokenLimitField = collection.tokenLimitField;
+    applied.push(`--token-limit-field ${collection.tokenLimitField}`);
+  }
+  if (applied.length) notes.unshift(`using ${id}'s collection settings from the bank: ${applied.join(', ')}.`);
+  return notes;
+}
 
 /** Only HTTPS to the vendor's own host may receive that vendor's key, even with --allow-insecure-http. */
 function vendorEndpoint(endpoint: string | undefined, host: string): boolean {
@@ -202,7 +236,7 @@ export async function main(argv = process.argv): Promise<void> {
     .option('--model <id>', 'claimed API model or optional CLI model override')
     .option('--api-format <format>', 'OpenAI wire format: chat-completions (default) or responses')
     .option('--token-limit-field <name>', 'API budget field: max_tokens, max_completion_tokens, or max_output_tokens (default depends on the API format)')
-    .option('--max-tokens <count>', 'output token budget per integer request (default: samples × 5 + 64); reasoning models need more', positiveInteger)
+    .option('--max-tokens <count>', 'output token budget per integer request (default: the budget the bank recorded for --model, otherwise samples × 5 + 64); reasoning models need more', positiveInteger)
     .option('--bank <path>', 'measured bank matching this transport (default: compatible bundled bank, otherwise collection only)')
     .option('--pooled', 'use the bundled experimental pooled bank: 8 requests of 64 integers; heuristic matches only')
     .option('--allow-transport-mismatch', 'experimentally compare against another transport\'s bank; no validated identity or early stopping', false)
@@ -257,12 +291,15 @@ export async function main(argv = process.argv): Promise<void> {
     if (options.samples !== undefined && (options.samples < MIN_SAMPLES || options.samples > MAX_SAMPLES)) {
       throw new Error(`--samples must be between ${MIN_SAMPLES} and ${MAX_SAMPLES}`);
     }
+    // Loaded before the transport, whose token-limit field can come from the bank's collection settings.
+    const bank = options.pooled ? await pooledBank() : options.bank ? await loadBank(options.bank) : undefined;
     let transport: ProbeTransport;
     if (options.driver) {
       const driverOptions = { ...(options.model ? { model: options.model } : {}), ...(options.passEnv.length ? { passEnv: options.passEnv } : {}) };
       transport = new DRIVERS[options.driver as keyof typeof DRIVERS](driverOptions);
     } else {
       if (!options.model) throw new Error('--model is required for API mode');
+      for (const note of applyCollectionSettings(options, bank ?? defaultBank())) process.stderr.write(`${pc.yellow('Note:')} ${note}\n`);
       // Stored as the --key value so error redaction covers it.
       if (options.keyFile !== undefined) options.key = await readKeyFile(options.keyFile);
       const key = resolveApiKey(options);
@@ -275,7 +312,6 @@ export async function main(argv = process.argv): Promise<void> {
         allowInsecureHttp: options.allowInsecureHttp, ...(key ? { apiKey: key } : {}),
       });
     }
-    const bank = options.pooled ? await pooledBank() : options.bank ? await loadBank(options.bank) : undefined;
     const controller = new AbortController();
     // Persistent listeners, not once(): signal-exit, which execa's subprocess cleanup and ora load,
     // re-raises a signal when no other listener remains, ending the process before the probe

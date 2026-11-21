@@ -119,6 +119,16 @@ export function openEnvelopes(bank: FingerprintBank): FingerprintBank {
   return bank;
 }
 
+/** syntheticBank() whose synthetic-17 records collection settings, as the bank updater writes them. */
+export function collectionBank(): FingerprintBank {
+  const bank = syntheticBank();
+  bank.models[0]!.collection = {
+    provider: 'openai', route: 'synthetic-17', apiFormat: 'chat-completions', tokenLimitField: 'max_completion_tokens', maxTokens: 4096,
+    collectedAt: '2026-01-01T00:00:00.000Z', corpusSha256: 'a'.repeat(64),
+  };
+  return bank;
+}
+
 /**
  * Three artificial models with open envelopes. A probe of 128 × 10 leads model-b by
  * 128 · ln(192.5 / 189.5) ≈ 2.0, below the naming threshold ln 400 ≈ 5.99, and model-c by far more,
