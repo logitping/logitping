@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { deriveClaimRates } from '../src/core/claim.js';
 import { fingerprint } from '../src/core/engine.js';
 import type { FingerprintBank } from '../src/core/types.js';
+import * as bankLoader from '../src/data/bank_loader.js';
+import * as claimRates from '../src/data/claim_rates.js';
 import { collectionSettingsFor } from '../src/data/collection_settings.js';
 import { collectionBank, MemoryTransport, overlappingBank, SequenceTransport, syntheticBank, syntheticPooledBank, syntheticRun, uncalibratedBank } from './fixtures.js';
 
@@ -77,5 +80,68 @@ describe('collection settings matching', () => {
   it('shares the claim matching rule', () => {
     expect(collectionSettingsFor(collectionBank(), 'VENDOR/Synthetic-17')).toMatchObject({ id: 'synthetic-17', collection: { maxTokens: 4096 } });
     expect(collectionSettingsFor(collectionBank(), 'synthetic-287')).toBeUndefined();
+  });
+});
+
+describe('claim rates', () => {
+  const file = (): claimRates.ClaimRatesFile => ({
+    schemaVersion: 1, bank: { file: 'src/data/default_bank.json', sha256: 'a'.repeat(64) }, corpora: [], rule: 'claimed model in candidates',
+    claims: {
+      'synthetic-17': { own: { source: 'independent', accepted: 9, runs: 10 }, runs: [{ model: 'synthetic-287', population: 'enrolled', accepted: 1, runs: 5 }] },
+      'synthetic-287': { own: { source: 'tuning', accepted: 5, runs: 5 }, runs: [{ model: 'synthetic-17', population: 'unenrolled', accepted: 0, runs: 3 }] },
+    },
+  });
+  /** The bundled bank is the synthetic bank, measured by `rates`. */
+  const bundled = (rates = file()) => {
+    vi.spyOn(bankLoader, 'defaultBank').mockImplementation(syntheticBank);
+    return vi.spyOn(claimRates, 'bundledClaimRates').mockImplementation(() => rates);
+  };
+
+  it('attaches the measured rates to a claim checked with the bundled bank', async () => {
+    bundled();
+    expect((await fingerprint(reply(17), { claim: 'synthetic-17' })).claim).toMatchObject({
+      verdict: 'CONSISTENT', rates: deriveClaimRates(file().claims['synthetic-17']!),
+    });
+  });
+
+  it('attaches them to an inconsistent claim too', async () => {
+    bundled();
+    expect((await fingerprint(reply(17), { claim: 'synthetic-287' })).claim).toMatchObject({
+      verdict: 'INCONSISTENT', rates: deriveClaimRates(file().claims['synthetic-287']!),
+    });
+  });
+
+  it('attaches none to a bank passed in, even one identical to the bundled bank', async () => {
+    bundled();
+    expect((await fingerprint(reply(17), { bank: bankLoader.defaultBank(), claim: 'synthetic-17' })).claim).toMatchObject({ verdict: 'CONSISTENT', rates: null });
+  });
+
+  it('attaches none to a cross-transport comparison', async () => {
+    bundled();
+    const result = await fingerprint(new MemoryTransport([`${Array<number>(128).fill(17).join(' ')} `], 'token', 'claude'), { claim: 'synthetic-17', allowTransportMismatch: true });
+    expect(result.crossTransport).toBeDefined();
+    expect(result.claim).toMatchObject({ verdict: 'CONSISTENT', rates: null });
+  });
+
+  it('attaches none to a claim the file does not measure', async () => {
+    const rates = file();
+    delete rates.claims['synthetic-287'];
+    bundled(rates);
+    expect((await fingerprint(reply(17), { claim: 'synthetic-287' })).claim).toMatchObject({ verdict: 'INCONSISTENT', rates: null });
+  });
+
+  it('attaches the committed counts on the real bundled bank', async () => {
+    const result = await fingerprint(reply(17, 512), { claim: 'anthropic/claude-sonnet-5.5' });
+    expect(result.claim).toMatchObject({
+      model: 'claude-sonnet-5.5', verdict: 'INCONSISTENT', rates: deriveClaimRates(claimRates.bundledClaimRates().claims['claude-sonnet-5.5']!),
+    });
+  });
+
+  it('reads the file only for a claim that needs rates', async () => {
+    const read = bundled();
+    await fingerprint(reply(17), {});
+    await fingerprint(reply(17), { claim: 'gpt-7' });
+    await fingerprint(reply(17, 50), { claim: 'synthetic-17' });
+    expect(read).not.toHaveBeenCalled();
   });
 });

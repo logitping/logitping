@@ -10,10 +10,19 @@ export function claimedModel(bank: FingerprintBank, name: string): ModelFingerpr
   return segment ? bank.models.find((model) => model.id.toLowerCase() === segment) : undefined;
 }
 
-/** Whether the claimed model is among the result's candidates; see the spec's verdict table. */
-export function checkClaim(requested: string, bank: FingerprintBank, result: Pick<ProbeResult, 'status' | 'model' | 'candidates'>): ClaimCheck {
+/**
+ * Whether the claimed model is among the result's candidates. `countsFor` returns a claimed model's
+ * measured counts, when they apply to this bank and probe; it is called only for a checked claim.
+ */
+export function checkClaim(
+  requested: string, bank: FingerprintBank, result: Pick<ProbeResult, 'status' | 'model' | 'candidates'>,
+  countsFor?: (id: string) => ClaimCounts | undefined,
+): ClaimCheck {
   const entry = claimedModel(bank, requested);
-  const check = (verdict: ClaimCheck['verdict'], reason: string): ClaimCheck => ({ requested, model: entry?.id ?? null, verdict, reason, rates: null });
+  const check = (verdict: ClaimCheck['verdict'], reason: string): ClaimCheck => {
+    const counts = verdict === 'CONSISTENT' || verdict === 'INCONSISTENT' ? countsFor?.(entry!.id) : undefined;
+    return { requested, model: entry?.id ?? null, verdict, reason, rates: counts ? deriveClaimRates(counts) : null };
+  };
   if (!entry) return check('NOT_ENROLLED', `The bank enrolls no model named ${requested}.`);
   const { id } = entry;
   if (entry.status !== 'calibrated') return check('NOT_CHECKED', `${id} is enrolled without calibration, so it is never a candidate.`);

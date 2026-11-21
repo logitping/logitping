@@ -8,6 +8,7 @@ import { integerPrompt } from '../probes/templates.js';
 import { tokenizerPrompt } from '../probes/tokenizer.js';
 import { abortScope, childScope, DEFAULT_TIMEOUT_MS } from './abort.js';
 import { checkClaim } from './claim.js';
+import { bundledClaimRates } from '../data/claim_rates.js';
 import { LogitpingError } from './errors.js';
 import { classifyPooled } from './pooled.js';
 import type { ClaimCheck, EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport, TokenUsage } from './types.js';
@@ -333,9 +334,19 @@ function classifyPooledProbe(responses: number[][], bank: FingerprintBank, plan:
   return { candidates, classification: { ...shared, status: 'UNKNOWN_MODEL', model: null, reason: `No enrolled model fits ${every}.` } };
 }
 
-/** The claim check of a result, as a field to spread into it; none without a claim. */
-function claimField(options: EngineOptions, bank: FingerprintBank, result: Pick<ProbeResult, 'status' | 'model' | 'candidates'>): { claim?: ClaimCheck } {
-  return options.claim ? { claim: checkClaim(options.claim, bank, result) } : {};
+/**
+ * The claim check of a result, as a field to spread into it; none without a claim. Measured rates
+ * apply only to the bundled default bank the engine loaded itself, never to a bank passed in (the
+ * caller may have changed it) or to a comparison across transports.
+ */
+function claimField(options: EngineOptions, bank: FingerprintBank, plan: ProbePlan, result: Pick<ProbeResult, 'status' | 'model' | 'candidates'>): { claim?: ClaimCheck } {
+  if (!options.claim) return {};
+  const measured = !options.bank && !plan.crossTransport && plan.requests === 1;
+  const countsFor = (id: string) => {
+    const { claims } = bundledClaimRates();
+    return Object.hasOwn(claims, id) ? claims[id] : undefined;
+  };
+  return { claim: checkClaim(options.claim, bank, result, measured ? countsFor : undefined) };
 }
 
 /** Relabel a classification for opt-in cross-transport comparisons and collection-only runs. */
@@ -393,7 +404,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
         tokenizer, warnings, requests: sent,
         ...(transport.reportsUsage ? { usage } : {}),
         ...(pooled ? { candidates: pooled.candidates } : {}),
-        ...claimField(options, bank, { ...classification, ...(pooled ? { candidates: pooled.candidates } : {}) }),
+        ...claimField(options, bank, plan, { ...classification, ...(pooled ? { candidates: pooled.candidates } : {}) }),
         ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
       };
     }
@@ -419,7 +430,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
       tokenizer, warnings,
       ...(transport.reportsUsage ? { usage: [usage] } : {}),
-      ...claimField(options, bank, classification),
+      ...claimField(options, bank, plan, classification),
       ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
     };
   } finally { scope.dispose(); }
