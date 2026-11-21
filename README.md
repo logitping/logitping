@@ -14,7 +14,7 @@ CI includes type checking, tests, builds, and package installation checks.
 
 The project website is live at [logitping.com](https://logitping.com), with an interactive output inspector, a methodology overview, and reference-bank details. Paste an existing model response into the browser playground to explore the protocol and results.
 
-**Experimental 0.7.0.** Results describe behavioral similarity, not proof of model identity. `confidence` is a relative likelihood under statistical assumptions, not an empirically validated identity probability. Do not use a match as the sole basis for a security or billing decision.
+**Experimental 0.7.0.** Results describe behavioral similarity, not proof of model identity. Results report likelihood gaps between enrolled models, not identity probabilities. Do not use a match as the sole basis for a security or billing decision.
 
 The bundled bank contains **18 models**: seven GPT models collected directly from OpenAI, five on 2026-11-06 and `gpt-6.2-astra` and `gpt-6.2-sol` on 2026-11-18; seven Claude models collected through OpenRouter, six on 2026-10-03 and `claude-fable-5.2` on 2026-11-11; and four Gemini models collected directly from Google AI Studio, `gemini-4-argon` on 2026-10-21, `gemini-4-carbon` on 2026-11-11, `gemini-4-hydrogen` on 2026-11-13, and `gemini-4-neon` on 2026-11-19. Each has 10 training and 5 threshold-calibration runs. It uses 512 English integer samples per run. Early stopping is disabled pending independent evaluation. See the [model list, collection settings, and evaluation status](docs/bank.md).
 
@@ -60,7 +60,6 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 {
   "status": "INCONCLUSIVE",
   "model": null,
-  "confidence": null,
   "reason": "Insufficient separation between enrolled models, or likelihood and OOD checks disagree",
   "evaluatedSamples": 512,
   "requestedSamples": 512,
@@ -79,7 +78,7 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 | Status | Meaning | Exit code |
 | --- | --- | --- |
 | `IDENTIFIED` | One reference passed the nominal likelihood and distance checks; this is not identity attestation | `0` |
-| `HEURISTIC_MATCH` | An explicitly enabled exploratory comparison found a reference candidate: across transports, or with the experimental `--pooled` bank; `confidence` is `null` | `2` |
+| `HEURISTIC_MATCH` | An explicitly enabled exploratory comparison found a reference candidate: across transports, or with the experimental `--pooled` bank | `2` |
 | `INCONCLUSIVE` | Insufficient separation, disagreeing checks, or an incomplete response; `candidates` lists the enrolled models still consistent | `2` |
 | `UNKNOWN_MODEL` | All enrolled distance regions rejected the observation; drift can also cause this. This is rare: an unenrolled model usually returns `INCONCLUSIVE` | `2` |
 | `UNCALIBRATED` | Samples were collected without a usable calibrated bank for this transport | `2` |
@@ -136,7 +135,7 @@ const result = await fingerprint(new HttpClient({
   signal: AbortSignal.timeout(120_000),
 });
 
-console.log(result.status, result.model, result.confidence);
+console.log(result.status, result.model, result.candidates);
 ```
 
 This makes the same kind of paid probe as the Quickstart. See the [library reference](docs/library.md) for custom banks, transports, cancellation, and error codes.
