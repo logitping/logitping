@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createFingerprintBank } from '../src/data/enrollment.js';
-import { evaluateDefaultBank, evaluatePooledBank, groupRuns, parseStoredCorpus, type SetTally, type StatusTally, type StoredCorpus } from '../src/data/evaluation.js';
+import {
+  evaluateBanks, evaluateDefaultBank, evaluatePooledBank, groupRuns, parseStoredCorpus, renderEvaluationReport, sha256,
+  type EvaluationReport, type SetTally, type StatusTally, type StoredCorpus,
+} from '../src/data/evaluation.js';
 import { corpusDigest } from '../src/data/gateway_plan.js';
 import { createPooledBank } from '../src/data/pooled_enrollment.js';
 import { forceCutoffs, openEnvelopes, syntheticEnrollment, syntheticRun } from './fixtures.js';
@@ -124,5 +127,83 @@ describe('pooled-bank evaluation', () => {
 
   it('rejects a bank without pooled scoring', async () => {
     await expect(evaluatePooledBank(bank, [], 2)).rejects.toThrow(/needs a pooled bank/);
+  });
+});
+
+const input = (corpora: unknown[]) => ({
+  default: { file: 'src/data/default_bank.json', text: JSON.stringify(bank) },
+  pooled: { file: 'src/data/pooled_bank.json', text: JSON.stringify(pooled([true, false, false])) },
+  corpora,
+});
+
+describe('evaluation report', () => {
+  it('records both banks by file and SHA-256, and corpora in collection order', async () => {
+    const report = await evaluateBanks(input([other, own, fresh]));
+    expect(report.schemaVersion).toBe(1);
+    expect(report.banks.default).toEqual({ file: 'src/data/default_bank.json', sha256: sha256(JSON.stringify(bank)), models: 3 });
+    expect(report.corpora.map((entry) => entry.sha256)).toEqual([ownDigest, otherDigest, freshDigest]);
+    expect(report.corpora[0]).toEqual({
+      sha256: ownDigest, collectedAt: own.collectedAt, targetSamples: 128, models: ['synthetic-17', 'synthetic-150', 'synthetic-287', 'synthetic-200'],
+    });
+    expect(report.default.enrolled[0]!.corpus).toBe(otherDigest);
+    expect(report.pooled.neverEnrolled[0]!.corpus).toBe(freshDigest);
+    expect(report.pooled.groupings).toBe(10);
+  });
+
+  it('reads a copied corpus once', async () => {
+    expect(await evaluateBanks(input([other, structuredClone(other)]))).toEqual(await evaluateBanks(input([other])));
+  });
+
+  it('refuses a corpus that matches neither bank', async () => {
+    await expect(evaluateBanks(input([{ ...other, protocol: { ...other.protocol, language: 'zh' } }]))).rejects.toThrow(/matches neither bank/);
+  });
+
+  it('refuses to run without corpora', async () => {
+    await expect(evaluateBanks(input([]))).rejects.toThrow(/No stored corpora/);
+  });
+
+  it('refuses a bank file that is not a valid bank', async () => {
+    await expect(evaluateBanks({ ...input([other]), default: { file: 'src/data/default_bank.json', text: '{}' } })).rejects.toThrow(/Invalid bank/);
+  });
+});
+
+describe('rendered report', () => {
+  const C = 'c'.repeat(64);
+  const report: EvaluationReport = {
+    schemaVersion: 1,
+    banks: { default: { file: 'src/data/default_bank.json', sha256: 'a'.repeat(64), models: 2 }, pooled: { file: 'src/data/pooled_bank.json', sha256: 'b'.repeat(64), models: 2 } },
+    corpora: [{ sha256: C, collectedAt: '2026-10-11T02:51:23.401Z', targetSamples: 512, models: ['m1', 'm2'] }],
+    default: {
+      enrolled: [{ corpus: C, models: { m1: { runs: 3, correct: 1, wrong: { m3: 1, m2: 1 }, inconclusive: 1, unknown: 0 } } }],
+      labelRemoved: [{ corpus: C, models: { m1: { runs: 3, correct: 0, wrong: { m2: 2 }, inconclusive: 0, unknown: 1 } } }],
+      neverEnrolled: [],
+    },
+    pooled: {
+      groupings: 10, requestsPerProbe: 8, enrolled: [],
+      neverEnrolled: [{ corpus: C, models: { m9: { probes: 50, correct: 0, wrong: { m1: 3 }, several: 0, none: 47, stopped: 0 } } }],
+    },
+  };
+  const markdown = renderEvaluationReport(report);
+
+  it('starts with its title and ends with one newline', () => {
+    expect(markdown.startsWith('# Independent evaluation\n')).toBe(true);
+    expect(markdown.endsWith('\n')).toBe(true);
+    expect(markdown.endsWith('\n\n')).toBe(false);
+  });
+
+  it('writes the bank, corpus, per-model and total rows', () => {
+    const lines = markdown.split('\n');
+    for (const line of [
+      '| Default | `src/data/default_bank.json` | `' + 'a'.repeat(64) + '` | 2 |',
+      '| `cccccccccccc` | 2026-10-11 | 512 | m1, m2 |',
+      '| `cccccccccccc` | m1 | 3 | 1 | 2 (m2 1, m3 1) | 1 | 0 |',
+      '| **Total** | | 3 | 1 | 2 (m2 1, m3 1) | 1 | 0 |',
+      '| `cccccccccccc` | m1 | 3 | 2 (m2 2) | 0 | 1 |',
+      '| `cccccccccccc` | m9 | 50 | 3 (m1 3) | 0 | 47 | 0 |',
+    ]) expect(lines).toContain(line);
+  });
+
+  it('prints No runs. for an empty section', () => {
+    expect(markdown).toContain('### Models the bank never enrolled\n\nNo runs.\n');
   });
 });

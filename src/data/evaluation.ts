@@ -1,9 +1,11 @@
+import { createHash } from 'node:crypto';
 import { fingerprint } from '../core/engine.js';
 import type { FingerprintBank, ProbeTransport } from '../core/types.js';
 import { INTEGER_MAX, INTEGER_MIN } from '../math/ordered_block.js';
 import { mulberry32 } from '../math/pooled_sets.js';
 import { isIntegerInRange, isRecord } from '../util/validate.js';
-import { corpusDigest } from './gateway_plan.js';
+import { validateBank } from './bank_loader.js';
+import { corpusDigest, sameProtocol } from './gateway_plan.js';
 
 /** The fields of a corpus the bank updater archives; its digest names it in model provenance. */
 export interface StoredCorpus {
@@ -183,4 +185,120 @@ export async function evaluatePooledBank(bank: FingerprintBank, corpora: readonl
     await add(results.neverEnrolled, corpus.digest, neverEnrolled);
   }
   return results;
+}
+
+export interface BankSummary { file: string; sha256: string; models: number }
+export interface CorpusSummary { sha256: string; collectedAt: string; targetSamples: number; models: string[] }
+
+/** The committed independent evaluation of both bundled banks (docs/evaluation.json). */
+export interface EvaluationReport {
+  schemaVersion: 1;
+  banks: { default: BankSummary; pooled: BankSummary };
+  /** Sorted by collectedAt, then sha256. */
+  corpora: CorpusSummary[];
+  default: DefaultResults;
+  pooled: PooledResults;
+}
+
+export interface EvaluationInput {
+  default: { file: string; text: string };
+  pooled: { file: string; text: string };
+  /** Parsed corpus files, in any order; a corpus read twice counts once. */
+  corpora: readonly unknown[];
+}
+
+/** Lowercase hex SHA-256 of UTF-8 text; ties a report to the exact bank files it scored. */
+export function sha256(text: string): string {
+  return createHash('sha256').update(text).digest('hex');
+}
+
+/** Score both bundled banks on every stored run they were not built from. */
+export async function evaluateBanks(input: EvaluationInput): Promise<EvaluationReport> {
+  const defaultBank = validateBank(JSON.parse(input.default.text));
+  const pooledBank = validateBank(JSON.parse(input.pooled.text));
+  if (pooledBank.schemaVersion !== 2) throw new Error('Pooled evaluation needs a pooled bank (schema version 2)');
+  if (!input.corpora.length) throw new Error('No stored corpora (*.corpus-*.json) were found; the report needs the maintainer corpora');
+  const seen = new Set<string>();
+  const corpora: DigestedCorpus[] = [];
+  for (const value of input.corpora) {
+    const parsed = parseStoredCorpus(value);
+    if (seen.has(parsed.digest)) continue;
+    seen.add(parsed.digest);
+    if (!sameProtocol(defaultBank, parsed.corpus) && !sameProtocol(pooledBank, parsed.corpus)) {
+      throw new Error(`Corpus sha256:${parsed.digest} matches neither bank's protocol`);
+    }
+    corpora.push(parsed);
+  }
+  corpora.sort((a, b) => a.corpus.collectedAt.localeCompare(b.corpus.collectedAt) || a.digest.localeCompare(b.digest));
+  const summary = (file: string, text: string, bank: FingerprintBank): BankSummary => ({ file, sha256: sha256(text), models: bank.models.length });
+  return {
+    schemaVersion: 1,
+    banks: { default: summary(input.default.file, input.default.text, defaultBank), pooled: summary(input.pooled.file, input.pooled.text, pooledBank) },
+    corpora: corpora.map(({ digest, corpus }) => ({ sha256: digest, collectedAt: corpus.collectedAt, targetSamples: corpus.protocol.targetSamples, models: corpus.models.map((model) => model.id) })),
+    default: await evaluateDefaultBank(defaultBank, corpora.filter(({ corpus }) => sameProtocol(defaultBank, corpus))),
+    pooled: await evaluatePooledBank(pooledBank, corpora.filter(({ corpus }) => sameProtocol(pooledBank, corpus))),
+  };
+}
+
+/** `0`, or the total and each named model, by count descending, then id. */
+function named(wrong: Record<string, number>): string {
+  const entries = Object.entries(wrong).sort(([a, x], [b, y]) => y - x || a.localeCompare(b));
+  const total = entries.reduce((sum, [, count]) => sum + count, 0);
+  return total ? `${total} (${entries.map(([id, count]) => `${id} ${count}`).join(', ')})` : '0';
+}
+
+const shortDigest = (digest: string) => `\`${digest.slice(0, 12)}\``;
+const row = (cells: readonly (string | number)[]) => `| ${cells.join(' | ')} |`;
+
+/** A section's table with a total row, or `No runs.` when it has none. */
+function table<T extends object>(header: readonly string[], entries: readonly CorpusTallies<T>[], cells: (tally: T) => (string | number)[], sum: (tallies: T[]) => T): string {
+  const rows = entries.flatMap(({ corpus, models }) => Object.entries(models).map(([id, tally]) => row([shortDigest(corpus), id, ...cells(tally as T)])));
+  if (!rows.length) return 'No runs.';
+  const total = sum(entries.flatMap(({ models }) => Object.values(models) as T[]));
+  return [row(header), row(header.map(() => '---')), ...rows, `| **Total** | ${row(cells(total))}`].join('\n');
+}
+
+const mergeWrong = (tallies: { wrong: Record<string, number> }[]) => {
+  const wrong: Record<string, number> = {};
+  for (const tally of tallies) for (const [id, count] of Object.entries(tally.wrong)) wrong[id] = (wrong[id] ?? 0) + count;
+  return wrong;
+};
+const sumStatus = (tallies: StatusTally[]): StatusTally => ({
+  runs: tallies.reduce((s, t) => s + t.runs, 0), correct: tallies.reduce((s, t) => s + t.correct, 0), wrong: mergeWrong(tallies),
+  inconclusive: tallies.reduce((s, t) => s + t.inconclusive, 0), unknown: tallies.reduce((s, t) => s + t.unknown, 0),
+});
+const sumSets = (tallies: SetTally[]): SetTally => ({
+  probes: tallies.reduce((s, t) => s + t.probes, 0), correct: tallies.reduce((s, t) => s + t.correct, 0), wrong: mergeWrong(tallies),
+  several: tallies.reduce((s, t) => s + t.several, 0), none: tallies.reduce((s, t) => s + t.none, 0), stopped: tallies.reduce((s, t) => s + t.stopped, 0),
+});
+
+/** docs/evaluation.md, derived only from the report so the test can compare it with the committed file. */
+export function renderEvaluationReport(report: EvaluationReport): string {
+  const section = (heading: string, body: string) => `${heading}\n\n${body}`;
+  const status = ['Corpus', 'Model', 'Runs'];
+  const sets = ['Corpus', 'Model', 'Probes'];
+  const { default: defaults, pooled } = report;
+  const parts = [
+    '# Independent evaluation',
+    '<!-- Generated by `npm run bank:evaluate` from evaluation.json. Do not edit; rerun the command. -->',
+    '[Back to README](../README.md) · [Bank status](bank.md#evaluation-status) · [Bank maintenance](bank-maintenance.md#evaluate-the-bundled-banks)',
+    'Each bundled bank is scored on every stored run it was not built from, with the production engine and no provider requests. Corpora are named by the first 12 characters of their SHA-256.',
+    [row(['Bank', 'File', 'SHA-256', 'Models']), row(['---', '---', '---', '---']),
+      ...([['Default', report.banks.default], ['Pooled', report.banks.pooled]] as const).map(([name, bank]) => row([name, `\`${bank.file}\``, `\`${bank.sha256}\``, bank.models]))].join('\n'),
+    section('## Corpora', [row(['Corpus', 'Collected', 'Integers per run', 'Models']), row(['---', '---', '---', '---']),
+      ...report.corpora.map((corpus) => row([shortDigest(corpus.sha256), corpus.collectedAt.slice(0, 10), corpus.targetSamples, corpus.models.join(', ')]))].join('\n')),
+    '## Default bank',
+    section('### Enrolled models, runs from other collections', table([...status, 'Correct', 'Wrong', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.enrolled,
+      (t: StatusTally) => [t.runs, t.correct, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
+    section('### Same runs, tested model removed', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.labelRemoved,
+      (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
+    section('### Models the bank never enrolled', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.neverEnrolled,
+      (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
+    `## Pooled bank: ${pooled.requestsPerProbe} requests per probe, ${pooled.groupings} groupings`,
+    section('### Enrolled models, runs from other collections', table([...sets, 'Correct', 'Wrong', 'Several', 'None', 'Stopped'], pooled.enrolled,
+      (t: SetTally) => [t.probes, t.correct, named(t.wrong), t.several, t.none, t.stopped], sumSets)),
+    section('### Models the bank never enrolled', table([...sets, 'Named', 'Several', 'None', 'Stopped'], pooled.neverEnrolled,
+      (t: SetTally) => [t.probes, named(t.wrong), t.several, t.none, t.stopped], sumSets)),
+  ];
+  return `${parts.join('\n\n')}\n`;
 }
