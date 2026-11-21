@@ -24,6 +24,18 @@ With `K` fixed positive categorical hypotheses, the sequential threshold is `log
 
 **Candidates.** When at least one distance envelope accepts, a result lists as `candidates` the enrolled models the sequential test cannot reject against the most likely one, with a log-likelihood ratio below the naming threshold, and whose envelope accepts; the most likely comes first. An identified result lists only the named model, and `UNKNOWN_MODEL` lists none. Candidates are always enrolled models. An unenrolled model also gets candidates, usually several and from more than one vendor, so a candidate list does not show that the endpoint runs an enrolled model.
 
+## Claim verification
+
+A claim names the model an endpoint claims to serve. It is accepted when the claimed model is among the result's `candidates`: the enrolled models the sequential test cannot reject against the most likely one and whose distance envelope accepts the observation. An empty list rejects every claim. No new threshold is involved.
+
+How much a verdict is worth differs by claim, so `npm run bank:evaluate` measures, for each enrolled model of the default bank as a claim, how often it is accepted on stored 512-integer runs (the report's [Claims](evaluation.md#claims) section):
+
+- **Own runs:** the claimed model's runs from collections it was not enrolled from. Models without any, 8 of 18 in the current bank, are measured on their 5 tuning runs: the validation runs that set their distance envelope at the largest tuning distance × 1.1. The envelope accepts them by construction, so these figures are optimistic.
+- **Other enrolled models' runs:** their independent and tuning runs, scored with the full bank. Tuning runs are out of sample for every other claim, because each model's integer distribution is fitted on its training runs only. Training runs are never used.
+- **Models outside the bank:** runs of models the bank does not enroll, and other enrolled models' runs scored with their own reference removed, as the report's "tested model removed" section does.
+
+Each rate has a 95% Wilson score interval computed from its counts; 5 of 5 gives about 57–100%. The rates describe this probe's behavior on stored runs collected through particular providers and dates, and apply only to the bundled default bank through the HTTP API transports. They are not the probability that an endpoint serves the claimed model. A model whose runs pass as another model's claim produces similar integers; nothing more is implied.
+
 ## Experimental pooled probe (`pooled-sets-v1`)
 
 Some models answer the 512-integer probe with near-permutations, which use almost every value once. Their value histograms then carry little information: `gpt-6.1-sol` and `gpt-6-astra` were `INCONCLUSIVE` on every evaluated run. A pooled bank instead asks for several short replies, 8 requests of 64 integers, and scores what is left free in short replies: which values come first, which follow which, and when values recur.

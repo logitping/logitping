@@ -84,9 +84,33 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 | `UNCALIBRATED` | Samples were collected without a usable calibrated bank for this transport | `2` |
 | `ERROR` | Invalid configuration, transport failure, or malformed output | `1` |
 
-Exit `2` reports one of the four result statuses above; inspect `status` and `reason` rather than treating it as a transport failure. Cancellation exits with `130`; successful utility commands exit with `0`.
+Exit `2` reports one of the four result statuses above; inspect `status` and `reason` rather than treating it as a transport failure. Cancellation exits with `130`; successful utility commands exit with `0`. With `--claim`, the claim verdict sets the exit code instead, and `3` means the claim is inconsistent; see [Check a claimed model](#check-a-claimed-model).
 
 On 460 stored runs of 10 enrolled models from collections the bundled bank was not built from, it named 152 correctly and none wrongly; 303 were `INCONCLUSIVE` and 5 `UNKNOWN_MODEL`. With the tested model removed from the bank, 18 runs were named as another model, all between `claude-fable-5` and `claude-fable-5.1`. Of 225 runs of the four models removed from the bank in `0.7.0`, none was named and only 2 were rejected as `UNKNOWN_MODEL`, so an `INCONCLUSIVE` result does not show that the endpoint runs an enrolled model. **The 460 runs came through OpenRouter, eight days to five weeks from their references; this is not an accuracy estimate for arbitrary endpoints.** See the [evaluation report](docs/evaluation.md) and the [evaluation notes](docs/bank.md#evaluation-status).
+
+## Check a claimed model
+
+`--model` names the model the endpoint claims to serve. When it names an enrolled model, ignoring any `vendor/` prefix and letter case, the probe also checks that claim: the claim passes when the claimed model is among the result's `candidates`. Pass `--claim <model>` when `--model` is the endpoint's own alias for the model.
+
+| Verdict | Meaning | Exit code with `--claim` |
+| --- | --- | --- |
+| `CONSISTENT` | The claimed model is among the candidates | `0` |
+| `INCONSISTENT` | The claimed model is not among the candidates, including when no enrolled model fits | `3` |
+| `NOT_ENROLLED` | The bank enrolls no model by that name | `2` |
+| `NOT_CHECKED` | The probe computed no candidates, as after a short reply or through a CLI driver with the bundled bank | `2` |
+
+A verdict does not verify the model. With the bundled bank, each checked claim carries how often the bank accepted that claim on stored runs, because claims differ widely in strength. A `claude-sonnet-5.5` claim was accepted for all 40 of its own runs from other collections and for none of 505 runs of other enrolled models. A `gpt-6.2-sol` claim was accepted for 43% of other enrolled models' runs and 74% of runs from models outside the bank, so passing it says little. Eight models have no runs from other collections and are measured on the 5 tuning runs that set their distance envelope, an optimistic figure, and `claude-sonnet-5`'s own runs passed its claim only 15 of 40 times. These are acceptance rates on stored runs, not the probability that an endpoint serves the claimed model. See the [Claims section](docs/evaluation.md#claims) of the evaluation report.
+
+For a run the bank accepts as `gpt-6.2-sol`, the readable output adds:
+
+```text
+Claim gpt-6.2-sol: consistent
+  Accepted for 5 of 5 of its own runs (tuning runs; likely 57–100%).
+  Also accepted for 43% of other enrolled models' runs (232 of 545) and 74% of runs from models outside the bank (567 of 770).
+  Most often accepted for: gpt-5.6-sol (not enrolled) 70/70, gpt-6-astra 60/60, gpt-6.1-sol 60/60 (+9 more).
+```
+
+Without `--claim`, exit codes do not change: the claim from `--model` appears only in the output and in JSON as `claim`.
 
 ## Supported connections
 

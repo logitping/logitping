@@ -46,6 +46,8 @@ API keys are read in this order: `--key` or `--key-file`, `LOGITPING_API_KEY`, t
 
 When `--model` names a model enrolled in the bank in use, ignoring any `vendor/` prefix and letter case, the CLI applies the output budget the model was collected with as `--max-tokens`. When the probe uses the recorded API format, it also applies the recorded `--token-limit-field`. Options you pass yourself always win. It prints a `Note:` on stderr naming what it applied. If your `--provider` or `--api-format` differs from the recorded format, the note names the flags that would match it; the CLI does not change them. `--provider anthropic` also switches to Anthropic's `x-api-key` authentication, which not every endpoint accepts.
 
+`--claim <model>` names the model the endpoint claims to serve, for an endpoint whose `--model` is its own alias; without it, the claim is `--model`. It also works with `--driver`, and recorded collection settings follow the `--claim` model. The claim passes when the claimed model is among the result's candidates. The readable output adds a claim block after the early-stop line. With the bundled bank, it gives the verdict and how often that claim was accepted on stored runs: for the claimed model's own runs, other enrolled models' runs and runs of models outside the bank, with 95% ranges and the models most often accepted for it. An inconsistent claim whose own runs pass less than 90% of the time, at the range's upper bound, is called weak evidence. JSON carries the same data as `claim`. `NOT_ENROLLED` prints one line. `NOT_CHECKED`, where the probe computed no candidates, prints nothing, because the status already says why. A bank you pass with `--bank` or `--pooled` gets a verdict but no rates, and so does `--allow-transport-mismatch`: the block then says `No acceptance rates were measured for this bank and probe.` The rates are not a probability that the endpoint serves the claimed model; see the [methodology](methodology.md#claim-verification).
+
 By default, without `--bank`, the bundled bank is used for identification only when its transport matches the selected connection. The bundled bank has transport `api`: it was collected without streaming through Chat Completions, Responses, and Anthropic Messages, from OpenAI, OpenRouter, and Google AI Studio. The engine permits comparisons with both `--provider openai` and `--provider anthropic`; transfer across providers, streaming modes, and API formats still needs independent evaluation. See the [current bank](bank.md). `lping --driver codex`, `lping --driver claude`, and `lping --driver antigravity` collect samples and return `UNCALIBRATED` (exit code 2), with no model ranking. Their output explains the missing calibration; this is a completed collection, not a transport error. The same behavior applies to the library when `fingerprint()` is called without an explicit bank.
 
 To identify models through Codex under a matching calibration, supply a bank enrolled from independent Codex driver runs with `protocol.transport: "codex"` and `temperature: null` (`"antigravity"` for the Antigravity driver); see [enrollment](bank-maintenance.md#create-a-measured-bank). Local CLI prompts and settings can change the output distribution, so API measurements do not establish calibration for those drivers. By default, an explicit `--bank` must match the transport, language, sample budget, and temperature. Mismatch errors report the differing values before starting a probe.
@@ -72,10 +74,13 @@ Exit codes:
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Identified under the supplied bank and nominal statistical assumptions; or a successful utility command |
+| 0 | Identified under the supplied bank and nominal statistical assumptions; with `--claim`, the claim is consistent; or a successful utility command |
 | 1 | Invalid configuration, transport failure, or malformed model output |
-| 2 | `HEURISTIC_MATCH`, `UNKNOWN_MODEL`, `INCONCLUSIVE`, or `UNCALIBRATED` |
+| 2 | `HEURISTIC_MATCH`, `UNKNOWN_MODEL`, `INCONCLUSIVE`, or `UNCALIBRATED`; with `--claim`, the claim was not checked or the bank does not enroll it |
+| 3 | With `--claim`: the claim is inconsistent |
 | 130 | Interrupted by SIGINT or SIGTERM, or interactive selection cancelled |
+
+With `--claim`, only the claim verdict decides between `0`, `2` and `3`: a consistent claim exits `0` on an `INCONCLUSIVE` result, and an endpoint identified as another model exits `3`. Without `--claim`, the claim taken from `--model` never changes the exit code.
 
 An interrupted probe stops its CLI or request, removes its temporary directory, and then reports the interruption; a second signal exits immediately.
 
