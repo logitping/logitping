@@ -57,7 +57,7 @@ Each entry used the 8,192-token output limit above, except `claude-fable-5.2`, w
 | `gemini-4-hydrogen` | `gemini-4-hydrogen` | `chat-completions` | `max_tokens` |
 | `gemini-4-neon` | `gemini-4-neon` | `chat-completions` | `max_tokens` |
 
-The probe CLI defaults to 2,624 output tokens for 512 integers. Use `--max-tokens 8192` to match this bank's collection limit, `--max-tokens 16384` for `claude-fable-5.2`, `--max-tokens 32768` for `gpt-6.2-astra`, `gpt-6.2-sol`, `gemini-4-argon` and `gemini-4-carbon`, or `--max-tokens 65536` for `gemini-4-hydrogen` and `gemini-4-neon`; a smaller budget can truncate reasoning models before all integers arrive. Matching the budget and format does not establish transfer across hosts or streaming modes.
+Each model entry records its collection settings in `collection`: the provider, requested route, API format, token-limit field, output budget, collection time and corpus digest. When `--model` names an enrolled model, as `openai/gpt-6.1-sol` names `gpt-6.1-sol`, the CLI applies its recorded `--max-tokens`, and its `--token-limit-field` when the probe uses the recorded API format, unless you pass them yourself. A smaller budget can truncate reasoning models before all integers arrive. The CLI does not switch `--provider` or `--api-format`, because endpoints differ in what they support and how they authenticate; it notes the flags that would match the recorded format. Matching the budget and format does not establish transfer across hosts or streaming modes.
 
 ## Evaluation status
 

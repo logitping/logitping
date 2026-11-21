@@ -37,7 +37,7 @@ The [npm package](https://www.npmjs.com/package/logitping) includes ESM/CommonJS
 
 ## Quickstart
 
-This example probes `openai/gpt-6.1-sol` through OpenRouter using the Responses format and 8,192 output-token budget recorded in its reference fingerprint. You need an OpenRouter account with access to that route and an API key already exported as `OPENROUTER_API_KEY` through your shell or secret manager. `.env` files are not loaded automatically.
+This example probes `openai/gpt-6.1-sol` through OpenRouter using the Responses format recorded in its reference fingerprint. Because `--model` names an enrolled model, the CLI also applies the 8,192-token output budget it was collected with. You need an OpenRouter account with access to that route and an API key already exported as `OPENROUTER_API_KEY` through your shell or secret manager. `.env` files are not loaded automatically.
 
 **Running this command sends one provider request and may incur charges, including reasoning tokens.** It does not refresh the bank or retry a failed probe. The CLI streams the response; the bank was collected without streaming, and its GPT references directly from OpenAI, so this compares across streaming modes and providers. That transfer has not been independently evaluated. OpenRouter documents its [Responses endpoint and authentication](https://openrouter.ai/docs/api/reference/responses/overview).
 
@@ -48,7 +48,6 @@ LOGITPING_API_KEY="${OPENROUTER_API_KEY:?Export OPENROUTER_API_KEY first}" \
   --endpoint https://openrouter.ai/api/v1 \
   --model openai/gpt-6.1-sol \
   --api-format responses \
-  --max-tokens 8192 \
   --json \
   --no-interactive
 ```

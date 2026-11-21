@@ -6,6 +6,7 @@
 
 - `npm run bank:evaluate` (`scripts/evaluate-banks.mjs`) scores both bundled banks on every stored run they were not built from, without provider requests, and writes `docs/evaluation.json` and `docs/evaluation.md`. A test checks that the committed report matches the bundled banks.
 - Single-request probes report `candidates`, as pooled probes do: the enrolled models the sequential test cannot reject against the most likely one and whose distance envelope accepts, most likely first. The readable output prints `Inconclusive, consistent with: …`. `SequentialDecision` gains `logLikelihoods`. The evaluation report (schema version 2) adds how often the tested model is listed, mean list size and lists spanning several vendors.
+- Each bank model records its collection settings in a structured `collection` field: provider, requested route, API format, token-limit field, output budget, collection time and corpus digest. Both bundled banks have it, filled from their provenance without new requests. When `--model` names an enrolled model, the CLI applies its recorded output budget, and its token-limit field when the API format matches, unless given; it notes, but does not change, a different `--provider` or `--api-format`. `collectionSettingsFor()` exposes the settings to library users.
 
 ### Changed
 
