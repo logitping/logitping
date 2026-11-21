@@ -1,6 +1,6 @@
 # Candidate lists for single-request probes: design
 
-Status: drafted on 2026-11-21 as item 3 of the 0.8.0 plan, for review.
+Status: implemented on 2026-11-21 as item 3 of the 0.8.0 plan; see the erratum for changes from the final review.
 
 ## Context
 
@@ -71,6 +71,12 @@ Fixed copy.
 **`CHANGELOG.md`: under `## Unreleased` → `### Added`, add:**
 
 > - Single-request probes report `candidates`, as pooled probes do: the enrolled models the sequential test cannot reject against the most likely one and whose distance envelope accepts, most likely first. The readable output prints `Inconclusive, consistent with: …`. `SequentialDecision` gains `logLikelihoods`. The evaluation report (schema version 2) adds how often the tested model is listed, mean list size and lists spanning several vendors.
+
+## Erratum (2026-11-21, final review)
+
+- **The result now carries the caveat.** The candidate list can read as confirmation: 216 of 225 runs of the removed models now print `Inconclusive, consistent with: …`. So an `INCONCLUSIVE` single-request result that lists candidates adds the warning "Candidates are enrolled models only: an unenrolled model also gets candidates, so they do not show that the endpoint runs one of them." The CLI prints it as a `Note:` line. This replaces "CLI: no code change" only in that the engine adds a warning the CLI already prints.
+- **The field's new meaning is documented.** `ProbeResult.candidates` was pooled-only and now has a second meaning. Its documentation and a changelog "Changed" note say that, for single-request results, its length does not determine the status.
+- **The tie test now ties.** It uses two models enrolled on identical runs, because 64 × 17 then 64 × 287 against the two synthetic models differs by 1e-12 and does not tie.
 
 ## Rejected
 

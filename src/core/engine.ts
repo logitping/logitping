@@ -14,6 +14,9 @@ import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelS
 type Classification = Pick<ProbeResult, 'status' | 'model' | 'confidence' | 'reason' | 'scores' | 'evaluatedSamples' | 'candidates'>;
 type RequestOptions = Pick<ProbeRequest, 'timeoutMs' | 'temperature'> & { signal: AbortSignal };
 
+/** Added to inconclusive single-request results that list candidates; the list itself can read as confirmation. */
+const CANDIDATES_WARNING = 'Candidates are enrolled models only: an unenrolled model also gets candidates, so they do not show that the endpoint runs one of them.';
+
 /** Local CLI drivers, which expose no sampling temperature. */
 const CLI_TRANSPORTS: ReadonlySet<string> = new Set(['claude', 'codex', 'antigravity']);
 
@@ -360,6 +363,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
             : `Identification requires all ${plan.count} requested integers; the response ended after ${samples.length}. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.` }
       : early ?? classify(samples, plan.calibrated, project, test);
     if (samples.length < plan.count && !early) warnings.push(`The response ended after ${samples.length} of ${plan.count} requested integers (output limit: ${plan.maxTokens} tokens).`);
+    if (classification.status === 'INCONCLUSIVE' && classification.candidates?.length) warnings.push(CANDIDATES_WARNING);
     return {
       ...relabel(classification, plan, transport, bank),
       confidenceMeaning: 'nominal closed-set IID likelihood; not calibrated identity probability',

@@ -100,17 +100,28 @@ describe('classification pipeline', () => {
     expect(result.sampleBudgetSaved).toBe(0.5);
     expect(result.confidence).toBeGreaterThan(0.995);
     expect(result.candidates).toEqual(['synthetic-17']);
+    expect(result.warnings.join(' ')).not.toContain('Candidates are enrolled models only');
     expect(transport.closed && transport.aborted).toBe(true);
   });
   it('lists the models the sequential test cannot reject, most likely first', async () => {
     const result = await fingerprint(new MemoryTransport(Array<string>(128).fill('10 ')), { bank: overlappingBank(), tokenizerProbe: false });
     expect(result.status).toBe('INCONCLUSIVE');
     expect(result.candidates).toEqual(['model-a', 'model-b']);
+    // An unenrolled model also gets candidates; the result itself must say so, not only the docs.
+    expect(result.warnings).toContain('Candidates are enrolled models only: an unenrolled model also gets candidates, so they do not show that the endpoint runs one of them.');
   });
   it('keeps bank order between equally likely candidates', async () => {
-    const values = [...Array<string>(64).fill('17 '), ...Array<string>(64).fill('287 ')];
-    const result = await fingerprint(new MemoryTransport(values), { bank: openEnvelopes(syntheticBank()), tokenizerProbe: false, earlyStopping: false });
-    expect(result.candidates).toEqual(['synthetic-17', 'synthetic-287']);
+    // Two models enrolled on identical runs have bit-identical likelihoods, so only bank order separates them.
+    const run = [...Array<number>(64).fill(10), ...Array<number>(64).fill(20)];
+    const twins = (order: string[]) => openEnvelopes(createFingerprintBank({
+      source: 'SYNTHETIC TEST FIXTURE; no real model measurements', checkpoints: [64, 128],
+      protocol: { id: 'integer-v1', targetSamples: 128, language: 'en', temperature: null, transport: 'openai' },
+      models: order.map((id) => ({ id, family: 'synthetic', training: [run, run, run], validation: [run, run] })),
+    }));
+    for (const order of [['twin-x', 'twin-y'], ['twin-y', 'twin-x']]) {
+      const result = await fingerprint(new MemoryTransport(Array<string>(128).fill('10 ')), { bank: twins(order), tokenizerProbe: false });
+      expect(result.candidates).toEqual(order);
+    }
   });
   it('does not accept high closed-set confidence when OOD rejects it', async () => {
     const values = [...Array<string>(12).fill('17 '), ...Array<string>(116).fill('100 ')];
