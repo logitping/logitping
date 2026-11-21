@@ -1,6 +1,6 @@
 # Per-model collection settings in the bank: design
 
-Status: drafted on 2026-11-21 as item 4 of the 0.8.0 plan, for review.
+Status: implemented on 2026-11-21 as item 4 of the 0.8.0 plan; see the erratum for changes from the final review.
 
 ## Context
 
@@ -59,6 +59,14 @@ Fixed copy.
 **`src/cli.ts`: the `--max-tokens` help text becomes:**
 
 > output token budget per integer request (default: the budget the bank recorded for --model, otherwise samples × 5 + 64); reasoning models need more
+
+## Erratum (2026-11-21, final review)
+
+- **`docs/cli.md` budget paragraphs.** Its `--max-tokens` and `--pooled` paragraphs, which the copy above left out, still gave samples × 5 + 64 as the default and listed budgets to pass by hand. They now describe the recorded default.
+- **Applied-settings note.** It now ends "Pass them yourself to override; a large budget can also need a longer --timeout." An applied budget of up to 65,536 can outlast the 120 s default timeout, where the old default stopped quickly as `INCONCLUSIVE`.
+- **Anthropic Messages note.** It now reads "add --provider anthropic to match it, if the endpoint accepts Anthropic's x-api-key authentication." That flag changes the authentication header, which is this spec's own reason for not switching. `docs/cli.md` says the same.
+- **`docs/library.md` copy.** It now states that `collectionSettingsFor` returns `{ id, collection }`, and that an `apiFormat` of `messages` means `provider: 'anthropic'` for `HttpClient`.
+- **Changelog.** A "Changed" line tells existing users that an enrolled `--model` now gets the recorded budget by default.
 
 ## Out of scope
 

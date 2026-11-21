@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main, resolveApiKey } from '../src/cli.js';
-import type { ProbeRequest } from '../src/core/types.js';
+import type { FingerprintBank, ProbeRequest } from '../src/core/types.js';
 import * as bankLoader from '../src/data/bank_loader.js';
 import { collectionBank, forceCutoffs, openEnvelopes, overlappingBank, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
 
@@ -408,8 +408,8 @@ describe('CLI bank selection', () => {
 
   describe('recorded collection settings', () => {
     const bodies: Record<string, unknown>[] = [];
-    const probe = async (...args: string[]) => {
-      vi.spyOn(bankLoader, 'defaultBank').mockImplementation(collectionBank);
+    const probe = async (bank: () => FingerprintBank, ...args: string[]) => {
+      vi.spyOn(bankLoader, 'defaultBank').mockImplementation(bank);
       vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
       bodies.length = 0;
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
@@ -420,21 +420,33 @@ describe('CLI bank selection', () => {
     };
 
     it("applies a matching model's recorded budget and token-limit field", async () => {
-      await probe('--model', 'vendor/synthetic-17');
+      await probe(collectionBank, '--model', 'vendor/synthetic-17');
       expect(bodies[0]).toMatchObject({ max_completion_tokens: 4096 });
       expect(bodies[0]).not.toHaveProperty('max_tokens');
-      expect(stderr).toContain("using synthetic-17's collection settings from the bank: --max-tokens 4096, --token-limit-field max_completion_tokens.");
+      expect(stderr).toContain("using synthetic-17's collection settings from the bank: --max-tokens 4096, --token-limit-field max_completion_tokens. Pass them yourself to override; a large budget can also need a longer --timeout.");
     });
 
     it('keeps explicit options and only notes a different API format', async () => {
-      await probe('--model', 'synthetic-17', '--api-format', 'responses', '--max-tokens', '1000');
+      await probe(collectionBank, '--model', 'synthetic-17', '--api-format', 'responses', '--max-tokens', '1000');
       expect(bodies[0]).toMatchObject({ max_output_tokens: 1000 });
       expect(stderr).toContain('the bank collected synthetic-17 through Chat Completions; add --provider openai --api-format chat-completions to match it.');
       expect(stderr).not.toContain('collection settings from the bank');
     });
 
+    it("notes that matching an Anthropic Messages reference changes the endpoint's authentication", async () => {
+      const messagesBank = () => {
+        const bank = collectionBank();
+        bank.models[1]!.collection = { ...bank.models[0]!.collection!, provider: 'openrouter', route: 'anthropic/synthetic-287', apiFormat: 'messages', tokenLimitField: 'max_tokens', maxTokens: 2048 };
+        return bank;
+      };
+      await probe(messagesBank, '--model', 'anthropic/synthetic-287');
+      // The budget still applies; the token-limit field does not, because the probe uses Chat Completions.
+      expect(bodies[0]).toMatchObject({ max_tokens: 2048 });
+      expect(stderr).toContain("the bank collected synthetic-287 through Anthropic Messages; add --provider anthropic to match it, if the endpoint accepts Anthropic's x-api-key authentication.");
+    });
+
     it('leaves a model without collection settings at the default budget', async () => {
-      await probe('--model', 'synthetic-287');
+      await probe(collectionBank, '--model', 'synthetic-287');
       // 128 × 5 + 64.
       expect(bodies[0]).toMatchObject({ max_tokens: 704 });
       expect(stderr).not.toContain('collection settings from the bank');

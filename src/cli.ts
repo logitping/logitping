@@ -107,8 +107,11 @@ const VENDOR_KEYS = {
 const FORMAT_NAMES: Readonly<Record<CollectionSettings['apiFormat'], string>> = {
   'chat-completions': 'Chat Completions', responses: 'Responses', messages: 'Anthropic Messages',
 };
-const FORMAT_FLAGS: Readonly<Record<CollectionSettings['apiFormat'], string>> = {
-  'chat-completions': '--provider openai --api-format chat-completions', responses: '--provider openai --api-format responses', messages: '--provider anthropic',
+/** How to match a recorded format; --provider anthropic also switches to Anthropic's x-api-key header. */
+const FORMAT_HINTS: Readonly<Record<CollectionSettings['apiFormat'], string>> = {
+  'chat-completions': 'add --provider openai --api-format chat-completions to match it.',
+  responses: 'add --provider openai --api-format responses to match it.',
+  messages: "add --provider anthropic to match it, if the endpoint accepts Anthropic's x-api-key authentication.",
 };
 
 /**
@@ -128,12 +131,14 @@ export function applyCollectionSettings(options: Pick<Options, 'model' | 'provid
   }
   const format = options.provider === 'anthropic' ? 'messages' : options.apiFormat === 'responses' ? 'responses' : 'chat-completions';
   if (format !== collection.apiFormat) {
-    notes.push(`the bank collected ${id} through ${FORMAT_NAMES[collection.apiFormat]}; add ${FORMAT_FLAGS[collection.apiFormat]} to match it.`);
+    notes.push(`the bank collected ${id} through ${FORMAT_NAMES[collection.apiFormat]}; ${FORMAT_HINTS[collection.apiFormat]}`);
   } else if (options.tokenLimitField === undefined) {
     options.tokenLimitField = collection.tokenLimitField;
     applied.push(`--token-limit-field ${collection.tokenLimitField}`);
   }
-  if (applied.length) notes.unshift(`using ${id}'s collection settings from the bank: ${applied.join(', ')}.`);
+  if (applied.length) {
+    notes.unshift(`using ${id}'s collection settings from the bank: ${applied.join(', ')}. Pass them yourself to override; a large budget can also need a longer --timeout.`);
+  }
   return notes;
 }
 
