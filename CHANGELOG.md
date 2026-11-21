@@ -8,7 +8,7 @@
 
 ### Documentation
 
-- The README, bank status and methodology now report the first independent results for the default bank: on 460 runs of 10 enrolled models from other collections, 152 named correctly, none wrongly, and 303 `INCONCLUSIVE`. They also state that its distance envelopes rarely reject unenrolled models, which rejected 2 of 225 runs of four never-enrolled models.
+- The README, bank status and methodology now report the first independent results for the default bank: on 460 runs of 10 enrolled models from other collections, 152 named correctly, none wrongly, and 303 `INCONCLUSIVE`. They also state that its distance envelopes rarely reject unenrolled models, which rejected 2 of 225 runs of the four models removed in `0.7.0`.
 
 ## 0.7.0 — 2026-11-20
 

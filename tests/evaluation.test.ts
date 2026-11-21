@@ -58,6 +58,15 @@ describe('default-bank evaluation', () => {
     } }]);
   });
 
+  it("scores an enrolled model whose references name another corpus, inside a bank's own corpus", async () => {
+    // As in corpus 163709a6: the bank's own for some models, independent for another enrolled model.
+    const mixed = { ...bank, models: bank.models.map((entry) => entry.id !== 'synthetic-150' ? entry
+      : { ...entry, provenance: `SYNTHETIC TEST FIXTURE; corpus sha256:${'0'.repeat(64)}; no real model measurements` }) };
+    const results = await evaluateDefaultBank(mixed, [{ digest: ownDigest, corpus: own }]);
+    expect(results.enrolled).toEqual([{ corpus: ownDigest, models: { 'synthetic-150': tally({ runs: 5, correct: 5 }) } }]);
+    expect(results.labelRemoved).toEqual([{ corpus: ownDigest, models: { 'synthetic-150': tally({ runs: 5, unknown: 5 }) } }]);
+  });
+
   it("scores never-enrolled models from every corpus, including a bank's own", async () => {
     expect((await evaluate()).neverEnrolled).toEqual([
       { corpus: ownDigest, models: { 'synthetic-200': tally({ runs: 5, unknown: 5 }) } },
@@ -204,6 +213,7 @@ describe('rendered report', () => {
   });
 
   it('prints No runs. for an empty section', () => {
-    expect(markdown).toContain('### Models the bank never enrolled\n\nNo runs.\n');
+    expect(markdown).toContain('### Models the bank does not enroll\n\nNo runs.\n');
+    expect(markdown).not.toContain('never enrolled');
   });
 });

@@ -292,12 +292,12 @@ export function renderEvaluationReport(report: EvaluationReport): string {
       (t: StatusTally) => [t.runs, t.correct, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
     section('### Same runs, tested model removed', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.labelRemoved,
       (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
-    section('### Models the bank never enrolled', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.neverEnrolled,
+    section('### Models the bank does not enroll', table([...status, 'Named', 'INCONCLUSIVE', 'UNKNOWN_MODEL'], defaults.neverEnrolled,
       (t: StatusTally) => [t.runs, named(t.wrong), t.inconclusive, t.unknown], sumStatus)),
     `## Pooled bank: ${pooled.requestsPerProbe} requests per probe, ${pooled.groupings} groupings`,
     section('### Enrolled models, runs from other collections', table([...sets, 'Correct', 'Wrong', 'Several', 'None', 'Stopped'], pooled.enrolled,
       (t: SetTally) => [t.probes, t.correct, named(t.wrong), t.several, t.none, t.stopped], sumSets)),
-    section('### Models the bank never enrolled', table([...sets, 'Named', 'Several', 'None', 'Stopped'], pooled.neverEnrolled,
+    section('### Models the bank does not enroll', table([...sets, 'Named', 'Several', 'None', 'Stopped'], pooled.neverEnrolled,
       (t: SetTally) => [t.probes, named(t.wrong), t.several, t.none, t.stopped], sumSets)),
   ];
   return `${parts.join('\n\n')}\n`;

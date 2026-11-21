@@ -35,9 +35,9 @@ try {
   console.log(`Read ${report.corpora.length} corpora.`);
   console.log(`Default bank, enrolled: ${sum(defaults.enrolled, 'runs')} runs, ${sum(defaults.enrolled, 'correct')} correct, ${sum(defaults.enrolled, 'wrong')} wrong, ${status(defaults.enrolled)}`);
   console.log(`Default bank, tested model removed: ${sum(defaults.labelRemoved, 'runs')} runs, ${sum(defaults.labelRemoved, 'wrong')} named, ${status(defaults.labelRemoved)}`);
-  console.log(`Default bank, never enrolled: ${sum(defaults.neverEnrolled, 'runs')} runs, ${sum(defaults.neverEnrolled, 'wrong')} named, ${status(defaults.neverEnrolled)}`);
+  console.log(`Default bank, not enrolled: ${sum(defaults.neverEnrolled, 'runs')} runs, ${sum(defaults.neverEnrolled, 'wrong')} named, ${status(defaults.neverEnrolled)}`);
   console.log(`Pooled bank, enrolled: ${sum(pooled.enrolled, 'probes')} probes, ${sum(pooled.enrolled, 'correct')} correct, ${sum(pooled.enrolled, 'wrong')} wrong, ${sets(pooled.enrolled)}`);
-  console.log(`Pooled bank, never enrolled: ${sum(pooled.neverEnrolled, 'probes')} probes, ${sum(pooled.neverEnrolled, 'wrong')} named, ${sets(pooled.neverEnrolled)}`);
+  console.log(`Pooled bank, not enrolled: ${sum(pooled.neverEnrolled, 'probes')} probes, ${sum(pooled.neverEnrolled, 'wrong')} named, ${sets(pooled.neverEnrolled)}`);
   console.log('Wrote docs/evaluation.json and docs/evaluation.md.');
 } catch (error) {
   console.error(error instanceof Error ? error.message : 'Bank evaluation failed');

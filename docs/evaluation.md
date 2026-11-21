@@ -74,7 +74,7 @@ Each bundled bank is scored on every stored run it was not built from, with the 
 | `73559ea673d1` | claude-fable-5 | 40 | 10 (claude-fable-5.1 10) | 30 | 0 |
 | **Total** | | 460 | 18 (claude-fable-5.1 10, claude-fable-5 8) | 413 | 29 |
 
-### Models the bank never enrolled
+### Models the bank does not enroll
 
 | Corpus | Model | Runs | Named | INCONCLUSIVE | UNKNOWN_MODEL |
 | --- | --- | --- | --- | --- | --- |
@@ -104,7 +104,7 @@ Each bundled bank is scored on every stored run it was not built from, with the 
 | `bbd00932f1a8` | gpt-6-astra | 50 | 12 | 13 (gpt-6.1-sol 13) | 13 | 12 | 0 |
 | **Total** | | 300 | 116 | 42 (gpt-6-astra 29, gpt-6.1-sol 13) | 103 | 39 | 0 |
 
-### Models the bank never enrolled
+### Models the bank does not enroll
 
 | Corpus | Model | Probes | Named | Several | None | Stopped |
 | --- | --- | --- | --- | --- | --- | --- |

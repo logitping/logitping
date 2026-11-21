@@ -11,7 +11,7 @@ The stored corpora already hold runs that the bundled banks were not built from:
 - runs of enrolled models from other collections, such as the 2026-10-11 OpenRouter `research-512` corpus and the superseded OpenRouter GPT runs of 2026-10-03;
 - runs of the four models removed in `0.7.0`, which neither bank enrolls.
 
-An offline review on 2026-11-21 scored them with the production engine. The default bank's distance envelopes rejected only 2 of 225 runs of never-enrolled models, while the README describes `UNKNOWN_MODEL` without saying how rare it is.
+An offline review on 2026-11-21 scored them with the production engine. The default bank's distance envelopes rejected only 2 of 225 runs of the four models removed in `0.7.0`, while the README describes `UNKNOWN_MODEL` without saying how rare it is.
 
 This work turns that review into a maintained command whose output is committed with each bank, and corrects the documentation. Item 3 of the plan (candidates and equivalence classes) will be judged against this report.
 
@@ -93,7 +93,7 @@ The copy below is fixed. Numbers come from the generated report and must equal t
 
 **`README.md`: replace the paragraph that begins "A local replay of 65 threshold-calibration runs" with:**
 
-> On 460 stored runs of 10 enrolled models from collections the bundled bank was not built from, it named 152 correctly and none wrongly; 303 were `INCONCLUSIVE` and 5 `UNKNOWN_MODEL`. With the tested model removed from the bank, 18 runs were named as another model, all between `claude-fable-5` and `claude-fable-5.1`. Of 225 runs of four models the bank never enrolled, none was named and only 2 were rejected as `UNKNOWN_MODEL`, so an `INCONCLUSIVE` result does not show that the endpoint runs an enrolled model. **The 460 runs came through OpenRouter, eight days to five weeks from their references; this is not an accuracy estimate for arbitrary endpoints.** See the [evaluation report](docs/evaluation.md) and the [evaluation notes](docs/bank.md#evaluation-status).
+> On 460 stored runs of 10 enrolled models from collections the bundled bank was not built from, it named 152 correctly and none wrongly; 303 were `INCONCLUSIVE` and 5 `UNKNOWN_MODEL`. With the tested model removed from the bank, 18 runs were named as another model, all between `claude-fable-5` and `claude-fable-5.1`. Of 225 runs of the four models removed from the bank in `0.7.0`, none was named and only 2 were rejected as `UNKNOWN_MODEL`, so an `INCONCLUSIVE` result does not show that the endpoint runs an enrolled model. **The 460 runs came through OpenRouter, eight days to five weeks from their references; this is not an accuracy estimate for arbitrary endpoints.** See the [evaluation report](docs/evaluation.md) and the [evaluation notes](docs/bank.md#evaluation-status).
 
 **`docs/bank.md`: replace the first paragraph under "## Evaluation status" with:**
 
@@ -103,11 +103,11 @@ The copy below is fixed. Numbers come from the generated report and must equal t
 > | --- | --- | --- | --- | --- | --- |
 > | Enrolled models | 460 | 152 | 0 | 303 | 5 |
 > | Same runs, tested model removed | 460 | Not applicable | 18 | 413 | 29 |
-> | Models never enrolled | 225 | Not applicable | 0 | 223 | 2 |
+> | Models removed in `0.7.0` | 225 | Not applicable | 0 | 223 | 2 |
 >
 > - The GPT runs test references across provider and date, because the references came directly from OpenAI on 2026-11-06. `gpt-6-luna` was named correctly in all 55 of its runs, `gpt-6-sol` in 4 of 55, and `gpt-6.1-sol` and `gpt-6-astra` in none of 110.
 > - The 18 wrong names with the tested model removed were all between `claude-fable-5` and `claude-fable-5.1`.
-> - The distance envelopes rarely reject a run. All 29 rejections with the tested model removed were `claude-sonnet-5` runs, and only 2 of 225 runs of never-enrolled models were rejected. An unenrolled model therefore usually returns `INCONCLUSIVE`, like an enrolled model the bank cannot separate from its neighbors.
+> - The distance envelopes rarely reject a run. All 29 rejections with the tested model removed were `claude-sonnet-5` runs, and only 2 of 225 runs of the removed models were rejected. An unenrolled model therefore usually returns `INCONCLUSIVE`, like an enrolled model the bank cannot separate from its neighbors.
 >
 > This is still not an estimate for arbitrary endpoints: the runs share providers with the references, cover 10 of the 18 models, and were not streamed. There is no estimate of latency savings. Keep early stopping disabled until independent sequential evaluation supports enabling it.
 >
@@ -119,11 +119,11 @@ The copy below is fixed. Numbers come from the generated report and must equal t
 
 **`docs/bank.md`: insert this paragraph directly after that one:**
 
-> The four models removed in `0.7.0` give an open-set test that no pooled bank was fitted to: 350 probes from their stored runs, 50 per model and collection. The current bank named a model in 51 of them, always a GPT model, `gpt-6-sol` in 41 and `gpt-6.1-terra` in 10, and returned no candidate in the other 299. The rate depends on the collection: `gpt-5.6-terra` was named in 3 of 50 probes of the 2026-10-11 OpenRouter runs and in 21 of 50 of the 2026-11-06 OpenAI runs. `gemini-3.8-flash` was never named. See the [evaluation report](evaluation.md).
+> The four models removed in `0.7.0` give an open-set test of the current pooled bank, which was refitted without them; the pooled banks of earlier releases enrolled them from these same runs. There are 350 probes from their stored runs, 50 per model and collection. The current bank named a model in 51 of them, always a GPT model, `gpt-6-sol` in 41 and `gpt-6.1-terra` in 10, and returned no candidate in the other 299. The rate depends on the collection: `gpt-5.6-terra` was named in 3 of 50 probes of the 2026-10-11 OpenRouter runs and in 21 of 50 of the 2026-11-06 OpenAI runs. `gemini-3.8-flash` was never named. See the [evaluation report](evaluation.md).
 
 **`docs/methodology.md`: append to the paragraph that begins "OOD rejection requires":**
 
-> In the [independent evaluation](evaluation.md), the envelopes rejected only 2 of 225 runs of models the bundled bank never enrolled; most unenrolled models return `INCONCLUSIVE`, not `UNKNOWN_MODEL`.
+> In the [independent evaluation](evaluation.md), the envelopes rejected only 2 of 225 runs of the four models removed from the bundled bank in `0.7.0`; most unenrolled models return `INCONCLUSIVE`, not `UNKNOWN_MODEL`.
 
 **`docs/bank-maintenance.md`: add a final section:**
 
@@ -147,7 +147,11 @@ The copy below is fixed. Numbers come from the generated report and must equal t
 >
 > ### Documentation
 >
-> - The README, bank status and methodology now report the first independent results for the default bank: on 460 runs of 10 enrolled models from other collections, 152 named correctly, none wrongly, and 303 `INCONCLUSIVE`. They also state that its distance envelopes rarely reject unenrolled models, which rejected 2 of 225 runs of four never-enrolled models.
+> - The README, bank status and methodology now report the first independent results for the default bank: on 460 runs of 10 enrolled models from other collections, 152 named correctly, none wrongly, and 303 `INCONCLUSIVE`. They also state that its distance envelopes rarely reject unenrolled models, which rejected 2 of 225 runs of the four models removed in `0.7.0`.
+
+## Erratum (2026-11-21, final review)
+
+The documentation copy above originally said the removed models were "never enrolled" and that "no pooled bank was fitted to" their runs. Both were wrong: the `0.6.0` banks enrolled all four, the pooled one from these same corpora. The copy now names them as removed in `0.7.0`, and the report headings read "Models the bank does not enroll". The JSON field keeps its name, `neverEnrolled`.
 
 ## Out of scope
 
