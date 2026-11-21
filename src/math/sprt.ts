@@ -13,6 +13,8 @@ export interface SequentialDecision {
   threshold: number;
   /** Equal-prior, enrolled-model-relative weights, not measured identity accuracy. */
   weights: Record<string, number>;
+  /** Each hypothesis's summed log likelihood of the observations so far. */
+  logLikelihoods: Record<string, number>;
 }
 
 /** Observations before the default test accepts any decision; calibrated banks need at least this many. */
@@ -72,6 +74,7 @@ export class SequentialTest {
       logLikelihoodRatio: gap,
       threshold: this.threshold,
       weights: Object.fromEntries(this.hypotheses.map((h, i) => [h.id, exp[i]! / sum])),
+      logLikelihoods: Object.fromEntries(this.hypotheses.map((h, i) => [h.id, this.scores[i]!])),
     };
   }
 }

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { main, resolveApiKey } from '../src/cli.js';
 import type { ProbeRequest } from '../src/core/types.js';
 import * as bankLoader from '../src/data/bank_loader.js';
-import { forceCutoffs, openEnvelopes, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
+import { forceCutoffs, openEnvelopes, overlappingBank, syntheticBank, syntheticEnrollment, syntheticPooledBank, syntheticRun } from './fixtures.js';
 
 const fake = vi.hoisted(() => ({
   requests: [] as ProbeRequest[],
@@ -395,6 +395,15 @@ describe('CLI bank selection', () => {
     expect(JSON.parse(stdout)).toMatchObject({ status: 'ERROR', error: expect.stringContaining(message) });
     expect(fetch).not.toHaveBeenCalled();
     expect(fake.requests).toHaveLength(0);
+  });
+
+  it('prints the candidates of an inconclusive single-request probe', async () => {
+    const path = join(directory, 'overlapping-bank.json');
+    await writeFile(path, JSON.stringify(overlappingBank()));
+    vi.stubEnv('LOGITPING_API_KEY', 'tool-key');
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => sse('10 '.repeat(128)));
+    await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--bank', path, '--no-tokenizer', '--no-interactive']);
+    expect(stdout).toContain('Inconclusive, consistent with: model-a, model-b');
   });
 
   it('strips bidirectional controls from streamed model text', async () => {

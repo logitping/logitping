@@ -8,7 +8,7 @@ import { defaultBank, loadBank, validateBank } from '../src/data/bank_loader.js'
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import * as bankLoader from '../src/data/bank_loader.js';
 import { IntegerOutputError, IntegerStreamParser } from '../src/probes/integer_stream.js';
-import { MemoryTransport, syntheticBank, uncalibratedBank } from './fixtures.js';
+import { MemoryTransport, openEnvelopes, overlappingBank, syntheticBank, uncalibratedBank } from './fixtures.js';
 
 describe('strict streaming integer parser', () => {
   it('handles every chunk boundary identically', () => {
@@ -99,7 +99,29 @@ describe('classification pipeline', () => {
     expect(result.earlyStopped).toBe(true);
     expect(result.sampleBudgetSaved).toBe(0.5);
     expect(result.confidence).toBeGreaterThan(0.995);
+    expect(result.candidates).toEqual(['synthetic-17']);
+    expect(result.warnings.join(' ')).not.toContain('Candidates are enrolled models only');
     expect(transport.closed && transport.aborted).toBe(true);
+  });
+  it('lists the models the sequential test cannot reject, most likely first', async () => {
+    const result = await fingerprint(new MemoryTransport(Array<string>(128).fill('10 ')), { bank: overlappingBank(), tokenizerProbe: false });
+    expect(result.status).toBe('INCONCLUSIVE');
+    expect(result.candidates).toEqual(['model-a', 'model-b']);
+    // An unenrolled model also gets candidates; the result itself must say so, not only the docs.
+    expect(result.warnings).toContain('Candidates are enrolled models only: an unenrolled model also gets candidates, so they do not show that the endpoint runs one of them.');
+  });
+  it('keeps bank order between equally likely candidates', async () => {
+    // Two models enrolled on identical runs have bit-identical likelihoods, so only bank order separates them.
+    const run = [...Array<number>(64).fill(10), ...Array<number>(64).fill(20)];
+    const twins = (order: string[]) => openEnvelopes(createFingerprintBank({
+      source: 'SYNTHETIC TEST FIXTURE; no real model measurements', checkpoints: [64, 128],
+      protocol: { id: 'integer-v1', targetSamples: 128, language: 'en', temperature: null, transport: 'openai' },
+      models: order.map((id) => ({ id, family: 'synthetic', training: [run, run, run], validation: [run, run] })),
+    }));
+    for (const order of [['twin-x', 'twin-y'], ['twin-y', 'twin-x']]) {
+      const result = await fingerprint(new MemoryTransport(Array<string>(128).fill('10 ')), { bank: twins(order), tokenizerProbe: false });
+      expect(result.candidates).toEqual(order);
+    }
   });
   it('does not accept high closed-set confidence when OOD rejects it', async () => {
     const values = [...Array<string>(12).fill('17 '), ...Array<string>(116).fill('100 ')];
@@ -108,6 +130,7 @@ describe('classification pipeline', () => {
     expect(result.confidence).toBeNull();
     expect(result.scores.every((score) => score.weight === null)).toBe(true);
     expect(result.earlyStopped).toBe(false);
+    expect(result.candidates).toEqual([]);
   });
   it('supports full-budget testing and refuses message-level savings claims', async () => {
     for (const granularity of ['token', 'message'] as const) {
@@ -146,6 +169,7 @@ describe('classification pipeline', () => {
     const result = await fingerprint(new MemoryTransport(['17 '.repeat(70)]), { bank: syntheticBank(), tokenizerProbe: false, earlyStopping: false });
     expect(result.status).toBe('INCONCLUSIVE');
     expect(result.evaluatedSamples).toBe(0);
+    expect(result).not.toHaveProperty('candidates');
   });
   it('fails protocol mismatches before contacting the endpoint', async () => {
     const transport = new MemoryTransport(['17 '.repeat(128)]);
@@ -221,6 +245,7 @@ describe('classification pipeline', () => {
     });
     expect(result.samples).toHaveLength(128);
     expect(result.scores.find((score) => score.id === 'synthetic-17')?.weight).toBeGreaterThan(0.995);
+    expect(result.candidates).toEqual(['synthetic-17']);
     expect(result.reason).toContain('has not been validated');
     expect(result.warnings.join(' ')).toContain('early stopping is disabled');
     expect(bank).toEqual(original);
@@ -370,6 +395,7 @@ describe('output budget, deadlines, and single-model banks', () => {
     expect(result.reason).toContain('at least two calibrated reference models');
     expect(result.scores).toEqual([expect.objectContaining({ id: 'only', accepted: true, weight: null })]);
     expect(result.warnings.join(' ')).toContain('enrolls one calibrated model');
+    expect(result).not.toHaveProperty('candidates');
   });
   it('labels protocol mismatches and malformed output with stable error codes', async () => {
     await expect(fingerprint(new MemoryTransport([]), { bank: syntheticBank(), samples: 100 })).rejects.toMatchObject({ code: 'PROTOCOL_MISMATCH' });

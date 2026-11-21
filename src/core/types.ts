@@ -106,7 +106,13 @@ export interface ProbeResult {
   warnings: string[];
   /** Present for opt-in reference comparisons whose transport calibration does not transfer. */
   crossTransport?: { probeTransport: string; bankTransport: FingerprintBank['protocol']['transport'] };
-  /** Pooled banks only, once every request completed: the prediction set, in bank order. */
+  /**
+   * Pooled banks, once every request completed: the prediction set, in bank order; one candidate is a
+   * HEURISTIC_MATCH and none UNKNOWN_MODEL. Single-request banks, whenever the engine scored the
+   * response: enrolled models the sequential test cannot reject against the most likely one and whose
+   * envelope accepts, most likely first, and `[]` for UNKNOWN_MODEL. There the length does not
+   * determine the status: INCONCLUSIVE can list none, one or several. Absent when nothing was scored.
+   */
   candidates?: string[];
   /** Pooled banks only: requests sent for this probe. */
   requests?: number;

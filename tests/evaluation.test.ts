@@ -6,13 +6,13 @@ import {
 } from '../src/data/evaluation.js';
 import { corpusDigest } from '../src/data/gateway_plan.js';
 import { createPooledBank } from '../src/data/pooled_enrollment.js';
-import { forceCutoffs, openEnvelopes, syntheticEnrollment, syntheticRun } from './fixtures.js';
+import { forceCutoffs, openEnvelopes, overlappingBank, syntheticEnrollment, syntheticRun } from './fixtures.js';
 
 const PROTOCOL = { id: 'integer-v1', language: 'en', targetSamples: 128, temperature: null, transport: 'openai' } as const;
 const constant = (value: number, count: number) => Array.from({ length: count }, () => Array<number>(128).fill(value));
 const model = (id: string, value: number, training: number, validation = 0) => ({ id, training: constant(value, training), validation: constant(value, validation) });
 const corpus = (collectedAt: string, models: StoredCorpus['models']): StoredCorpus => ({ collectedAt, protocol: { ...PROTOCOL }, checkpoints: [64, 128], models });
-const tally = (fields: Partial<StatusTally>): StatusTally => ({ runs: 0, correct: 0, wrong: {}, inconclusive: 0, unknown: 0, ...fields });
+const tally = (fields: Partial<StatusTally>): StatusTally => ({ runs: 0, correct: 0, wrong: {}, inconclusive: 0, unknown: 0, listed: 0, empty: 0, candidateCount: 0, multiVendor: 0, ...fields });
 
 // The bank is fitted from `own`, which also holds a model it does not enroll (synthetic-200).
 const own = corpus('2026-01-01T00:00:00.000Z', [model('synthetic-17', 17, 3, 2), model('synthetic-150', 150, 3, 2), model('synthetic-287', 287, 3, 2), model('synthetic-200', 200, 3, 2)]);
@@ -49,12 +49,12 @@ describe('default-bank evaluation', () => {
   it('skips own runs and scores independent runs against the full bank and without their model', async () => {
     const results = await evaluate();
     expect(results.enrolled).toEqual([{ corpus: otherDigest, models: {
-      'synthetic-17': tally({ runs: 2, correct: 2 }),
-      'synthetic-150': tally({ runs: 2, wrong: { 'synthetic-17': 2 } }),
+      'synthetic-17': tally({ runs: 2, correct: 2, listed: 2, candidateCount: 2 }),
+      'synthetic-150': tally({ runs: 2, wrong: { 'synthetic-17': 2 }, candidateCount: 2 }),
     } }]);
     expect(results.labelRemoved).toEqual([{ corpus: otherDigest, models: {
-      'synthetic-17': tally({ runs: 2, unknown: 2 }),
-      'synthetic-150': tally({ runs: 2, wrong: { 'synthetic-17': 2 } }),
+      'synthetic-17': tally({ runs: 2, unknown: 2, empty: 2 }),
+      'synthetic-150': tally({ runs: 2, wrong: { 'synthetic-17': 2 }, candidateCount: 2 }),
     } }]);
   });
 
@@ -63,14 +63,21 @@ describe('default-bank evaluation', () => {
     const mixed = { ...bank, models: bank.models.map((entry) => entry.id !== 'synthetic-150' ? entry
       : { ...entry, provenance: `SYNTHETIC TEST FIXTURE; corpus sha256:${'0'.repeat(64)}; no real model measurements` }) };
     const results = await evaluateDefaultBank(mixed, [{ digest: ownDigest, corpus: own }]);
-    expect(results.enrolled).toEqual([{ corpus: ownDigest, models: { 'synthetic-150': tally({ runs: 5, correct: 5 }) } }]);
-    expect(results.labelRemoved).toEqual([{ corpus: ownDigest, models: { 'synthetic-150': tally({ runs: 5, unknown: 5 }) } }]);
+    expect(results.enrolled).toEqual([{ corpus: ownDigest, models: { 'synthetic-150': tally({ runs: 5, correct: 5, listed: 5, candidateCount: 5 }) } }]);
+    expect(results.labelRemoved).toEqual([{ corpus: ownDigest, models: { 'synthetic-150': tally({ runs: 5, unknown: 5, empty: 5 }) } }]);
+  });
+
+  it('counts candidate lists that span several vendors', async () => {
+    // overlappingBank's model-a and model-b, of different families, both stay within the naming threshold.
+    const tens = corpus('2026-01-04T00:00:00.000Z', [{ id: 'model-a', training: [Array<number>(128).fill(10), Array<number>(128).fill(10)], validation: [] }]);
+    const results = await evaluateDefaultBank(overlappingBank(), [{ digest: corpusDigest(tens), corpus: tens }]);
+    expect(results.enrolled[0]!.models['model-a']).toEqual(tally({ runs: 2, inconclusive: 2, listed: 2, candidateCount: 4, multiVendor: 2 }));
   });
 
   it("scores never-enrolled models from every corpus, including a bank's own", async () => {
     expect((await evaluate()).neverEnrolled).toEqual([
-      { corpus: ownDigest, models: { 'synthetic-200': tally({ runs: 5, unknown: 5 }) } },
-      { corpus: otherDigest, models: { 'synthetic-200': tally({ runs: 2, unknown: 2 }) } },
+      { corpus: ownDigest, models: { 'synthetic-200': tally({ runs: 5, unknown: 5, empty: 5 }) } },
+      { corpus: otherDigest, models: { 'synthetic-200': tally({ runs: 2, unknown: 2, empty: 2 }) } },
     ]);
   });
 });
@@ -93,7 +100,7 @@ const fresh: StoredCorpus = { collectedAt: '2026-01-03T00:00:00.000Z', protocol:
   { id: 'synthetic-never', training: draws(1, 355, 960, 8), validation: [] },
 ] };
 const freshDigest = corpusDigest(fresh);
-const sets = (fields: Partial<SetTally>): SetTally => ({ probes: 0, correct: 0, wrong: {}, several: 0, none: 0, stopped: 0, ...fields });
+const sets = (fields: Partial<SetTally>): SetTally => ({ probes: 0, correct: 0, wrong: {}, several: 0, none: 0, stopped: 0, listed: 0, ...fields });
 
 describe('pooled-bank evaluation', () => {
   const corpora = [{ digest: pooledOwnDigest, corpus: pooledOwn }, { digest: freshDigest, corpus: fresh }];
@@ -116,7 +123,7 @@ describe('pooled-bank evaluation', () => {
     expect(await evaluatePooledBank(pooled([true, false, false]), corpora, 2)).toEqual({
       groupings: 2, requestsPerProbe: 4,
       enrolled: [{ corpus: freshDigest, models: {
-        'synthetic-1-120': sets({ probes: 4, correct: 4 }),
+        'synthetic-1-120': sets({ probes: 4, correct: 4, listed: 4 }),
         'synthetic-118-237': sets({ probes: 4, wrong: { 'synthetic-1-120': 4 } }),
       } }],
       neverEnrolled: [{ corpus: freshDigest, models: { 'synthetic-never': sets({ probes: 4, wrong: { 'synthetic-1-120': 4 } }) } }],
@@ -124,7 +131,7 @@ describe('pooled-bank evaluation', () => {
   });
 
   it('counts several candidates and empty sets', async () => {
-    expect((await evaluatePooledBank(pooled([true, true, false]), corpora, 2)).enrolled[0]!.models['synthetic-1-120']).toEqual(sets({ probes: 4, several: 4 }));
+    expect((await evaluatePooledBank(pooled([true, true, false]), corpora, 2)).enrolled[0]!.models['synthetic-1-120']).toEqual(sets({ probes: 4, several: 4, listed: 4 }));
     expect((await evaluatePooledBank(pooled([false, false, false]), corpora, 2)).enrolled[0]!.models['synthetic-1-120']).toEqual(sets({ probes: 4, none: 4 }));
   });
 
@@ -148,7 +155,7 @@ const input = (corpora: unknown[]) => ({
 describe('evaluation report', () => {
   it('records both banks by file and SHA-256, and corpora in collection order', async () => {
     const report = await evaluateBanks(input([other, own, fresh]));
-    expect(report.schemaVersion).toBe(1);
+    expect(report.schemaVersion).toBe(2);
     expect(report.banks.default).toEqual({ file: 'src/data/default_bank.json', sha256: sha256(JSON.stringify(bank)), models: 3 });
     expect(report.corpora.map((entry) => entry.sha256)).toEqual([ownDigest, otherDigest, freshDigest]);
     expect(report.corpora[0]).toEqual({
@@ -179,17 +186,17 @@ describe('evaluation report', () => {
 describe('rendered report', () => {
   const C = 'c'.repeat(64);
   const report: EvaluationReport = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     banks: { default: { file: 'src/data/default_bank.json', sha256: 'a'.repeat(64), models: 2 }, pooled: { file: 'src/data/pooled_bank.json', sha256: 'b'.repeat(64), models: 2 } },
     corpora: [{ sha256: C, collectedAt: '2026-10-11T02:51:23.401Z', targetSamples: 512, models: ['m1', 'm2'] }],
     default: {
-      enrolled: [{ corpus: C, models: { m1: { runs: 3, correct: 1, wrong: { m3: 1, m2: 1 }, inconclusive: 1, unknown: 0 } } }],
-      labelRemoved: [{ corpus: C, models: { m1: { runs: 3, correct: 0, wrong: { m2: 2 }, inconclusive: 0, unknown: 1 } } }],
+      enrolled: [{ corpus: C, models: { m1: { runs: 3, correct: 1, wrong: { m3: 1, m2: 1 }, inconclusive: 1, unknown: 0, listed: 2, empty: 0, candidateCount: 5, multiVendor: 1 } } }],
+      labelRemoved: [{ corpus: C, models: { m1: { runs: 3, correct: 0, wrong: { m2: 2 }, inconclusive: 0, unknown: 1, listed: 0, empty: 1, candidateCount: 4, multiVendor: 0 } } }],
       neverEnrolled: [],
     },
     pooled: {
       groupings: 10, requestsPerProbe: 8, enrolled: [],
-      neverEnrolled: [{ corpus: C, models: { m9: { probes: 50, correct: 0, wrong: { m1: 3 }, several: 0, none: 47, stopped: 0 } } }],
+      neverEnrolled: [{ corpus: C, models: { m9: { probes: 50, correct: 0, wrong: { m1: 3 }, several: 0, none: 47, stopped: 0, listed: 0 } } }],
     },
   };
   const markdown = renderEvaluationReport(report);
@@ -205,9 +212,9 @@ describe('rendered report', () => {
     for (const line of [
       '| Default | `src/data/default_bank.json` | `' + 'a'.repeat(64) + '` | 2 |',
       '| `cccccccccccc` | 2026-10-11 | 512 | m1, m2 |',
-      '| `cccccccccccc` | m1 | 3 | 1 | 2 (m2 1, m3 1) | 1 | 0 |',
-      '| **Total** | | 3 | 1 | 2 (m2 1, m3 1) | 1 | 0 |',
-      '| `cccccccccccc` | m1 | 3 | 2 (m2 2) | 0 | 1 |',
+      '| `cccccccccccc` | m1 | 3 | 1 | 2 (m2 1, m3 1) | 1 | 0 | 2 | 1.7 | 1 |',
+      '| **Total** | | 3 | 1 | 2 (m2 1, m3 1) | 1 | 0 | 2 | 1.7 | 1 |',
+      '| `cccccccccccc` | m1 | 3 | 2 (m2 2) | 0 | 1 | 1 | 1.3 | 0 |',
       '| `cccccccccccc` | m9 | 50 | 3 (m1 3) | 0 | 47 | 0 |',
     ]) expect(lines).toContain(line);
   });

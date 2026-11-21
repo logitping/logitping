@@ -96,6 +96,13 @@ describe('sequential test', () => {
     expect(result.weights.a).toBeGreaterThan(0.995);
     expect(result.threshold).toBeCloseTo(Math.log(200));
   });
+  it("reports each hypothesis's summed log likelihood", () => {
+    const test = new SequentialTest([{ id: 'a', probabilities: [0.75, 0.25] }, { id: 'b', probabilities: [0.25, 0.75] }]);
+    test.update(0); test.update(0); test.update(1);
+    const { logLikelihoods } = test.snapshot();
+    expect(logLikelihoods.a).toBeCloseTo(2 * Math.log(0.75) + Math.log(0.25), 12);
+    expect(logLikelihoods.b).toBeCloseTo(2 * Math.log(0.25) + Math.log(0.75), 12);
+  });
   it('does not force a decision for identical distributions', () => {
     const test = new SequentialTest([{ id: 'a', probabilities: [0.5, 0.5] }, { id: 'b', probabilities: [0.5, 0.5] }]);
     for (let i = 0; i < 1000; i++) test.update(i % 2);
