@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FingerprintBank } from '../src/core/types.js';
 import { loadBank } from '../src/data/bank_loader.js';
 import { collectionFetch } from '../src/data/collection_fetch.js';
+import { parseCollectionSettings } from '../src/data/collection_settings.js';
 import { createFingerprintBank } from '../src/data/enrollment.js';
 import { loadGatewayBankConfig, parseGatewayBankConfig, type GatewayTarget } from '../src/data/gateway_config.js';
 import { planGatewayBankUpdate, readIncrementalBase } from '../src/data/gateway_plan.js';
@@ -528,6 +529,12 @@ describe('Gateway collection and atomic bank updates', () => {
     expect(bank.models[0]!.provenance).toContain('api=responses');
     expect(bank.models[1]!.provenance).toContain('api=messages');
     expect(bank.models[2]!.provenance).toContain('api=chat-completions');
+    expect(bank.models[0]!.collection).toMatchObject({ provider: 'cloudflare', route: 'openai/reference-a', apiFormat: 'responses', tokenLimitField: 'max_output_tokens' });
+    expect(bank.models[1]!.collection).toMatchObject({ apiFormat: 'messages', tokenLimitField: 'max_tokens', maxTokens: 8192 });
+    for (const model of bank.models) {
+      expect(model.collection!.corpusSha256).toBe(/corpus sha256:([0-9a-f]{64});/.exec(model.provenance)![1]);
+      expect(model.collection).toEqual(parseCollectionSettings(model.provenance));
+    }
     expect(fetch).toHaveBeenCalledTimes(15);
     for (const [url, init] of fetch.mock.calls) {
       const headers = new Headers(init?.headers);
@@ -1619,6 +1626,19 @@ describe('Incremental bank updates', () => {
     expect(saved.calibration).toMatchObject({ heldOutRuns: 6, sequentialValidated: false });
     expect(result.bank).toEqual(saved);
     expect(await entries(directory)).toEqual(['default_bank.json']);
+  });
+
+  it("fills a retained model's missing collection settings from its provenance", async () => {
+    // A bank written before models recorded their collection settings.
+    const older = JSON.parse(await readFile(outputPath, 'utf8')) as FingerprintBank;
+    for (const model of older.models) delete model.collection;
+    await writeFile(outputPath, `${JSON.stringify(older, null, 2)}\n`);
+    await updateGatewayBank(withModels([referenceA, referenceB, referenceC]), { outputPath, fetch: routes(), now: later, incremental: true });
+    const saved = await loadBank(outputPath);
+    for (const model of saved.models.slice(0, 2)) {
+      expect(model.collection).toBeDefined();
+      expect(model.collection).toEqual(parseCollectionSettings(model.provenance));
+    }
   });
 
   it('enrolls a Gemini model from Google AI Studio into an existing bank without re-collecting the others', async () => {

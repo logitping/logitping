@@ -8,8 +8,8 @@ Each bundled bank is scored on every stored run it was not built from, with the 
 
 | Bank | File | SHA-256 | Models |
 | --- | --- | --- | --- |
-| Default | `src/data/default_bank.json` | `dac733967ed98d0aae275e2ac13ad06d30ee78654132c04107c8413c89283da9` | 18 |
-| Pooled | `src/data/pooled_bank.json` | `080801f3f2a8162ab4bf91e97d8e2163d3a9eeebe6f9622a631c00e5f44e8f3b` | 18 |
+| Default | `src/data/default_bank.json` | `49769c39d5ce57a654bd825baf86c20ffb0333d42a8bdd660b6a1b2325b8f890` | 18 |
+| Pooled | `src/data/pooled_bank.json` | `d0d0a6c606c381aa547709a84b3222d48a85c1166502df6ef6ae289363bf32e5` | 18 |
 
 ## Corpora
 

@@ -10,6 +10,7 @@ import { errorCode, syncDirectory } from '../util/fs.js';
 import { MAX_PAYLOAD_BYTES } from '../util/validate.js';
 import { loadBank, validateBank } from './bank_loader.js';
 import { collectionFetch } from './collection_fetch.js';
+import { withCollectionSettings } from './collection_settings.js';
 import { createFingerprintBank, VARIANCE_METHOD } from './enrollment.js';
 import { completedRuns, newGatewayCheckpoint, readGatewayCheckpoint, saveGatewayCheckpoint, type GatewayCheckpoint } from './gateway_checkpoint.js';
 import { parseGatewayBankConfig, type GatewayBankConfig, type GatewayTarget } from './gateway_config.js';
@@ -317,6 +318,10 @@ function enroll(config: GatewayBankConfig, state: GatewayCheckpoint, nuisanceDir
     const rejected = shortResponses[index]!;
     const invalid = invalidResponses[index]!;
     model.provenance = `${PROVIDER_LABELS[target.provider]}; ${details}${collectionSettings(target)} cache=${target.provider === 'google' || target.provider === 'openai' ? 'none' : 'bypassed'}; variance=${VARIANCE_METHOD}; retries=${rejected.training + rejected.validation + invalid.training + invalid.validation}; short-training-responses=${rejected.training}; short-validation-responses=${rejected.validation}; invalid-training-responses=${invalid.training}; invalid-validation-responses=${invalid.validation}; maxProbeRetries=${config.maxProbeRetries}`;
+    model.collection = {
+      provider: target.provider, route: target.model, apiFormat: target.apiFormat, tokenLimitField: target.tokenLimitField,
+      maxTokens: target.maxTokens, collectedAt, corpusSha256: digest,
+    };
   }
   return config.requestsPerProbe === undefined ? bank : attachPooledScoring(bank, models, { requestsPerProbe: config.requestsPerProbe });
 }
@@ -324,7 +329,8 @@ function enroll(config: GatewayBankConfig, state: GatewayCheckpoint, nuisanceDir
 /** Keep retained models verbatim, add newly collected ones, and follow configuration order. */
 function merge(config: GatewayBankConfig, plan: BankUpdatePlan, base: FingerprintBank, collected?: FingerprintBank): FingerprintBank {
   const enrolled = new Map([...base.models, ...(collected?.models ?? [])].map((model) => [model.id, model]));
-  const models = config.models.map((target) => enrolled.get(target.id)!);
+  // A retained model from a bank written before `collection` existed gets it from its provenance.
+  const models = config.models.map((target) => withCollectionSettings(enrolled.get(target.id)!));
   return validateBank({
     ...base, protocol: config.protocol, models,
     calibration: {

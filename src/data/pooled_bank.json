@@ -3955,7 +3955,16 @@
           "maxMahalanobis": 297.3338165690465
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6.1-sol; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6.1-sol; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6.1-sol",
+        "apiFormat": "responses",
+        "tokenLimitField": "max_output_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-11-06T15:11:35.516Z",
+        "corpusSha256": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b"
+      }
     },
     {
       "id": "gpt-6.1-terra",
@@ -7899,7 +7908,16 @@
           "maxMahalanobis": 79.57882349351024
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6.1-terra; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6.1-terra; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6.1-terra",
+        "apiFormat": "responses",
+        "tokenLimitField": "max_output_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-11-06T15:11:35.516Z",
+        "corpusSha256": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b"
+      }
     },
     {
       "id": "gpt-6-sol",
@@ -11843,7 +11861,16 @@
           "maxMahalanobis": 273.47709446070223
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6-sol; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=4; short-training-responses=2; short-validation-responses=2; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6-sol; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=4; short-training-responses=2; short-validation-responses=2; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6-sol",
+        "apiFormat": "responses",
+        "tokenLimitField": "max_output_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-11-06T15:11:35.516Z",
+        "corpusSha256": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b"
+      }
     },
     {
       "id": "gpt-6-luna",
@@ -15787,7 +15814,16 @@
           "maxMahalanobis": 294.66649494758286
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6-luna; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=4; short-training-responses=2; short-validation-responses=1; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6-luna; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=4; short-training-responses=2; short-validation-responses=1; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6-luna",
+        "apiFormat": "responses",
+        "tokenLimitField": "max_output_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-11-06T15:11:35.516Z",
+        "corpusSha256": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b"
+      }
     },
     {
       "id": "gpt-6-astra",
@@ -19731,7 +19767,16 @@
           "maxMahalanobis": 318.93546189788844
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6-astra; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_completion_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-06T15:11:35.516Z; integer-v1; corpus sha256:5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b; labels are requested catalog identities, not independent model attestation; model=gpt-6-astra; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_completion_tokens=4096; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6-astra",
+        "apiFormat": "chat-completions",
+        "tokenLimitField": "max_completion_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-11-06T15:11:35.516Z",
+        "corpusSha256": "5472cb6f40f49804d4b314cef8f2d4c95f3aaeb0923c22eb75ece68f5b47435b"
+      }
     },
     {
       "id": "claude-sonnet-5.5",
@@ -23675,7 +23720,16 @@
           "maxMahalanobis": 247.6184878839082
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-sonnet-5.5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=7; short-training-responses=0; short-validation-responses=0; invalid-training-responses=4; invalid-validation-responses=3; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-sonnet-5.5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=7; short-training-responses=0; short-validation-responses=0; invalid-training-responses=4; invalid-validation-responses=3; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-sonnet-5.5",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-10-11T02:51:23.858Z",
+        "corpusSha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf"
+      }
     },
     {
       "id": "claude-opus-5.5",
@@ -27619,7 +27673,16 @@
           "maxMahalanobis": 340.3658127903018
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-opus-5.5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-opus-5.5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-opus-5.5",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-10-11T02:51:23.858Z",
+        "corpusSha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf"
+      }
     },
     {
       "id": "claude-fable-5.1",
@@ -31563,7 +31626,16 @@
           "maxMahalanobis": 272.91867174203355
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-fable-5.1; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-fable-5.1; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-fable-5.1",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-10-11T02:51:23.858Z",
+        "corpusSha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf"
+      }
     },
     {
       "id": "claude-opus-5",
@@ -35507,7 +35579,16 @@
           "maxMahalanobis": 272.6415542430754
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-opus-5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-opus-5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-opus-5",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-10-11T02:51:23.858Z",
+        "corpusSha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf"
+      }
     },
     {
       "id": "claude-sonnet-5",
@@ -39451,7 +39532,16 @@
           "maxMahalanobis": 270.54426646059426
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-sonnet-5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-sonnet-5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-sonnet-5",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-10-11T02:51:23.858Z",
+        "corpusSha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf"
+      }
     },
     {
       "id": "claude-fable-5",
@@ -43395,7 +43485,16 @@
           "maxMahalanobis": 294.8837991015601
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-fable-5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-10-11T02:51:23.858Z; integer-v1; corpus sha256:4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-fable-5; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-fable-5",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-10-11T02:51:23.858Z",
+        "corpusSha256": "4d34afe7497e9d0d83238136885022a808a5c0e6ecfcfc32b7ed5689131f0bbf"
+      }
     },
     {
       "id": "claude-fable-5.2",
@@ -47339,7 +47438,16 @@
           "maxMahalanobis": 297.04245642150386
         }
       ],
-      "provenance": "OpenRouter API; collected 2026-11-11T23:16:14.630Z; integer-v1; corpus sha256:be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-fable-5.2; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenRouter API; collected 2026-11-11T23:16:14.630Z; integer-v1; corpus sha256:be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84; labels are requested catalog identities, not independent model attestation; model=anthropic/claude-fable-5.2; api=messages; stream=false; training=25; validation=15; sampling=first-64; max_tokens=4096; cache=bypassed; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openrouter",
+        "route": "anthropic/claude-fable-5.2",
+        "apiFormat": "messages",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 4096,
+        "collectedAt": "2026-11-11T23:16:14.630Z",
+        "corpusSha256": "be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84"
+      }
     },
     {
       "id": "gemini-4-argon",
@@ -51283,7 +51391,16 @@
           "maxMahalanobis": 395.9305520295093
         }
       ],
-      "provenance": "Google AI Studio Gemini API; collected 2026-11-11T23:16:14.630Z; integer-v1; corpus sha256:be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84; labels are requested catalog identities, not independent model attestation; model=gemini-4-argon; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "Google AI Studio Gemini API; collected 2026-11-11T23:16:14.630Z; integer-v1; corpus sha256:be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84; labels are requested catalog identities, not independent model attestation; model=gemini-4-argon; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "google",
+        "route": "gemini-4-argon",
+        "apiFormat": "chat-completions",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 32768,
+        "collectedAt": "2026-11-11T23:16:14.630Z",
+        "corpusSha256": "be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84"
+      }
     },
     {
       "id": "gemini-4-carbon",
@@ -55227,7 +55344,16 @@
           "maxMahalanobis": 244.305271080913
         }
       ],
-      "provenance": "Google AI Studio Gemini API; collected 2026-11-11T23:16:14.630Z; integer-v1; corpus sha256:be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84; labels are requested catalog identities, not independent model attestation; model=gemini-4-carbon; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "Google AI Studio Gemini API; collected 2026-11-11T23:16:14.630Z; integer-v1; corpus sha256:be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84; labels are requested catalog identities, not independent model attestation; model=gemini-4-carbon; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "google",
+        "route": "gemini-4-carbon",
+        "apiFormat": "chat-completions",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 32768,
+        "collectedAt": "2026-11-11T23:16:14.630Z",
+        "corpusSha256": "be70762f6c14be2256680199954c580c68a426dcb7b3c83b4607bdd89a6eca84"
+      }
     },
     {
       "id": "gemini-4-hydrogen",
@@ -59171,7 +59297,16 @@
           "maxMahalanobis": 296.73693743098295
         }
       ],
-      "provenance": "Google AI Studio Gemini API; collected 2026-11-13T22:42:07.056Z; integer-v1; corpus sha256:6a284c99d6ac48b86c8f87be0c3afe4a8c60265345de70693a5f4d406a448a3a; labels are requested catalog identities, not independent model attestation; model=gemini-4-hydrogen; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=65536; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "Google AI Studio Gemini API; collected 2026-11-13T22:42:07.056Z; integer-v1; corpus sha256:6a284c99d6ac48b86c8f87be0c3afe4a8c60265345de70693a5f4d406a448a3a; labels are requested catalog identities, not independent model attestation; model=gemini-4-hydrogen; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=65536; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "google",
+        "route": "gemini-4-hydrogen",
+        "apiFormat": "chat-completions",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 65536,
+        "collectedAt": "2026-11-13T22:42:07.056Z",
+        "corpusSha256": "6a284c99d6ac48b86c8f87be0c3afe4a8c60265345de70693a5f4d406a448a3a"
+      }
     },
     {
       "id": "gpt-6.2-astra",
@@ -63115,7 +63250,16 @@
           "maxMahalanobis": 339.06844193259815
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-19T01:02:46.297Z; integer-v1; corpus sha256:bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b; labels are requested catalog identities, not independent model attestation; model=gpt-6.2-astra; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-19T01:02:46.297Z; integer-v1; corpus sha256:bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b; labels are requested catalog identities, not independent model attestation; model=gpt-6.2-astra; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=1; short-training-responses=0; short-validation-responses=0; invalid-training-responses=1; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6.2-astra",
+        "apiFormat": "responses",
+        "tokenLimitField": "max_output_tokens",
+        "maxTokens": 32768,
+        "collectedAt": "2026-11-19T01:02:46.297Z",
+        "corpusSha256": "bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b"
+      }
     },
     {
       "id": "gpt-6.2-sol",
@@ -67059,7 +67203,16 @@
           "maxMahalanobis": 90.06956094924628
         }
       ],
-      "provenance": "OpenAI API; collected 2026-11-19T01:02:46.297Z; integer-v1; corpus sha256:bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b; labels are requested catalog identities, not independent model attestation; model=gpt-6.2-sol; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "OpenAI API; collected 2026-11-19T01:02:46.297Z; integer-v1; corpus sha256:bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b; labels are requested catalog identities, not independent model attestation; model=gpt-6.2-sol; api=responses; stream=false; training=25; validation=15; sampling=first-64; max_output_tokens=32768; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "openai",
+        "route": "gpt-6.2-sol",
+        "apiFormat": "responses",
+        "tokenLimitField": "max_output_tokens",
+        "maxTokens": 32768,
+        "collectedAt": "2026-11-19T01:02:46.297Z",
+        "corpusSha256": "bd4f73c0e86eeddd4d5eb4377bf2b67054b25d6dde1e86718a9b745f6161f91b"
+      }
     },
     {
       "id": "gemini-4-neon",
@@ -71003,7 +71156,16 @@
           "maxMahalanobis": 360.79297602833356
         }
       ],
-      "provenance": "Google AI Studio Gemini API; collected 2026-11-19T23:07:21.671Z; integer-v1; corpus sha256:40eb0a8bb730da70fb2d43adbbbd320de9d11842abd024d6ebf695ed27478e99; labels are requested catalog identities, not independent model attestation; model=gemini-4-neon; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=65536; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5"
+      "provenance": "Google AI Studio Gemini API; collected 2026-11-19T23:07:21.671Z; integer-v1; corpus sha256:40eb0a8bb730da70fb2d43adbbbd320de9d11842abd024d6ebf695ed27478e99; labels are requested catalog identities, not independent model attestation; model=gemini-4-neon; api=chat-completions; stream=false; training=25; validation=15; sampling=first-64; max_tokens=65536; cache=none; variance=block-median-shrinkage-v1; retries=0; short-training-responses=0; short-validation-responses=0; invalid-training-responses=0; invalid-validation-responses=0; maxProbeRetries=5",
+      "collection": {
+        "provider": "google",
+        "route": "gemini-4-neon",
+        "apiFormat": "chat-completions",
+        "tokenLimitField": "max_tokens",
+        "maxTokens": 65536,
+        "collectedAt": "2026-11-19T23:07:21.671Z",
+        "corpusSha256": "40eb0a8bb730da70fb2d43adbbbd320de9d11842abd024d6ebf695ed27478e99"
+      }
     }
   ],
   "calibration": {

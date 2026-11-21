@@ -7,5 +7,6 @@ export { corpusDigest, planGatewayBankUpdate, providerLabel, readIncrementalBase
 export { evaluateBanks, renderEvaluationReport, sha256, type EvaluationReport } from './data/evaluation.js';
 export { updateGatewayBank, type BankUpdateOptions, type BankUpdateProgress, type BankUpdateResult, type BankUpdateResume, type BankUpdateRetry } from './data/gateway_update.js';
 export { loadBank } from './data/bank_loader.js';
+export { parseCollectionSettings, withCollectionSettings } from './data/collection_settings.js';
 export { attachPooledScoring } from './data/pooled_enrollment.js';
 export { refitPooledBank, type PooledCollection } from './data/pooled_refit.js';

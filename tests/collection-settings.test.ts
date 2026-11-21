@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { CollectionSettings, ModelFingerprint } from '../src/core/types.js';
-import { validateBank } from '../src/data/bank_loader.js';
+import type { CollectionSettings, FingerprintBank, ModelFingerprint } from '../src/core/types.js';
+import { defaultBank, pooledBank, validateBank } from '../src/data/bank_loader.js';
 import { collectionSettingsFor, parseCollectionSettings, withCollectionSettings } from '../src/data/collection_settings.js';
 import { syntheticBank } from './fixtures.js';
 
@@ -56,5 +56,20 @@ describe('collection settings', () => {
       copy.models[0]!.collection = { ...astra, ...change } as CollectionSettings;
       expect(() => validateBank(copy)).toThrow(/Invalid bank: collection settings/);
     }
+  });
+
+  it("the bundled banks record every model's collection settings", async () => {
+    const banks = [defaultBank(), await pooledBank()];
+    for (const bank of banks) {
+      for (const model of bank.models) {
+        expect(model.collection).toBeDefined();
+        expect(model.collection).toEqual(parseCollectionSettings(model.provenance));
+      }
+    }
+    const of = (bank: FingerprintBank, id: string) => bank.models.find((model) => model.id === id)?.collection;
+    expect(of(banks[0]!, 'gpt-6-astra')).toMatchObject({ apiFormat: 'chat-completions', tokenLimitField: 'max_completion_tokens', maxTokens: 8192 });
+    expect(of(banks[0]!, 'claude-fable-5.2')).toMatchObject({ provider: 'openrouter', route: 'anthropic/claude-fable-5.2', maxTokens: 16384 });
+    expect(of(banks[0]!, 'gemini-4-neon')).toMatchObject({ provider: 'google', maxTokens: 65536 });
+    expect(of(banks[1]!, 'claude-fable-5.2')).toMatchObject({ maxTokens: 4096 });
   });
 });

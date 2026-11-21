@@ -7,6 +7,7 @@ import { loadGatewayBankConfig, parseGatewayBankConfig } from '../src/data/gatew
 import { enrolledAs } from '../src/data/gateway_plan.js';
 import { updateGatewayBank } from '../src/data/gateway_update.js';
 import { refitPooledBank, type PooledCollection } from '../src/data/pooled_refit.js';
+import { parseCollectionSettings } from '../src/data/collection_settings.js';
 
 const keys = { OPENAI_API_KEY: 'sk-test-openai-credential', OPENROUTER_API_KEY: 'sk-or-test-credential', GEMINI_API_KEY: 'test-gemini-credential' };
 const settings = {
@@ -81,6 +82,14 @@ describe('pooled refit from several collections', () => {
       source: expect.stringMatching(/^OpenRouter API and OpenAI API; integer-v1; pooled refit of 2 collections without new requests;/) as string,
       heldOutRuns: 6, sequentialValidated: false,
     });
+  });
+
+  it("fills a reused model's missing collection settings from its provenance", async () => {
+    const { old, fresh } = await collections();
+    for (const model of old.bank.models) delete model.collection;
+    const refit = refitPooledBank(pooledConfig(), [fresh, old]);
+    expect(refit.models[2]!.collection).toBeDefined();
+    expect(refit.models[2]!.collection).toEqual(parseCollectionSettings(old.bank.models[1]!.provenance));
   });
 
   it('chooses each model by its configured route, not by the order of the collections', async () => {

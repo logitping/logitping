@@ -3,12 +3,12 @@
   "banks": {
     "default": {
       "file": "src/data/default_bank.json",
-      "sha256": "dac733967ed98d0aae275e2ac13ad06d30ee78654132c04107c8413c89283da9",
+      "sha256": "49769c39d5ce57a654bd825baf86c20ffb0333d42a8bdd660b6a1b2325b8f890",
       "models": 18
     },
     "pooled": {
       "file": "src/data/pooled_bank.json",
-      "sha256": "080801f3f2a8162ab4bf91e97d8e2163d3a9eeebe6f9622a631c00e5f44e8f3b",
+      "sha256": "d0d0a6c606c381aa547709a84b3222d48a85c1166502df6ef6ae289363bf32e5",
       "models": 18
     }
   },

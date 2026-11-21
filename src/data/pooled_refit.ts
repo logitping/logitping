@@ -1,5 +1,6 @@
 import type { FingerprintBank } from '../core/types.js';
 import { validateBank } from './bank_loader.js';
+import { withCollectionSettings } from './collection_settings.js';
 import type { GatewayBankConfig } from './gateway_config.js';
 import { corpusDigest, enrolledAs, enrolledProvider, providerLabel, sameProtocol } from './gateway_plan.js';
 import { attachPooledScoring, type EnrolledRuns } from './pooled_enrollment.js';
@@ -38,7 +39,7 @@ export function refitPooledBank(config: GatewayBankConfig, collections: readonly
     if (!runs || !model.provenance.includes(`corpus sha256:${corpusDigest(collection.corpus)};`)) throw new Error(`${target.id} was not fitted from its collection's corpus`);
     return { model, runs, collection };
   });
-  const models = selected.map((source) => source.model);
+  const models = selected.map((source) => withCollectionSettings(source.model));
   const used = new Set(selected.map((source) => source.collection)).size;
   const bank = validateBank({
     ...collections[0]!.bank, protocol: config.protocol, models,
