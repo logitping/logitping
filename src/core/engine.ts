@@ -381,7 +381,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       };
       return {
         ...relabel(classification, plan, transport, bank),
-          samples: [...responses.flat(), ...(stopped ?? [])], requestedSamples: plan.count * plan.requests,
+        samples: [...responses.flat(), ...(stopped ?? [])], requestedSamples: plan.count * plan.requests,
         earlyStopped: false, sampleBudgetSaved: 0,
         elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
         tokenizer, warnings, requests: sent,
