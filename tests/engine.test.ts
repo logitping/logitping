@@ -98,7 +98,8 @@ describe('classification pipeline', () => {
     expect(result.samples).toHaveLength(64);
     expect(result.earlyStopped).toBe(true);
     expect(result.sampleBudgetSaved).toBe(0.5);
-    expect(result.confidence).toBeGreaterThan(0.995);
+    expect(result).not.toHaveProperty('confidence');
+    expect(result.scores.find((score) => score.id === 'synthetic-17')?.logLikelihoodGap).toBe(0);
     expect(result.candidates).toEqual(['synthetic-17']);
     expect(result.warnings.join(' ')).not.toContain('Candidates are enrolled models only');
     expect(transport.closed && transport.aborted).toBe(true);
@@ -107,6 +108,11 @@ describe('classification pipeline', () => {
     const result = await fingerprint(new MemoryTransport(Array<string>(128).fill('10 ')), { bank: overlappingBank(), tokenizerProbe: false });
     expect(result.status).toBe('INCONCLUSIVE');
     expect(result.candidates).toEqual(['model-a', 'model-b']);
+    const gap = (id: string) => result.scores.find((score) => score.id === id)?.logLikelihoodGap;
+    expect(gap('model-a')).toBe(0);
+    expect(gap('model-b')).toBeCloseTo(128 * Math.log(192.5 / 189.5), 6);
+    expect(gap('model-c')).toBeGreaterThan(Math.log(400));
+    expect(result).not.toHaveProperty('confidenceMeaning');
     // An unenrolled model also gets candidates; the result itself must say so, not only the docs.
     expect(result.warnings).toContain('Candidates are enrolled models only: an unenrolled model also gets candidates, so they do not show that the endpoint runs one of them.');
   });
@@ -127,8 +133,8 @@ describe('classification pipeline', () => {
     const values = [...Array<string>(12).fill('17 '), ...Array<string>(116).fill('100 ')];
     const result = await fingerprint(new MemoryTransport(values), { bank: syntheticBank(), tokenizerProbe: false });
     expect(result.status).toBe('UNKNOWN_MODEL');
-    expect(result.confidence).toBeNull();
-    expect(result.scores.every((score) => score.weight === null)).toBe(true);
+    expect(result).not.toHaveProperty('confidence');
+    expect(result.scores.every((score) => score.logLikelihoodGap === null)).toBe(true);
     expect(result.earlyStopped).toBe(false);
     expect(result.candidates).toEqual([]);
   });
@@ -160,7 +166,8 @@ describe('classification pipeline', () => {
     const bank = syntheticBank();
     bank.calibration!.sequentialValidated = validated;
     const result = await fingerprint(new MemoryTransport(['17 '.repeat(64)], 'message'), { bank });
-    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, confidence: null, scores: [], evaluatedSamples: 0, earlyStopped: false });
+    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, scores: [], evaluatedSamples: 0, earlyStopped: false });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.reason).toContain('response ended after 64');
     expect(result.reason).toContain('704-token output limit');
     expect(result.warnings.join(' ')).toContain('The response ended after 64 of 128 requested integers (output limit: 704 tokens).');
@@ -186,9 +193,10 @@ describe('classification pipeline', () => {
     const transport = new MemoryTransport(['17 '.repeat(128)], name === 'codex' ? 'message' : 'token', name);
     const result = await fingerprint(transport, { tokenizerProbe: false });
     expect(result).toMatchObject({
-      status: 'UNCALIBRATED', model: null, confidence: null, scores: [], evaluatedSamples: 0,
+      status: 'UNCALIBRATED', model: null, scores: [], evaluatedSamples: 0,
       earlyStopped: false, sampleBudgetSaved: 0,
     });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.reason).toContain(`No calibrated bank for ${name}`);
     expect(result.warnings.join(' ')).toContain(`enrolled through ${name}`);
     expect(result.warnings.join(' ')).not.toContain('uniform priors');
@@ -239,12 +247,13 @@ describe('classification pipeline', () => {
       ...(explicit ? { bank } : {}), tokenizerProbe: false, allowTransportMismatch: true,
     });
     expect(result).toMatchObject({
-      status: 'HEURISTIC_MATCH', model: 'synthetic-17', confidence: null, earlyStopped: false,
+      status: 'HEURISTIC_MATCH', model: 'synthetic-17', earlyStopped: false,
       sampleBudgetSaved: 0, evaluatedSamples: 128,
       crossTransport: { probeTransport: name, bankTransport: 'openai' },
     });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.samples).toHaveLength(128);
-    expect(result.scores.find((score) => score.id === 'synthetic-17')?.weight).toBeGreaterThan(0.995);
+    expect(result.scores.find((score) => score.id === 'synthetic-17')?.logLikelihoodGap).toBe(0);
     expect(result.candidates).toEqual(['synthetic-17']);
     expect(result.reason).toContain('has not been validated');
     expect(result.warnings.join(' ')).toContain('early stopping is disabled');
@@ -264,17 +273,19 @@ describe('classification pipeline', () => {
     const result = await fingerprint(new MemoryTransport(['17 '.repeat(64)], 'message', 'codex'), {
       bank: syntheticBank(), tokenizerProbe: false, allowTransportMismatch: true,
     });
-    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, confidence: null, scores: [], evaluatedSamples: 0, earlyStopped: false });
+    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, scores: [], evaluatedSamples: 0, earlyStopped: false });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.reason).toContain('requires all 128 integers; received 64');
   });
   it('retains reference-envelope rejection when all API models differ from Codex output', async () => {
     const result = await fingerprint(new MemoryTransport(['100 '.repeat(128)], 'message', 'codex'), {
       bank: syntheticBank(), tokenizerProbe: false, allowTransportMismatch: true,
     });
-    expect(result).toMatchObject({ status: 'UNKNOWN_MODEL', model: null, confidence: null, earlyStopped: false });
+    expect(result).toMatchObject({ status: 'UNKNOWN_MODEL', model: null, earlyStopped: false });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.crossTransport).toEqual({ probeTransport: 'codex', bankTransport: 'openai' });
     expect(result.scores).toHaveLength(2);
-    expect(result.scores.every((score) => !score.accepted && score.weight === null)).toBe(true);
+    expect(result.scores.every((score) => !score.accepted && score.logLikelihoodGap === null)).toBe(true);
     expect(result.reason).toContain('Experimental comparison across transports');
   });
   it('does not turn an uncalibrated bank into cross-transport reference measurements', async () => {
@@ -391,9 +402,10 @@ describe('output budget, deadlines, and single-model banks', () => {
       models: [{ id: 'only', family: 'synthetic', training: [run, run, run], validation: [run, run] }],
     });
     const result = await fingerprint(new MemoryTransport(['17 '.repeat(128)]), { bank });
-    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, confidence: null, evaluatedSamples: 128 });
+    expect(result).toMatchObject({ status: 'INCONCLUSIVE', model: null, evaluatedSamples: 128 });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.reason).toContain('at least two calibrated reference models');
-    expect(result.scores).toEqual([expect.objectContaining({ id: 'only', accepted: true, weight: null })]);
+    expect(result.scores).toEqual([expect.objectContaining({ id: 'only', accepted: true, logLikelihoodGap: null })]);
     expect(result.warnings.join(' ')).toContain('enrolls one calibrated model');
     expect(result).not.toHaveProperty('candidates');
   });

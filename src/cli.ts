@@ -203,16 +203,23 @@ function safeJson(value: unknown): string {
   return JSON.stringify(value, null, 2).replace(C1_AND_BIDI, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }
 
+/** A likelihood gap for the readable output: `0.0 nats`, `−2.0 nats`, or `unranked`. */
+function nats(gap: number | null): string {
+  if (gap === null) return 'unranked';
+  const rounded = gap.toFixed(1);
+  return rounded === '0.0' ? '0.0 nats' : `\u2212${rounded} nats`;
+}
+
 function display(result: ProbeResult): void {
   const label = result.status === 'HEURISTIC_MATCH' ? `Heuristic match: ${result.model}`
     : result.candidates && result.candidates.length > 1 ? `Inconclusive, consistent with: ${result.candidates.join(', ')}`
       : result.model ?? result.status;
   process.stdout.write(`\n${pc.bold(label)}\n${result.reason}\n`);
-  if (result.confidence !== null) process.stdout.write(`Nominal model-relative confidence: ${(result.confidence * 100).toFixed(2)}%\n`);
-  for (const score of [...result.scores].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))) {
+  // Most likely first; unranked scores last.
+  for (const score of [...result.scores].sort((a, b) => (a.logLikelihoodGap ?? Infinity) - (b.logLikelihoodGap ?? Infinity))) {
     const sets = score.fit === undefined ? ''
       : ` · fit ${score.fit >= score.fitCutoff! ? 'pass' : 'fail'} · margin ${score.margin! >= score.marginCutoff! ? 'pass' : 'fail'}`;
-    process.stdout.write(`  ${score.id}: ${score.weight === null ? 'unranked' : `${(score.weight * 100).toFixed(2)}%`} · H=${score.hellinger.toFixed(4)} · M=${score.mahalanobis.toFixed(2)} · OOD ${score.accepted ? 'pass' : 'reject'}${sets}\n`);
+    process.stdout.write(`  ${score.id}: ${nats(score.logLikelihoodGap)} · H=${score.hellinger.toFixed(4)} · M=${score.mahalanobis.toFixed(2)} · OOD ${score.accepted ? 'pass' : 'reject'}${sets}\n`);
   }
   process.stdout.write(`${result.samples.length}/${result.requestedSamples} integers${result.requests ? ` in ${result.requests} requests` : ''} · ${result.elapsedMs} ms\n`);
   process.stdout.write(result.earlyStopped

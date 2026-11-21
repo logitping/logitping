@@ -11,7 +11,7 @@ import { LogitpingError } from './errors.js';
 import { classifyPooled } from './pooled.js';
 import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport } from './types.js';
 
-type Classification = Pick<ProbeResult, 'status' | 'model' | 'confidence' | 'reason' | 'scores' | 'evaluatedSamples' | 'candidates'>;
+type Classification = Pick<ProbeResult, 'status' | 'model' | 'reason' | 'scores' | 'evaluatedSamples' | 'candidates'>;
 type RequestOptions = Pick<ProbeRequest, 'timeoutMs' | 'temperature'> & { signal: AbortSignal };
 
 /** Added to inconclusive single-request results that list candidates; the list itself can read as confirmation. */
@@ -91,7 +91,7 @@ export function planProbe(
   }
   const warnings = [
     'Behavioral similarity is not cryptographic provenance; adaptive proxies can imitate these probes.',
-    'Nominal confidence assumes fixed IID categorical distributions. LLM integers are dependent; validate error rates empirically.',
+    'The naming threshold assumes independent integers from fixed distributions; LLM integers are dependent, so validate error rates empirically.',
   ];
   if (incompatibleDefault) warnings.push(`The bundled bank uses ${bank.protocol.transport}. Supply a bank enrolled through ${transport.name} with --bank <path> to enable model identification.`);
   else if (!calibrated.length) warnings.push('This bank has no measured fingerprints; collected samples cannot identify a model.');
@@ -114,7 +114,7 @@ export function planProbe(
 
 function classify(samples: readonly number[], models: ModelFingerprint[], project: Projector, test?: SequentialTest): Classification {
   const unavailable = (status: 'UNCALIBRATED' | 'INCONCLUSIVE', reason: string): Classification => ({
-    status, model: null, confidence: null, reason, scores: [], evaluatedSamples: 0,
+    status, model: null, reason, scores: [], evaluatedSamples: 0,
   });
   if (!models.length) return unavailable('UNCALIBRATED', 'No measured fingerprints are enrolled in this bank');
   if (!models.every((model) => model.profiles.some((profile) => profile.sampleCount === samples.length))) {
@@ -124,30 +124,30 @@ function classify(samples: readonly number[], models: ModelFingerprint[], projec
   const scores: ModelScore[] = models.map((model) => ({
     id: model.id,
     ...assessOOD(features, model.profiles.find((profile) => profile.sampleCount === samples.length)!, project),
-    weight: null,
+    logLikelihoodGap: null,
   }));
   if (!scores.some((score) => score.accepted)) {
     return {
-      status: 'UNKNOWN_MODEL', model: null, confidence: null, reason: 'Outside every enrolled model’s calibrated OOD region', scores, evaluatedSamples: samples.length,
+      status: 'UNKNOWN_MODEL', model: null, reason: 'Outside every enrolled model’s calibrated OOD region', scores, evaluatedSamples: samples.length,
       ...(test ? { candidates: [] } : {}),
     };
   }
   if (!test) {
-    return { status: 'INCONCLUSIVE', model: null, confidence: null, reason: 'Identification needs at least two calibrated reference models; see scores for the OOD verdict', scores, evaluatedSamples: samples.length };
+    return { status: 'INCONCLUSIVE', model: null, reason: 'Identification needs at least two calibrated reference models; see scores for the OOD verdict', scores, evaluatedSamples: samples.length };
   }
   const decision = test.snapshot();
-  for (const score of scores) score.weight = decision.weights[score.id] ?? null;
+  const likelihood = (id: string) => decision.logLikelihoods[id]!;
+  const best = Math.max(...Object.values(decision.logLikelihoods));
+  for (const score of scores) score.logLikelihoodGap = best - likelihood(score.id);
   const winner = scores.find((score) => score.id === decision.winner);
   // Models the sequential test cannot reject against the most likely one, among those whose envelope
   // accepts, most likely first; the stable sort keeps bank order for ties.
-  const likelihood = (id: string) => decision.logLikelihoods[id]!;
-  const best = Math.max(...Object.values(decision.logLikelihoods));
   const candidates = scores.filter((score) => score.accepted && best - likelihood(score.id) < decision.threshold)
     .sort((a, b) => likelihood(b.id) - likelihood(a.id)).map((score) => score.id);
   if (!decision.accepted || !winner?.accepted) {
-    return { status: 'INCONCLUSIVE', model: null, confidence: null, reason: 'Insufficient separation between enrolled models, or likelihood and OOD checks disagree', scores, evaluatedSamples: samples.length, candidates };
+    return { status: 'INCONCLUSIVE', model: null, reason: 'Insufficient separation between enrolled models, or likelihood and OOD checks disagree', scores, evaluatedSamples: samples.length, candidates };
   }
-  return { status: 'IDENTIFIED', model: winner.id, confidence: winner.weight, reason: 'Nominal sequential threshold and calibrated OOD gate passed', scores, evaluatedSamples: samples.length, candidates };
+  return { status: 'IDENTIFIED', model: winner.id, reason: 'Nominal sequential threshold and calibrated OOD gate passed', scores, evaluatedSamples: samples.length, candidates };
 }
 
 /** Enforce `signal` even on a transport that ignores it: each pending read races the abort. */
@@ -278,7 +278,7 @@ async function collectPooled(
 /** One candidate is a heuristic match, more are inconclusive, none is an unknown model. */
 function classifyPooledProbe(responses: number[][], bank: FingerprintBank, plan: ProbePlan): { classification: Classification; candidates: string[] } {
   const { candidates, scores } = classifyPooled(responses, bank, createNuisanceProjector(bank.nuisanceDirections));
-  const shared = { confidence: null, scores, evaluatedSamples: responses.length * plan.count };
+  const shared = { scores, evaluatedSamples: responses.length * plan.count };
   const every = `all ${plan.requests} responses`;
   if (candidates.length === 1) {
     return { candidates, classification: { ...shared, status: 'HEURISTIC_MATCH', model: candidates[0]!,
@@ -296,7 +296,7 @@ function relabel(result: Classification, plan: ProbePlan, transport: ProbeTransp
   if (plan.crossTransport) {
     if (result.status !== 'IDENTIFIED') return { ...result, reason: `Experimental comparison across transports. ${result.reason}` };
     return {
-      ...result, status: 'HEURISTIC_MATCH', confidence: null,
+      ...result, status: 'HEURISTIC_MATCH',
       reason: `Experimental match to ${result.model} in the ${bank.protocol.transport} reference bank; identity accuracy for ${transport.name} has not been validated.`,
     };
   }
@@ -333,15 +333,14 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       const pooled = stopped ? undefined : classifyPooledProbe(responses, bank, plan);
       if (short) warnings.push(`Request ${sent} ended after ${short.length} of ${plan.count} requested integers (output limit: ${plan.maxTokens} tokens); no further requests were sent.`);
       const classification: Classification = pooled?.classification ?? {
-        status: 'INCONCLUSIVE', model: null, confidence: null, scores: [], evaluatedSamples: 0,
+        status: 'INCONCLUSIVE', model: null, scores: [], evaluatedSamples: 0,
         reason: short
           ? `Request ${sent} of ${plan.requests} ended after ${short.length} of ${plan.count} integers; a pooled probe needs every request complete. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.`
           : `Request ${sent} repeated request ${repeated!.of} exactly; the endpoint may be caching or replaying replies, or sampling deterministically. A pooled probe needs independent responses.`,
       };
       return {
         ...relabel(classification, plan, transport, bank),
-        confidenceMeaning: 'nominal closed-set IID likelihood; not calibrated identity probability',
-        samples: [...responses.flat(), ...(stopped ?? [])], requestedSamples: plan.count * plan.requests,
+          samples: [...responses.flat(), ...(stopped ?? [])], requestedSamples: plan.count * plan.requests,
         earlyStopped: false, sampleBudgetSaved: 0,
         elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
         tokenizer, warnings, requests: sent,
@@ -357,7 +356,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
     // could end its reply at whichever calibrated checkpoint happens to look most favorable.
     const truncated = !early && samples.length < plan.count && plan.calibrated.length > 0;
     const classification: Classification = truncated
-      ? { status: 'INCONCLUSIVE', model: null, confidence: null, scores: [], evaluatedSamples: 0,
+      ? { status: 'INCONCLUSIVE', model: null, scores: [], evaluatedSamples: 0,
           reason: plan.crossTransport
             ? `Cross-transport comparison requires all ${plan.count} integers; received ${samples.length}.`
             : `Identification requires all ${plan.count} requested integers; the response ended after ${samples.length}. A provider stop or the ${plan.maxTokens}-token output limit ends a response early; reasoning models may need a larger maxTokens.` }
@@ -366,7 +365,6 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
     if (classification.status === 'INCONCLUSIVE' && classification.candidates?.length) warnings.push(CANDIDATES_WARNING);
     return {
       ...relabel(classification, plan, transport, bank),
-      confidenceMeaning: 'nominal closed-set IID likelihood; not calibrated identity probability',
       samples, requestedSamples: plan.count, earlyStopped: early !== undefined,
       sampleBudgetSaved: early ? 1 - samples.length / plan.count : 0,
       elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,

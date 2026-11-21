@@ -15,9 +15,10 @@ describe('pooled probes', () => {
     const transport = new SequenceTransport(lowReplies());
     const result = await fingerprint(transport, { bank: openEnvelopes(syntheticPooledBank()) });
     expect(result).toMatchObject({
-      status: 'HEURISTIC_MATCH', model: LOW, candidates: [LOW], confidence: null, requests: 4,
+      status: 'HEURISTIC_MATCH', model: LOW, candidates: [LOW], requests: 4,
       requestedSamples: 256, evaluatedSamples: 256, earlyStopped: false,
     });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.samples).toEqual(Array.from({ length: 4 }, (_, run) => syntheticRun(1, 120, run)).flat());
     expect(result.reason).toContain('an unenrolled model from the same vendor');
     expect(transport.requests.map((request) => request.prompt)).toEqual(Array(4).fill(integerPrompt(64, 'en')));
@@ -35,7 +36,8 @@ describe('pooled probes', () => {
     [[false, false, true], 'HEURISTIC_MATCH', HIGH, [HIGH], 'Only synthetic-236-355 fits all 4 responses'],
   ] as const)('maps the prediction set %j to its status', async (pass, status, model, candidates, reason) => {
     const result = await fingerprint(new SequenceTransport(lowReplies()), { bank: forceCutoffs(openEnvelopes(syntheticPooledBank()), pass) });
-    expect(result).toMatchObject({ status, model, candidates: [...candidates], confidence: null });
+    expect(result).toMatchObject({ status, model, candidates: [...candidates] });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.reason).toContain(reason);
   });
 
@@ -52,7 +54,7 @@ describe('pooled probes', () => {
     bank.models[2]!.profiles[0]!.maxHellinger = 1e-9;
     const result = await fingerprint(new SequenceTransport(lowReplies()), { bank });
     expect(result.candidates).toEqual([LOW, MID]);
-    expect(result.scores.find((score) => score.id === HIGH)).toMatchObject({ accepted: false, weight: null });
+    expect(result.scores.find((score) => score.id === HIGH)).toMatchObject({ accepted: false, logLikelihoodGap: null });
   });
 
   it('stops at a short reply and names the request', async () => {

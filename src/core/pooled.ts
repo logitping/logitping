@@ -35,7 +35,7 @@ export function classifyPooled(responses: readonly (readonly number[])[], bank: 
     const { fit: fitCutoff, margin: marginCutoff } = pooled.models[m]!.cutoffs;
     if (accepted && fit >= fitCutoff && margin >= marginCutoff) candidates.push(model.id);
     return {
-      id: model.id, weight: null, accepted,
+      id: model.id, logLikelihoodGap: null, accepted,
       hellinger: Math.max(...distances.map((distance) => distance.hellinger)),
       mahalanobis: Math.max(...distances.map((distance) => distance.mahalanobis)),
       fit, margin, fitCutoff, marginCutoff,

@@ -94,8 +94,11 @@ export interface ModelScore {
   hellinger: number;
   mahalanobis: number;
   accepted: boolean;
-  /** Relative likelihood among enrolled models; absent when the OOD gate fails. */
-  weight: number | null;
+  /**
+   * How many nats this model's log likelihood falls behind the most likely model's (0 for that
+   * model). Null when nothing was ranked: no sequential test, or every envelope rejected.
+   */
+  logLikelihoodGap: number | null;
   /** Pooled banks only: summed fit and worst head-to-head margin over all responses, with this model's cutoffs. */
   fit?: number;
   margin?: number;
@@ -107,8 +110,6 @@ export interface ProbeResult {
   status: 'IDENTIFIED' | 'HEURISTIC_MATCH' | 'UNKNOWN_MODEL' | 'INCONCLUSIVE' | 'UNCALIBRATED';
   /** For HEURISTIC_MATCH this names a reference candidate, not a validated identity. */
   model: string | null;
-  confidence: number | null;
-  confidenceMeaning: 'nominal closed-set IID likelihood; not calibrated identity probability';
   reason: string;
   scores: ModelScore[];
   samples: number[];

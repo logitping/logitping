@@ -172,7 +172,8 @@ describe('CLI bank selection', () => {
   it('runs --driver codex without a bank and returns collection-only JSON', async () => {
     await main(['node', 'lping', '--driver', 'codex', '--no-tokenizer', '--json']);
     const result = JSON.parse(stdout);
-    expect(result).toMatchObject({ status: 'UNCALIBRATED', model: null, confidence: null, scores: [], earlyStopped: false });
+    expect(result).toMatchObject({ status: 'UNCALIBRATED', model: null, scores: [], earlyStopped: false });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.samples).toHaveLength(128);
     expect(result.reason).toContain('bundled bank uses openai');
     expect(fake.requests).toHaveLength(1);
@@ -207,9 +208,10 @@ describe('CLI bank selection', () => {
       ...(explicit ? ['--bank', path] : []), '--no-tokenizer', '--json']);
     const result = JSON.parse(stdout);
     expect(result).toMatchObject({
-      status: 'HEURISTIC_MATCH', model: 'synthetic-17', confidence: null, earlyStopped: false,
+      status: 'HEURISTIC_MATCH', model: 'synthetic-17', earlyStopped: false,
       crossTransport: { probeTransport: 'codex', bankTransport: 'openai' },
     });
+    expect(result).not.toHaveProperty('confidence');
     expect(result.samples).toHaveLength(128);
     expect(result.scores).toHaveLength(2);
     expect(fake.requests).toHaveLength(1);
@@ -404,6 +406,10 @@ describe('CLI bank selection', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async () => sse('10 '.repeat(128)));
     await main(['node', 'lping', '--endpoint', 'https://proxy.example/v1', '--model', 'claimed', '--bank', path, '--no-tokenizer', '--no-interactive']);
     expect(stdout).toContain('Inconclusive, consistent with: model-a, model-b');
+    expect(stdout).toContain('model-a: 0.0 nats');
+    expect(stdout).toContain('model-b: −2.0 nats');
+    expect(stdout).not.toContain('%');
+    expect(stdout).not.toContain('Nominal model-relative confidence');
   });
 
   describe('recorded collection settings', () => {
