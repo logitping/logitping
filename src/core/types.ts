@@ -119,6 +119,43 @@ export interface ModelScore {
   marginCutoff?: number;
 }
 
+export type ClaimVerdict = 'CONSISTENT' | 'INCONSISTENT' | 'NOT_ENROLLED' | 'NOT_CHECKED';
+
+export interface AcceptanceRate {
+  accepted: number;
+  runs: number;
+  /** Bounds of the 95% Wilson score interval of accepted / runs. */
+  low: number;
+  high: number;
+}
+
+export interface ClaimRates {
+  /** The claimed model's own runs; 'tuning' runs set its envelope, so that figure is optimistic. */
+  own: AcceptanceRate & { source: 'independent' | 'tuning' };
+  /** Runs of other enrolled models, scored with the full bank. */
+  enrolled: AcceptanceRate;
+  /** Runs of models outside the bank: unenrolled models, and enrolled models scored without their own reference. */
+  outside: AcceptanceRate;
+  /** Other models whose runs pass as this claim in at least half of their runs, most often first. */
+  mostAccepted: { model: string; enrolled: boolean; accepted: number; runs: number }[];
+}
+
+export interface ClaimCheck {
+  /** The claimed model name as given, e.g. 'openai/gpt-6.2-sol'. */
+  requested: string;
+  /** The enrolled model the claim names; null for NOT_ENROLLED. */
+  model: string | null;
+  verdict: ClaimVerdict;
+  /** One sentence explaining the verdict, e.g. which model the probe named instead. */
+  reason: string;
+  /**
+   * How often this probe accepts the claim on stored runs, measured offline. Null when no rates were
+   * measured for this bank and probe (custom or pooled banks, cross-transport comparisons) and for
+   * NOT_ENROLLED and NOT_CHECKED. Not a probability that the endpoint serves the claimed model.
+   */
+  rates: ClaimRates | null;
+}
+
 export interface ProbeResult {
   status: 'IDENTIFIED' | 'HEURISTIC_MATCH' | 'UNKNOWN_MODEL' | 'INCONCLUSIVE' | 'UNCALIBRATED';
   /** For HEURISTIC_MATCH this names a reference candidate, not a validated identity. */
@@ -152,9 +189,19 @@ export interface ProbeResult {
    * not use it.
    */
   usage?: TokenUsage[];
+  /**
+   * Present when `EngineOptions.claim` names a model: whether the claimed model is among `candidates`,
+   * with the claim's measured acceptance rates when they apply.
+   */
+  claim?: ClaimCheck;
 }
 
 export interface EngineOptions {
+  /**
+   * The model the endpoint claims to serve, such as 'openai/gpt-6.2-sol'; its last `/` segment names a
+   * bank model, ignoring case. An empty string is no claim.
+   */
+  claim?: string;
   /** Explicit banks are protocol-checked; an incompatible bundled bank defaults to sample collection. */
   bank?: FingerprintBank;
   /** Compare across transports experimentally; other protocol checks still apply and early stopping is disabled. */

@@ -7,9 +7,10 @@ import { IntegerStreamParser } from '../probes/integer_stream.js';
 import { integerPrompt } from '../probes/templates.js';
 import { tokenizerPrompt } from '../probes/tokenizer.js';
 import { abortScope, childScope, DEFAULT_TIMEOUT_MS } from './abort.js';
+import { checkClaim } from './claim.js';
 import { LogitpingError } from './errors.js';
 import { classifyPooled } from './pooled.js';
-import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport, TokenUsage } from './types.js';
+import type { ClaimCheck, EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport, TokenUsage } from './types.js';
 
 type Classification = Pick<ProbeResult, 'status' | 'model' | 'reason' | 'scores' | 'evaluatedSamples' | 'candidates'>;
 type RequestOptions = Pick<ProbeRequest, 'timeoutMs' | 'temperature'> & { signal: AbortSignal };
@@ -332,6 +333,11 @@ function classifyPooledProbe(responses: number[][], bank: FingerprintBank, plan:
   return { candidates, classification: { ...shared, status: 'UNKNOWN_MODEL', model: null, reason: `No enrolled model fits ${every}.` } };
 }
 
+/** The claim check of a result, as a field to spread into it; none without a claim. */
+function claimField(options: EngineOptions, bank: FingerprintBank, result: Pick<ProbeResult, 'status' | 'model' | 'candidates'>): { claim?: ClaimCheck } {
+  return options.claim ? { claim: checkClaim(options.claim, bank, result) } : {};
+}
+
 /** Relabel a classification for opt-in cross-transport comparisons and collection-only runs. */
 function relabel(result: Classification, plan: ProbePlan, transport: ProbeTransport, bank: FingerprintBank): Classification {
   if (plan.crossTransport) {
@@ -387,6 +393,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
         tokenizer, warnings, requests: sent,
         ...(transport.reportsUsage ? { usage } : {}),
         ...(pooled ? { candidates: pooled.candidates } : {}),
+        ...claimField(options, bank, { ...classification, ...(pooled ? { candidates: pooled.candidates } : {}) }),
         ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
       };
     }
@@ -412,6 +419,7 @@ export async function fingerprint(transport: ProbeTransport, options: EngineOpti
       elapsedMs: Math.round(performance.now() - started), streamGranularity: transport.granularity,
       tokenizer, warnings,
       ...(transport.reportsUsage ? { usage: [usage] } : {}),
+      ...claimField(options, bank, classification),
       ...(plan.crossTransport ? { crossTransport: { probeTransport: transport.name, bankTransport: bank.protocol.transport } } : {}),
     };
   } finally { scope.dispose(); }

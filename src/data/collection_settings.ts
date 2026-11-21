@@ -1,3 +1,4 @@
+import { claimedModel } from '../core/claim.js';
 import type { CollectionSettings, FingerprintBank, ModelFingerprint } from '../core/types.js';
 import { PROVIDER_LABELS } from './gateway_plan.js';
 
@@ -34,7 +35,6 @@ export function withCollectionSettings(model: ModelFingerprint): ModelFingerprin
  * `/` segment, ignoring case, equals the model's id, so `openai/gpt-6.1-sol` names `gpt-6.1-sol`.
  */
 export function collectionSettingsFor(bank: FingerprintBank, model: string): { id: string; collection: CollectionSettings } | undefined {
-  const name = model.split('/').at(-1)!.toLowerCase();
-  const entry = bank.models.find((candidate) => candidate.collection && candidate.id.toLowerCase() === name);
-  return entry ? { id: entry.id, collection: entry.collection! } : undefined;
+  const entry = claimedModel(bank, model);
+  return entry?.collection ? { id: entry.id, collection: entry.collection } : undefined;
 }
