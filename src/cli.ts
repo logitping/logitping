@@ -42,6 +42,8 @@ interface Options {
   apiFormat?: string;
   tokenLimitField?: string;
   maxTokens?: number;
+  /** Extra variables or `NAME_*` prefixes for a --driver CLI's environment. */
+  passEnv: string[];
 }
 
 function positiveInteger(raw: string): number {
@@ -192,6 +194,7 @@ export async function main(argv = process.argv): Promise<void> {
     .exitOverride()
     .configureOutput({ outputError: (text, write) => { if (!jsonRequested) write(text); } })
     .option('--driver <name>', 'local CLI driver: claude, codex, or antigravity (runs agy)')
+    .option('--pass-env <name>', 'pass an environment variable, or a prefix such as AWS_*, to the --driver CLI; repeatable', (value: string, previous: string[]) => [...previous, value], [] as string[])
     .option('--endpoint <url>', 'API base URL or complete completion endpoint')
     .option('--provider <name>', 'API format: openai or anthropic', 'openai')
     .option('--key <key>', 'API key; visible in process listings and shell history (prefer --key-file or LOGITPING_API_KEY)')
@@ -250,12 +253,13 @@ export async function main(argv = process.argv): Promise<void> {
     if (options.driver && (options.key || options.keyFile !== undefined || options.temperature !== undefined || options.apiFormat || options.tokenLimitField || options.maxTokens !== undefined)) {
       throw new Error('Keys, temperature, API format, and token limits are API-only options');
     }
+    if (options.passEnv.length && !options.driver) throw new Error('--pass-env applies only to --driver probes');
     if (options.samples !== undefined && (options.samples < MIN_SAMPLES || options.samples > MAX_SAMPLES)) {
       throw new Error(`--samples must be between ${MIN_SAMPLES} and ${MAX_SAMPLES}`);
     }
     let transport: ProbeTransport;
     if (options.driver) {
-      const driverOptions = options.model ? { model: options.model } : {};
+      const driverOptions = { ...(options.model ? { model: options.model } : {}), ...(options.passEnv.length ? { passEnv: options.passEnv } : {}) };
       transport = new DRIVERS[options.driver as keyof typeof DRIVERS](driverOptions);
     } else {
       if (!options.model) throw new Error('--model is required for API mode');

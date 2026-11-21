@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `npm run bank:evaluate` (`scripts/evaluate-banks.mjs`) scores both bundled banks on every stored run they were not built from, without provider requests, and writes `docs/evaluation.json` and `docs/evaluation.md`. A test checks that the committed report matches the bundled banks.
+
+### Changed
+
+- **CLI drivers no longer inherit your whole environment.** Claude, Codex and `agy` receive common system, locale, proxy and certificate variables, `DO_NOT_TRACK`, and their own vendor's variables (`CLAUDE_*`/`ANTHROPIC_*` with Claude Code's `DISABLE_TELEMETRY`, `DISABLE_ERROR_REPORTING` and `DISABLE_AUTOUPDATER` opt-outs, `CODEX_*`/`OPENAI_*`, `AGY_*`/`ANTIGRAVITY_*`/`GEMINI_*`/`GOOGLE_*`), so the CLI is no longer handed other vendors' keys or AWS and Azure credentials. This narrows, but does not close, what a tool that starts before the probe stops it can read: it can still read files your account can read, and on Linux usually the environment of your other processes, including lping's own. A login that needs other variables, such as Claude Code through Amazon Bedrock, needs `--pass-env 'AWS_*'` (library: `passEnv`). `LOGITPING_API_KEY` is still never passed.
+- **Breaking for custom drivers:** a `CliDriver` subclass now receives only the shared variables unless it overrides `environmentPrefixes()` or is given `passEnv`.
+
+### Documentation
+
+- The README, bank status and methodology now report the first independent results for the default bank: on 460 runs of 10 enrolled models from other collections, 152 named correctly, none wrongly, and 303 `INCONCLUSIVE`. They also state that its distance envelopes rarely reject unenrolled models, which rejected 2 of 225 runs of the four models removed in `0.7.0`.
+
 ## 0.7.0 — 2026-11-20
 
 Enrolls `gpt-6.2-astra` and `gpt-6.2-sol`, which OpenAI released on 2026-11-17, and `gemini-4-neon`, which Google released on 2026-11-18, in both banks, and removes the three GPT-5.6 models and `gemini-3.8-flash` from both. The banks now have 18 models, and the references of the other 15 are unchanged.

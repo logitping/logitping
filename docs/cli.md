@@ -12,6 +12,7 @@ lping
 lping --driver claude
 lping --driver codex
 lping --driver antigravity --model gemini-3.8-flash-low   # runs agy; `agy models` lists the models
+lping --driver claude --pass-env 'AWS_*'   # a CLI gets only part of your environment; pass what its login needs, such as Bedrock's AWS credentials
 
 # OpenAI-compatible API: root URL, /v1, or full /v1/chat/completions URL
 export LOGITPING_API_KEY='your-key'

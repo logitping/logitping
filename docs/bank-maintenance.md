@@ -200,3 +200,13 @@ The fitted pooled cutoffs depend on model order: refitting the same runs in anot
 The last command writes a new file and never overwrites one; move it over `src/data/pooled_bank.json` after reviewing it. `--config` sets the requests per probe and each model's route and settings. Each configured model must come from exactly one collection that records them, so an older `openai/…` route in the same collection is ignored, and the command stops if a model has no such collection or more than one. Each corpus must also hash to the digest in its models' provenance. Reused models keep their envelopes and provenance, including their collection date, so they do not reflect any later upstream change. Pooled cutoffs and pair statistics depend on every model's runs and are fitted anew for all of them.
 
 `lping bank-create` builds a pooled bank from independently collected runs when its input adds `"scoring": "pooled-sets-v1"` and `"requestsPerProbe"` to the usual enrollment fields. A pooled bank needs at least two models, each with at least three training and two held-out runs.
+
+## Evaluate the bundled banks
+
+After any change to `src/data/default_bank.json` or `src/data/pooled_bank.json`, run:
+
+    npm run bank:evaluate
+
+It builds, reads every stored corpus (`*.corpus-*.json` in the repository root and `src/data/`), and scores both bundled banks on every run they were not built from: runs of enrolled models from other collections, the same runs with the tested model removed (default bank only), and runs of models the bank does not enroll. Corpora are identified by their content digest, so a copy of a corpus is read once. It makes no provider requests. It rewrites `docs/evaluation.json` and `docs/evaluation.md`; commit both with the bank. `tests/evaluation-report.test.ts` fails when either bank's SHA-256 differs from the report's, or when the markdown no longer matches the JSON. Then update the summary numbers in `README.md`, `docs/bank.md` and `docs/methodology.md` from the new report.
+
+The report covers only the corpora present in the checkout, so review its diff: a missing corpus removes its rows instead of failing.

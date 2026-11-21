@@ -87,5 +87,7 @@ export class CodexDriver extends CliDriver {
     return this.args(names.flatMap((name) => ['-c', `mcp_servers.${name}.enabled=false`]));
   }
 
+  protected override environmentPrefixes(): readonly string[] { return ['CODEX_', 'OPENAI_']; }
+
   protected decoder(): EventDecoder { return new CodexEventDecoder(); }
 }

@@ -82,13 +82,13 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 | `IDENTIFIED` | One reference passed the nominal likelihood and distance checks; this is not identity attestation | `0` |
 | `HEURISTIC_MATCH` | An explicitly enabled exploratory comparison found a reference candidate: across transports, or with the experimental `--pooled` bank; `confidence` is `null` | `2` |
 | `INCONCLUSIVE` | Insufficient separation, disagreeing checks, or an incomplete response; with `--pooled`, `candidates` lists the models still consistent | `2` |
-| `UNKNOWN_MODEL` | All enrolled distance regions rejected the observation; drift can also cause this | `2` |
+| `UNKNOWN_MODEL` | All enrolled distance regions rejected the observation; drift can also cause this. This is rare: an unenrolled model usually returns `INCONCLUSIVE` | `2` |
 | `UNCALIBRATED` | Samples were collected without a usable calibrated bank for this transport | `2` |
 | `ERROR` | Invalid configuration, transport failure, or malformed output | `1` |
 
 Exit `2` reports one of the four result statuses above; inspect `status` and `reason` rather than treating it as a transport failure. Cancellation exits with `130`; successful utility commands exit with `0`.
 
-A local replay of 65 threshold-calibration runs produced 24 label matches and 41 inconclusive results. Removing each tested model from the bank produced four wrong matches in 65 trials, each with nominal confidence above 99.99%. **These are limited diagnostics, not independent accuracy estimates.** Read the [evaluation notes](docs/bank.md#evaluation-status) before interpreting scores.
+On 460 stored runs of 10 enrolled models from collections the bundled bank was not built from, it named 152 correctly and none wrongly; 303 were `INCONCLUSIVE` and 5 `UNKNOWN_MODEL`. With the tested model removed from the bank, 18 runs were named as another model, all between `claude-fable-5` and `claude-fable-5.1`. Of 225 runs of the four models removed from the bank in `0.7.0`, none was named and only 2 were rejected as `UNKNOWN_MODEL`, so an `INCONCLUSIVE` result does not show that the endpoint runs an enrolled model. **The 460 runs came through OpenRouter, eight days to five weeks from their references; this is not an accuracy estimate for arbitrary endpoints.** See the [evaluation report](docs/evaluation.md) and the [evaluation notes](docs/bank.md#evaluation-status).
 
 ## Supported connections
 
@@ -101,7 +101,7 @@ A local replay of 65 threshold-calibration runs produced 24 label matches and 41
 
 API compatibility permits a comparison; it does not establish accuracy across hosts, API formats, or streaming modes. The bundled bank requires English, 512 samples, and omitted temperature (`null` in the bank). Other settings require a matching bank. The [CLI reference](docs/cli.md) covers custom banks, token budgets, streaming, JSON errors, and credential handling.
 
-Local CLI probes reuse your login and may incur provider usage or charges. Run them only with trusted binaries and backends. Codex and Antigravity may start a tool before the driver detects and terminates it; their temporary working directory and restricted settings are not a complete isolation boundary. Read the [transport limitations](docs/transports.md) first.
+Local CLI probes reuse your login and may incur provider usage or charges. They receive only part of your environment; add what a login needs with `--pass-env`, such as `--pass-env 'AWS_*'` for Claude Code through Amazon Bedrock. Run them only with trusted binaries and backends. Codex and Antigravity may start a tool before the driver detects and terminates it; their temporary working directory and restricted settings are not a complete isolation boundary. Read the [transport limitations](docs/transports.md) first.
 
 ```sh
 # Collection only with the bundled API bank; normally exits with code 2.

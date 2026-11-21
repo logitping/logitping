@@ -54,8 +54,8 @@ export function collectionSettings(target: GatewayTarget): string {
   return `${reuseSettings(target)}${target.maxTokens};`;
 }
 
-/** Whether `bank` was collected under the configured protocol. */
-export function sameProtocol(bank: FingerprintBank, config: GatewayBankConfig): boolean {
+/** Whether `bank` was collected under the protocol of a configuration or stored corpus. */
+export function sameProtocol(bank: FingerprintBank, config: { protocol: FingerprintBank['protocol'] }): boolean {
   return (['id', 'language', 'targetSamples', 'temperature', 'transport'] as const).every((key) => bank.protocol[key] === config.protocol[key]);
 }
 

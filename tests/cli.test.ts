@@ -147,6 +147,12 @@ describe('CLI bank selection', () => {
     expect(process.exitCode).toBe(2);
   });
 
+  it('passes --pass-env names to the driver in order', async () => {
+    await main(['node', 'lping', '--driver', 'antigravity', '--pass-env', 'AWS_*', '--pass-env', 'CLOUD_ML_REGION', '--no-tokenizer', '--json']);
+    expect(fake.antigravity).toEqual([{ passEnv: ['AWS_*', 'CLOUD_ML_REGION'] }]);
+    expect(process.exitCode).toBe(2);
+  });
+
   it('chooses Antigravity at the interactive connection prompt', async () => {
     prompts.answers.push('antigravity', undefined);
     const restore = stubTerminal();
@@ -382,6 +388,7 @@ describe('CLI bank selection', () => {
     [['--driver', 'codex', '--api-format', 'responses'], 'API-only options'],
     [['--endpoint', 'https://proxy.example', '--model', 'm', '--api-format', 'completions'], 'API format must be chat-completions or responses'],
     [['--endpoint', 'https://proxy.example', '--model', 'm', '--token-limit-field', 'max_output_tokens'], 'max_output_tokens requires Responses'],
+    [['--endpoint', 'https://proxy.example', '--model', 'm', '--pass-env', 'AWS_*'], '--pass-env applies only to --driver probes'],
   ])('rejects %j before any request', async (args, message) => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     await main(['node', 'lping', ...args, '--json']);

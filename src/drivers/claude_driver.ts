@@ -71,5 +71,10 @@ export class ClaudeDriver extends CliDriver {
     ];
   }
 
+  /** Its vendor's variables, and opt-outs Claude Code reads without that prefix, which a user may have exported. */
+  protected override environmentPrefixes(): readonly string[] {
+    return ['CLAUDE_', 'ANTHROPIC_', 'DISABLE_TELEMETRY', 'DISABLE_ERROR_REPORTING', 'DISABLE_AUTOUPDATER'];
+  }
+
   protected decoder(): EventDecoder { return new ClaudeEventDecoder(); }
 }
