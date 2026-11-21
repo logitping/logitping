@@ -93,7 +93,8 @@ void bank; void client; void code;
   await mkdir(probeTmp);
   await writeFile(join(fakeBin, 'claude'), '#!/bin/sh\n: > "$LOGITPING_SMOKE_STARTED"\nexec sleep 30\n', { mode: 0o755 });
   const interrupted = await new Promise((resolve, reject) => {
-    const child = spawn(join(directory, 'bin', 'lping'), ['--driver', 'claude', '--json'], {
+    // The fake CLI needs its own variable: drivers receive only an allowlist of the environment.
+    const child = spawn(join(directory, 'bin', 'lping'), ['--driver', 'claude', '--pass-env', 'LOGITPING_SMOKE_STARTED', '--json'], {
       env: { ...process.env, PATH: `${fakeBin}${delimiter}${process.env.PATH}`, TMPDIR: probeTmp, LOGITPING_SMOKE_STARTED: started },
     });
     let stdout = '';
