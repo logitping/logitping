@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "bank": {
+    "file": "src/data/default_bank.json",
+    "sha256": "49769c39d5ce57a654bd825baf86c20ffb0333d42a8bdd660b6a1b2325b8f890"
+  },
+  "corpora": [],
+  "rule": "claimed model in candidates",
+  "claims": {}
+}
