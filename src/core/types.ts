@@ -106,7 +106,11 @@ export interface ProbeResult {
   warnings: string[];
   /** Present for opt-in reference comparisons whose transport calibration does not transfer. */
   crossTransport?: { probeTransport: string; bankTransport: FingerprintBank['protocol']['transport'] };
-  /** Pooled banks only, once every request completed: the prediction set, in bank order. */
+  /**
+   * Pooled banks, once every request completed: the prediction set, in bank order. Single-request
+   * banks: enrolled models the sequential test cannot reject against the most likely one and whose
+   * envelope accepts, most likely first.
+   */
   candidates?: string[];
   /** Pooled banks only: requests sent for this probe. */
   requests?: number;

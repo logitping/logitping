@@ -11,7 +11,7 @@ import { LogitpingError } from './errors.js';
 import { classifyPooled } from './pooled.js';
 import type { EngineOptions, FingerprintBank, Language, ModelFingerprint, ModelScore, ProbeRequest, ProbeResult, ProbeTransport } from './types.js';
 
-type Classification = Pick<ProbeResult, 'status' | 'model' | 'confidence' | 'reason' | 'scores' | 'evaluatedSamples'>;
+type Classification = Pick<ProbeResult, 'status' | 'model' | 'confidence' | 'reason' | 'scores' | 'evaluatedSamples' | 'candidates'>;
 type RequestOptions = Pick<ProbeRequest, 'timeoutMs' | 'temperature'> & { signal: AbortSignal };
 
 /** Local CLI drivers, which expose no sampling temperature. */
@@ -124,7 +124,10 @@ function classify(samples: readonly number[], models: ModelFingerprint[], projec
     weight: null,
   }));
   if (!scores.some((score) => score.accepted)) {
-    return { status: 'UNKNOWN_MODEL', model: null, confidence: null, reason: 'Outside every enrolled model’s calibrated OOD region', scores, evaluatedSamples: samples.length };
+    return {
+      status: 'UNKNOWN_MODEL', model: null, confidence: null, reason: 'Outside every enrolled model’s calibrated OOD region', scores, evaluatedSamples: samples.length,
+      ...(test ? { candidates: [] } : {}),
+    };
   }
   if (!test) {
     return { status: 'INCONCLUSIVE', model: null, confidence: null, reason: 'Identification needs at least two calibrated reference models; see scores for the OOD verdict', scores, evaluatedSamples: samples.length };
@@ -132,10 +135,16 @@ function classify(samples: readonly number[], models: ModelFingerprint[], projec
   const decision = test.snapshot();
   for (const score of scores) score.weight = decision.weights[score.id] ?? null;
   const winner = scores.find((score) => score.id === decision.winner);
+  // Models the sequential test cannot reject against the most likely one, among those whose envelope
+  // accepts, most likely first; the stable sort keeps bank order for ties.
+  const likelihood = (id: string) => decision.logLikelihoods[id]!;
+  const best = Math.max(...Object.values(decision.logLikelihoods));
+  const candidates = scores.filter((score) => score.accepted && best - likelihood(score.id) < decision.threshold)
+    .sort((a, b) => likelihood(b.id) - likelihood(a.id)).map((score) => score.id);
   if (!decision.accepted || !winner?.accepted) {
-    return { status: 'INCONCLUSIVE', model: null, confidence: null, reason: 'Insufficient separation between enrolled models, or likelihood and OOD checks disagree', scores, evaluatedSamples: samples.length };
+    return { status: 'INCONCLUSIVE', model: null, confidence: null, reason: 'Insufficient separation between enrolled models, or likelihood and OOD checks disagree', scores, evaluatedSamples: samples.length, candidates };
   }
-  return { status: 'IDENTIFIED', model: winner.id, confidence: winner.weight, reason: 'Nominal sequential threshold and calibrated OOD gate passed', scores, evaluatedSamples: samples.length };
+  return { status: 'IDENTIFIED', model: winner.id, confidence: winner.weight, reason: 'Nominal sequential threshold and calibrated OOD gate passed', scores, evaluatedSamples: samples.length, candidates };
 }
 
 /** Enforce `signal` even on a transport that ignores it: each pending read races the abort. */

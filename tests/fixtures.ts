@@ -119,6 +119,24 @@ export function openEnvelopes(bank: FingerprintBank): FingerprintBank {
   return bank;
 }
 
+/**
+ * Three artificial models with open envelopes. A probe of 128 × 10 leads model-b by
+ * 128 · ln(192.5 / 189.5) ≈ 2.0, below the naming threshold ln 400 ≈ 5.99, and model-c by far more,
+ * so its candidates are model-a then model-b. model-b comes first in bank order. Never a real model bank.
+ */
+export function overlappingBank(): FingerprintBank {
+  const run = (tens: number, other: number) => [...Array<number>(tens).fill(10), ...Array<number>(128 - tens).fill(other)];
+  const model = (id: string, sample: () => number[]) => ({
+    id, family: `synthetic-${id.slice(-1)}`, training: [sample(), sample(), sample()], validation: [sample(), sample()],
+  });
+  return openEnvelopes(createFingerprintBank({
+    source: 'SYNTHETIC TEST FIXTURE; no real model measurements',
+    protocol: { id: 'integer-v1', targetSamples: 128, language: 'en', temperature: null, transport: 'openai' },
+    checkpoints: [64, 128],
+    models: [model('model-b', () => run(63, 30)), model('model-a', () => run(64, 20)), model('model-c', () => Array<number>(128).fill(300))],
+  }));
+}
+
 /** Force each model into (`true`) or out of the prediction set through its cutoffs. */
 export function forceCutoffs(bank: FingerprintBank, pass: readonly boolean[]): FingerprintBank {
   bank.pooled!.models.forEach((model, index) => {
