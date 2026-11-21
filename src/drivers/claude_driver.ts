@@ -76,5 +76,17 @@ export class ClaudeDriver extends CliDriver {
     return ['CLAUDE_', 'ANTHROPIC_', 'DISABLE_TELEMETRY', 'DISABLE_ERROR_REPORTING', 'DISABLE_AUTOUPDATER'];
   }
 
+  /**
+   * Markers a Claude Code session sets for its subprocesses when lping runs inside one: its identity,
+   * its messaging socket and token, and its child-session state. They describe that session, not the
+   * user's configuration, so the probe's own Claude must not inherit them.
+   */
+  protected override environmentExclusions(): readonly string[] {
+    return [
+      'CLAUDECODE', 'CLAUDE_PID', 'CLAUDE_EFFORT', 'CLAUDE_CODE_ENTRYPOINT', 'CLAUDE_CODE_EXECPATH',
+      'CLAUDE_CODE_SESSION_*', 'CLAUDE_CODE_MESSAGING_*', 'CLAUDE_CODE_CHILD_*',
+    ];
+  }
+
   protected decoder(): EventDecoder { return new ClaudeEventDecoder(); }
 }

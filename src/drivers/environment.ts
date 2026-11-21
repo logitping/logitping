@@ -33,18 +33,33 @@ export function checkPassEnv(patterns: unknown): asserts patterns is readonly st
   }
 }
 
+/** Uppercased exact names and prefixes of entries written as names or `NAME_*`. */
+function compile(entries: readonly string[]): { names: ReadonlySet<string>; starts: readonly string[] } {
+  return {
+    names: new Set(entries.filter((entry) => !entry.endsWith('*')).map((entry) => entry.toUpperCase())),
+    starts: entries.filter((entry) => entry.endsWith('*')).map((entry) => entry.slice(0, -1).toUpperCase()),
+  };
+}
+
 /**
  * The shared variables, names starting with one of the driver's `prefixes`, and `passEnv` names or
  * `NAME_*` prefixes, compared case-insensitively as on Windows; never `LOGITPING_API_KEY`.
+ * `exclusions`, in the same syntax, drop names the rest would pass; only an exact `passEnv` name
+ * brings one back, because a caller naming it has chosen it, while a broad prefix has not.
  */
-export function driverEnvironment(source: Readonly<Record<string, string | undefined>>, prefixes: readonly string[], passEnv: readonly string[] = []): Record<string, string> {
-  const starts = [...prefixes, ...passEnv.filter((entry) => entry.endsWith('*')).map((entry) => entry.slice(0, -1))].map((prefix) => prefix.toUpperCase());
-  const named = new Set(passEnv.filter((entry) => !entry.endsWith('*')).map((entry) => entry.toUpperCase()));
+export function driverEnvironment(
+  source: Readonly<Record<string, string | undefined>>, prefixes: readonly string[], passEnv: readonly string[] = [], exclusions: readonly string[] = [],
+): Record<string, string> {
+  const vendor = prefixes.map((prefix) => prefix.toUpperCase());
+  const passed = compile(passEnv);
+  const excluded = compile(exclusions);
   const environment: Record<string, string> = {};
   for (const [name, value] of Object.entries(source)) {
     const upper = name.toUpperCase();
     if (value === undefined || upper === WITHHELD_VARIABLE) continue;
-    if (SHARED.has(upper) || named.has(upper) || starts.some((prefix) => upper.startsWith(prefix))) environment[name] = value;
+    if (passed.names.has(upper)) { environment[name] = value; continue; }
+    if (excluded.names.has(upper) || excluded.starts.some((prefix) => upper.startsWith(prefix))) continue;
+    if (SHARED.has(upper) || [...vendor, ...passed.starts].some((prefix) => upper.startsWith(prefix))) environment[name] = value;
   }
   return environment;
 }

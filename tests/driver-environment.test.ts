@@ -26,6 +26,18 @@ describe('driver environment', () => {
     expect(driverEnvironment(source, [], ['aws_*', 'cloud_ml_region'])).toEqual({ AWS_REGION: 'us-east-1', aws_profile: 'dev', CLOUD_ML_REGION: 'us-east5' });
   });
 
+  it("drops excluded names and prefixes that the driver's own prefixes would pass, in any letter case", () => {
+    const source = { PATH: '/bin', CLAUDE_CONFIG_DIR: '/cc', CLAUDE_CODE_SESSION_ID: 's', CLAUDE_CODE_MESSAGING_TOKEN: 't', claude_pid: '42' };
+    expect(driverEnvironment(source, ['CLAUDE_'], [], ['CLAUDE_CODE_SESSION_*', 'CLAUDE_CODE_MESSAGING_*', 'CLAUDE_PID']))
+      .toEqual({ PATH: '/bin', CLAUDE_CONFIG_DIR: '/cc' });
+  });
+
+  it('keeps an excluded variable only when passEnv names it exactly', () => {
+    const source = { CLAUDE_CODE_SESSION_ID: 's', CLAUDE_CODE_SESSION_KIND: 'k' };
+    expect(driverEnvironment(source, ['CLAUDE_'], ['CLAUDE_CODE_SESSION_ID', 'CLAUDE_*'], ['CLAUDE_CODE_SESSION_*']))
+      .toEqual({ CLAUDE_CODE_SESSION_ID: 's' });
+  });
+
   it('keeps the DO_NOT_TRACK opt-out for every driver', () => {
     expect(driverEnvironment({ DO_NOT_TRACK: '1' }, [])).toEqual({ DO_NOT_TRACK: '1' });
   });
