@@ -71,5 +71,7 @@ export class ClaudeDriver extends CliDriver {
     ];
   }
 
+  protected override environmentPrefixes(): readonly string[] { return ['CLAUDE_', 'ANTHROPIC_']; }
+
   protected decoder(): EventDecoder { return new ClaudeEventDecoder(); }
 }

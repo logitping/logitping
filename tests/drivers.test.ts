@@ -223,8 +223,8 @@ else if (mode === 'malformed') { process.stdout.write('not JSON\\n'); setInterva
 else if (mode === 'env') {
   // Report which of the probe's variables this CLI process can read, then finish normally.
   const send = event => process.stdout.write(JSON.stringify(event) + '\\n');
-  const { LOGITPING_API_KEY: key = null, logitping_api_key: lower = null, LOGITPING_TEST_MARKER: marker = null } = process.env;
-  send({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: JSON.stringify({ key, lower, marker }) } } });
+  const { LOGITPING_API_KEY: key = null, logitping_api_key: lower = null, LOGITPING_TEST_MARKER: marker = null, LANG: lang = null } = process.env;
+  send({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text: JSON.stringify({ key, lower, marker, lang }) } } });
   send({ type: 'result', subtype: 'success' });
 }
 else {
@@ -252,17 +252,46 @@ else {
     return JSON.parse(texts.join(''));
   }
 
-  it('withholds the API-mode key, in any letter case, and keeps the rest of the environment', async () => {
+  it('passes only allowlisted variables to the CLI process, never the API-mode key', async () => {
     // A tool call racing the abort could read the CLI's environment and return it to the backend under test.
     vi.stubEnv('LOGITPING_API_KEY', 'api-mode-secret');
     vi.stubEnv('logitping_api_key', 'api-mode-secret');
     vi.stubEnv('LOGITPING_TEST_MARKER', 'inherited');
-    expect(await reply(new FakeDriver('env'))).toEqual({ key: null, lower: null, marker: 'inherited' });
+    vi.stubEnv('LANG', 'C.logitping-test');
+    expect(await reply(new FakeDriver('env'))).toEqual({ key: null, lower: null, marker: null, lang: 'C.logitping-test' });
+  });
+  it('passes variables named in passEnv', async () => {
+    vi.stubEnv('LOGITPING_TEST_MARKER', 'inherited');
+    vi.stubEnv('LOGITPING_API_KEY', 'api-mode-secret');
+    expect(await reply(new FakeDriver('env', { passEnv: ['LOGITPING_TEST_*'] })))
+      .toEqual({ key: null, lower: null, marker: 'inherited', lang: process.env.LANG ?? null });
   });
   it('gives the CLI exactly the environment a caller supplies', async () => {
     vi.stubEnv('LOGITPING_TEST_MARKER', 'inherited');
     const env = { PATH: process.env.PATH, LOGITPING_API_KEY: 'deliberately-passed' };
-    expect(await reply(new FakeDriver('env', { env }))).toEqual({ key: 'deliberately-passed', lower: null, marker: null });
+    expect(await reply(new FakeDriver('env', { env }))).toEqual({ key: 'deliberately-passed', lower: null, marker: null, lang: null });
+  });
+
+  it('gives each driver its own vendor variables', () => {
+    const stubbed = {
+      ANTHROPIC_API_KEY: 'a', CLAUDE_CONFIG_DIR: '/cc', OPENAI_API_KEY: 'o', CODEX_HOME: '/ch', GEMINI_API_KEY: 'g',
+      GOOGLE_CLOUD_PROJECT: 'p', AGY_X: '1', ANTIGRAVITY_Y: '2', AWS_SECRET_ACCESS_KEY: 's',
+    };
+    for (const [name, value] of Object.entries(stubbed)) vi.stubEnv(name, value);
+    const pick = (env: Readonly<Record<string, string | undefined>>) => Object.fromEntries(Object.keys(stubbed).filter((name) => name in env).map((name) => [name, env[name]]));
+    class Claude extends ClaudeDriver { environmentOf() { return this.environment(); } }
+    class Codex extends CodexDriver { environmentOf() { return this.environment(); } }
+    class Agy extends AntigravityDriver { environmentOf() { return this.environment(); } }
+    class Generic extends FakeDriver { environmentOf() { return this.environment(); } }
+    expect(pick(new Claude().environmentOf())).toEqual({ ANTHROPIC_API_KEY: 'a', CLAUDE_CONFIG_DIR: '/cc' });
+    expect(pick(new Codex().environmentOf())).toEqual({ OPENAI_API_KEY: 'o', CODEX_HOME: '/ch' });
+    expect(pick(new Agy().environmentOf())).toEqual({ GEMINI_API_KEY: 'g', GOOGLE_CLOUD_PROJECT: 'p', AGY_X: '1', ANTIGRAVITY_Y: '2' });
+    expect(pick(new Generic('env').environmentOf())).toEqual({});
+  });
+  it('rejects passEnv with env, and invalid passEnv, before starting a process', () => {
+    expect(() => new ClaudeDriver({ env: {}, passEnv: ['AWS_*'] })).toThrow(TypeError);
+    expect(() => new ClaudeDriver({ env: {}, passEnv: ['AWS_*'] })).toThrow(/env is the complete environment/);
+    expect(() => new CodexDriver({ passEnv: ['*'] })).toThrow(/prefixes ending in \*/);
   });
 
   it.each(['normal', 'stubborn'])('terminates a %s child when consumption stops', async (mode) => {

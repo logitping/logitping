@@ -7,24 +7,23 @@ import { abortScope } from '../core/abort.js';
 import { LogitpingError } from '../core/errors.js';
 import type { ProbeRequest, ProbeTransport, StreamGranularity } from '../core/types.js';
 import { asRecord, MAX_PAYLOAD_BYTES } from '../util/validate.js';
+import { checkPassEnv, driverEnvironment } from './environment.js';
 
 export interface DriverOptions {
   binary?: string;
   /** Passed as the CLI's --model value; must not look like a flag. */
   model?: string;
   /**
-   * The CLI's complete environment. Defaults to this process's environment without
-   * LOGITPING_API_KEY, which authenticates only API-mode probes.
+   * The CLI's complete environment. Defaults to an allowlist of this process's environment:
+   * shared system, locale, proxy and certificate variables and the driver's own vendor prefixes,
+   * never LOGITPING_API_KEY, which authenticates only API-mode probes.
    */
   env?: Readonly<Record<string, string | undefined>>;
-}
-
-/** The API-mode probe key: a CLI never needs it, and a tool call racing the abort could read it. */
-const WITHHELD_VARIABLE = 'LOGITPING_API_KEY';
-
-/** This process's environment without the API-mode key; names compare case-insensitively, as on Windows. */
-function inheritedEnvironment(): Record<string, string | undefined> {
-  return Object.fromEntries(Object.entries(process.env).filter(([name]) => name.toUpperCase() !== WITHHELD_VARIABLE));
+  /**
+   * More of this process's variables for the default environment: names, or prefixes written
+   * `NAME_*`, such as `AWS_*` for Claude Code through Amazon Bedrock. Cannot be combined with `env`.
+   */
+  passEnv?: readonly string[];
 }
 
 /**
@@ -58,9 +57,21 @@ export abstract class CliDriver implements ProbeTransport {
     if (options.model !== undefined && (typeof options.model !== 'string' || !CLI_MODEL.test(options.model))) {
       throw new TypeError('CLI model must start with a letter or digit and contain only letters, digits, and . _ : / @ [ ] -');
     }
+    if (options.env !== undefined && options.passEnv !== undefined) throw new TypeError('env is the complete environment; use passEnv only without it');
+    if (options.passEnv !== undefined) checkPassEnv(options.passEnv);
   }
   protected abstract args(): string[];
   protected abstract decoder(): EventDecoder;
+
+  /** Variable-name prefixes of this CLI's vendor that its default environment keeps, such as `CLAUDE_`. */
+  protected environmentPrefixes(): readonly string[] {
+    return [];
+  }
+
+  /** The environment of one launch: `env` when given, otherwise the allowlist of this process's environment. */
+  protected environment(): Readonly<Record<string, string | undefined>> {
+    return this.options.env ?? driverEnvironment(process.env, this.environmentPrefixes(), this.options.passEnv);
+  }
 
   /** The default executable, which messages also name. */
   protected executable(): string {
@@ -111,7 +122,7 @@ export abstract class CliDriver implements ProbeTransport {
       const executable = this.executable();
       const binary = this.options.binary ?? executable;
       // The complete environment; execa must not merge process.env back in.
-      const env = this.options.env ?? inheritedEnvironment();
+      const env = this.environment();
       const args = await this.launchArgs({ binary, cwd: directory, env, signal: scope.signal });
       scope.signal.throwIfAborted();
       const child = execa(binary, args, {

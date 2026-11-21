@@ -100,5 +100,7 @@ export class AntigravityDriver extends CliDriver {
     return `${JSON.stringify({ event: 'user', message: { content: prompt } })}\n`;
   }
 
+  protected override environmentPrefixes(): readonly string[] { return ['AGY_', 'ANTIGRAVITY_', 'GEMINI_', 'GOOGLE_']; }
+
   protected decoder(): EventDecoder { return new AntigravityEventDecoder(); }
 }
