@@ -8,7 +8,8 @@
 
 ### Changed
 
-- **CLI drivers no longer inherit your whole environment.** Claude, Codex and `agy` receive common system, locale, proxy and certificate variables and their own vendor's variables (`CLAUDE_*`/`ANTHROPIC_*`, `CODEX_*`/`OPENAI_*`, `AGY_*`/`ANTIGRAVITY_*`/`GEMINI_*`/`GOOGLE_*`), so a tool that starts before the probe stops it cannot read other vendors' keys or cloud credentials from the environment. A login that needs other variables, such as Claude Code through Amazon Bedrock, needs `--pass-env 'AWS_*'` (library: `passEnv`). `LOGITPING_API_KEY` is still never passed.
+- **CLI drivers no longer inherit your whole environment.** Claude, Codex and `agy` receive common system, locale, proxy and certificate variables, `DO_NOT_TRACK`, and their own vendor's variables (`CLAUDE_*`/`ANTHROPIC_*` with Claude Code's `DISABLE_TELEMETRY`, `DISABLE_ERROR_REPORTING` and `DISABLE_AUTOUPDATER` opt-outs, `CODEX_*`/`OPENAI_*`, `AGY_*`/`ANTIGRAVITY_*`/`GEMINI_*`/`GOOGLE_*`), so the CLI is no longer handed other vendors' keys or AWS and Azure credentials. This narrows, but does not close, what a tool that starts before the probe stops it can read: it can still read files your account can read, and on Linux usually the environment of your other processes, including lping's own. A login that needs other variables, such as Claude Code through Amazon Bedrock, needs `--pass-env 'AWS_*'` (library: `passEnv`). `LOGITPING_API_KEY` is still never passed.
+- **Breaking for custom drivers:** a `CliDriver` subclass now receives only the shared variables unless it overrides `environmentPrefixes()` or is given `passEnv`.
 
 ### Documentation
 

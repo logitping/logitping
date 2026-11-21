@@ -276,6 +276,8 @@ else {
     const stubbed = {
       ANTHROPIC_API_KEY: 'a', CLAUDE_CONFIG_DIR: '/cc', OPENAI_API_KEY: 'o', CODEX_HOME: '/ch', GEMINI_API_KEY: 'g',
       GOOGLE_CLOUD_PROJECT: 'p', AGY_X: '1', ANTIGRAVITY_Y: '2', AWS_SECRET_ACCESS_KEY: 's',
+      // Opt-outs Claude Code reads without its prefix; dropping them would undo the user's choice.
+      DISABLE_TELEMETRY: '1', DISABLE_ERROR_REPORTING: '1', DISABLE_AUTOUPDATER: '1',
     };
     for (const [name, value] of Object.entries(stubbed)) vi.stubEnv(name, value);
     const pick = (env: Readonly<Record<string, string | undefined>>) => Object.fromEntries(Object.keys(stubbed).filter((name) => name in env).map((name) => [name, env[name]]));
@@ -283,7 +285,9 @@ else {
     class Codex extends CodexDriver { environmentOf() { return this.environment(); } }
     class Agy extends AntigravityDriver { environmentOf() { return this.environment(); } }
     class Generic extends FakeDriver { environmentOf() { return this.environment(); } }
-    expect(pick(new Claude().environmentOf())).toEqual({ ANTHROPIC_API_KEY: 'a', CLAUDE_CONFIG_DIR: '/cc' });
+    expect(pick(new Claude().environmentOf())).toEqual({
+      ANTHROPIC_API_KEY: 'a', CLAUDE_CONFIG_DIR: '/cc', DISABLE_TELEMETRY: '1', DISABLE_ERROR_REPORTING: '1', DISABLE_AUTOUPDATER: '1',
+    });
     expect(pick(new Codex().environmentOf())).toEqual({ OPENAI_API_KEY: 'o', CODEX_HOME: '/ch' });
     expect(pick(new Agy().environmentOf())).toEqual({ GEMINI_API_KEY: 'g', GOOGLE_CLOUD_PROJECT: 'p', AGY_X: '1', ANTIGRAVITY_Y: '2' });
     expect(pick(new Generic('env').environmentOf())).toEqual({});

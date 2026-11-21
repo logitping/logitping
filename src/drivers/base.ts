@@ -63,7 +63,10 @@ export abstract class CliDriver implements ProbeTransport {
   protected abstract args(): string[];
   protected abstract decoder(): EventDecoder;
 
-  /** Variable-name prefixes of this CLI's vendor that its default environment keeps, such as `CLAUDE_`. */
+  /**
+   * Name prefixes this CLI's default environment keeps, such as `CLAUDE_`. An exact variable name
+   * works too: as a prefix it matches only itself and longer names.
+   */
   protected environmentPrefixes(): readonly string[] {
     return [];
   }

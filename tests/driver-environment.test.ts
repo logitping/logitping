@@ -26,6 +26,10 @@ describe('driver environment', () => {
     expect(driverEnvironment(source, [], ['aws_*', 'cloud_ml_region'])).toEqual({ AWS_REGION: 'us-east-1', aws_profile: 'dev', CLOUD_ML_REGION: 'us-east5' });
   });
 
+  it('keeps the DO_NOT_TRACK opt-out for every driver', () => {
+    expect(driverEnvironment({ DO_NOT_TRACK: '1' }, [])).toEqual({ DO_NOT_TRACK: '1' });
+  });
+
   it('drops variables without a value, keeping empty strings', () => {
     expect(driverEnvironment({ PATH: undefined, HOME: '/h', NO_PROXY: '' }, [])).toEqual({ HOME: '/h', NO_PROXY: '' });
   });

@@ -2,19 +2,21 @@
  * Which of this process's environment variables a local CLI driver may receive. A tool the
  * backend under test starts before the driver stops the CLI can read every variable the CLI got,
  * so only what a CLI login needs is passed. This is defense in depth: such a tool can still read
- * the CLI's own credentials and any file the user's account can read.
+ * the CLI's own credentials, any file the user's account can read, and on Linux usually other
+ * processes' environments under /proc, including this process's own.
  */
 
 /** The API-mode probe key: a CLI never needs it. Only an explicit complete `env` can carry it. */
 export const WITHHELD_VARIABLE = 'LOGITPING_API_KEY';
 
-/** Variables every driver receives: system, locale, temporary directory, session, proxy and certificate, and Windows profile. */
+/** Variables every driver receives: system, locale, temporary directory, session, proxy and certificate, Windows profile, and the `DO_NOT_TRACK` opt-out. */
 export const SHARED_VARIABLES: readonly string[] = [
   'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'TERM', 'TMPDIR', 'TMP', 'TEMP', 'LANG', 'LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LC_MESSAGES', 'TZ',
   'XDG_CONFIG_HOME', 'XDG_DATA_HOME', 'XDG_CACHE_HOME', 'XDG_STATE_HOME', 'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS',
   'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'NODE_EXTRA_CA_CERTS', 'NODE_USE_SYSTEM_CA',
   'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT', 'SYSTEMDRIVE', 'USERPROFILE', 'HOMEDRIVE', 'HOMEPATH', 'USERNAME', 'APPDATA',
   'LOCALAPPDATA', 'PROGRAMDATA', 'PROGRAMFILES', 'PROGRAMFILES(X86)', 'PROCESSOR_ARCHITECTURE',
+  'DO_NOT_TRACK',
 ];
 
 const SHARED = new Set(SHARED_VARIABLES);
