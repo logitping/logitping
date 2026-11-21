@@ -81,7 +81,7 @@ A completed probe may return `INCONCLUSIVE` or `UNKNOWN_MODEL`. The following is
 | --- | --- | --- |
 | `IDENTIFIED` | One reference passed the nominal likelihood and distance checks; this is not identity attestation | `0` |
 | `HEURISTIC_MATCH` | An explicitly enabled exploratory comparison found a reference candidate: across transports, or with the experimental `--pooled` bank; `confidence` is `null` | `2` |
-| `INCONCLUSIVE` | Insufficient separation, disagreeing checks, or an incomplete response; with `--pooled`, `candidates` lists the models still consistent | `2` |
+| `INCONCLUSIVE` | Insufficient separation, disagreeing checks, or an incomplete response; `candidates` lists the enrolled models still consistent | `2` |
 | `UNKNOWN_MODEL` | All enrolled distance regions rejected the observation; drift can also cause this. This is rare: an unenrolled model usually returns `INCONCLUSIVE` | `2` |
 | `UNCALIBRATED` | Samples were collected without a usable calibrated bank for this transport | `2` |
 | `ERROR` | Invalid configuration, transport failure, or malformed output | `1` |
