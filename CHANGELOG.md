@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.0 — 2026-11-21
+## 0.8.0 — 2026-11-22
 
 Adds claim verification with measured acceptance rates, candidate lists for single-request probes, recorded collection settings, reported token usage and a maintained independent evaluation of both bundled banks, and narrows the environment CLI drivers receive. Results no longer report `confidence`. Both banks keep the 18 models and references of `0.7.0` and add each model's collection settings.
 
