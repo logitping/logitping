@@ -1,12 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 — 2026-11-22
+
+Adds claim verification with measured acceptance rates, candidate lists for single-request probes, recorded collection settings, reported token usage and a maintained independent evaluation of both bundled banks, and narrows the environment CLI drivers receive. Results no longer report `confidence`. Both banks keep the 18 models and references of `0.7.0` and add each model's collection settings.
 
 ### Added
 
 - **Claim verification.** Given a claimed model, `--claim` or else `--model` (library: `claim`), results carry `claim`: whether the claimed model is among the `candidates` (`CONSISTENT` or `INCONSISTENT`), or why the claim was not checked (`NOT_ENROLLED`, `NOT_CHECKED`). With the bundled default bank, a checked claim also carries its measured acceptance rates: how often the bank accepted that claim for the model's own runs, other enrolled models' runs and runs of models outside the bank, with 95% Wilson ranges and the models most often accepted for it. The readable output prints them in a claim block. The figures come from `src/data/claim_rates.json`, which `npm run bank:evaluate` now writes from stored runs without provider requests, and the evaluation report gains a Claims section. The 8 models without runs from other collections are measured on their tuning runs, marked as such. These are acceptance rates on stored runs, not the probability that an endpoint serves the claimed model.
 - `--claim <model>` names the claimed model when `--model` is the endpoint's alias, and sets the exit code from the verdict: `0` consistent, `3` inconsistent, `2` not checked or not enrolled. Without `--claim`, exit codes do not change.
-
 - Results report `usage`: the input and output token counts the provider reported for each integer request, recorded for future tokenizer comparison and not used for identification. To capture counts that arrive at the end of a stream, an API probe keeps reading each request for up to 5 s after its last needed integer: output the model writes in that time is billed, and the request can take up to 5 s longer. Transports opt in with `reportsUsage` and `ProbeRequest.onUsage`.
 - `npm run bank:evaluate` (`scripts/evaluate-banks.mjs`) scores both bundled banks on every stored run they were not built from, without provider requests, and writes `docs/evaluation.json` and `docs/evaluation.md`. A test checks that the committed report matches the bundled banks.
 - Single-request probes report `candidates`, as pooled probes do: the enrolled models the sequential test cannot reject against the most likely one and whose distance envelope accepts, most likely first. The readable output prints `Inconclusive, consistent with: …`. `SequentialDecision` gains `logLikelihoods`. The evaluation report (schema version 2) adds how often the tested model is listed, mean list size and lists spanning several vendors.
